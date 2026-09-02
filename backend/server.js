@@ -73,4 +73,9 @@ app.use("/api/kundli", require("./routes/kundli"));
 app.get("/api/health", (req, res) => res.json({ status: "ok", service: "aroham-backend" }));
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🕉️  Aroham backend running on http://localhost:${PORT}`));
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => console.log(`🕉️  Aroham backend running on http://localhost:${PORT}`));
+}
+
+// Export the app for Vercel serverless deployment
+module.exports = app;
