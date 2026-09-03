@@ -7,13 +7,8 @@ import { useAuth } from "@aroham/shared-auth";
 import { useWishlist } from "@aroham/shared-state";
 import { SearchModal } from "./SearchModal";
 import { LanguageSelector } from "./LanguageSelector";
-<<<<<<< Updated upstream
-import { useTranslation } from "@visual/context/LanguageContext";
-import { KundliModal } from "../product/KundliModal";
-=======
 import { useTranslation } from "react-i18next";
-
->>>>>>> Stashed changes
+import { KundliModal } from "../product/KundliModal";
 
 export function Nav() {
   const navigate = useNavigate();
