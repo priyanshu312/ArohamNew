@@ -1,11 +1,11 @@
 import { ArrowRight, Flame, CheckCircle, Truck, Shield } from "lucide-react";
-import { MAROON, GOLD, IVORY, SANS, SERIF } from "@aroham/shared-config/theme";
-import { ArohamProduct } from "@aroham/shared-types/product";
+import { MAROON, GOLD, IVORY, SANS, SERIF } from "@nakshra/shared-config/theme";
+import { NakshraProduct } from "@nakshra/shared-types/product";
 import { HexPrismCarousel } from "./HexPrismCarousel";
 import { useTranslation } from "react-i18next";
 
 
-export function ShopConsultCards({ products, onShop, onProductClick }: { products: ArohamProduct[]; onShop: () => void; onProductClick?: (p: ArohamProduct) => void }) {
+export function ShopConsultCards({ products, onShop, onProductClick }: { products: NakshraProduct[]; onShop: () => void; onProductClick?: (p: NakshraProduct) => void }) {
   const displayProducts = products.length >= 3 ? products.slice(0, 3) : [];
   const { t } = useTranslation();
 

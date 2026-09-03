@@ -4,12 +4,12 @@ import {
   StyleSheet, Dimensions, ActivityIndicator, FlatList, TextInput, Alert
 } from 'react-native';
 import { MAROON, GOLD, IVORY, SPACE_BLACK, BORDER_COLOR, CARD_BG } from '../constants/theme';
-import { ArohamProduct, ActiveTab } from '../types';
-import { useProducts } from '@aroham/shared-hooks/useProducts';
-import { DEFAULT_PRODUCTS } from '@aroham/shared-config/products';
-import { COMMENTS_DATA } from '@aroham/shared-config/data';
-import { supabase } from '@aroham/shared-services';
-import { safeLocalStorage } from '@aroham/shared-utils/storage';
+import { NakshraProduct, ActiveTab } from '../types';
+import { useProducts } from '@nakshra/shared-hooks/useProducts';
+import { DEFAULT_PRODUCTS } from '@nakshra/shared-config/products';
+import { COMMENTS_DATA } from '@nakshra/shared-config/data';
+import { supabase } from '@nakshra/shared-services';
+import { safeLocalStorage } from '@nakshra/shared-utils/storage';
 import { Stars } from '../components/Stars';
 import { ProductCard } from '../components/ProductCard';
 
@@ -26,8 +26,8 @@ const STAR_COORDS = [
 
 interface HomeScreenProps {
   setTab: (tab: ActiveTab, collection?: string) => void;
-  onProductPress: (p: ArohamProduct) => void;
-  onAddToCart?: (p: ArohamProduct) => void;
+  onProductPress: (p: NakshraProduct) => void;
+  onAddToCart?: (p: NakshraProduct) => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ setTab, onProductPress, onAddToCart }) => {
@@ -52,7 +52,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setTab, onProductPress, 
     (async () => {
       let cached: any[] = [];
       try {
-        const cachedStr = safeLocalStorage.getItem('aroham_custom_reviews');
+        const cachedStr = safeLocalStorage.getItem('Nakshra_custom_reviews');
         if (cachedStr) cached = JSON.parse(cachedStr);
       } catch (e) {}
 
@@ -74,7 +74,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setTab, onProductPress, 
           });
           const merged = Array.from(combined.values());
           setCustomReviews(merged);
-          safeLocalStorage.setItem('aroham_custom_reviews', JSON.stringify(merged));
+          safeLocalStorage.setItem('Nakshra_custom_reviews', JSON.stringify(merged));
         } else if (cached.length > 0) {
           setCustomReviews(cached);
         }
@@ -122,7 +122,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setTab, onProductPress, 
     } catch (e) {}
     const updated = [newRev, ...customReviews];
     setCustomReviews(updated);
-    safeLocalStorage.setItem('aroham_custom_reviews', JSON.stringify(updated));
+    safeLocalStorage.setItem('Nakshra_custom_reviews', JSON.stringify(updated));
     setReviewSubmitting(false);
     setReviewSubmitted(true);
   };
@@ -153,7 +153,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setTab, onProductPress, 
   ];
 
   // Matches web's ProductsAndCombos.tsx shelf set exactly (title, sub-eyebrow, emoji title, sorted products).
-  const shelves: { title: string; sub: string; emoji: string; items: ArohamProduct[] }[] = [
+  const shelves: { title: string; sub: string; emoji: string; items: NakshraProduct[] }[] = [
     { title: 'Bestselling Products', sub: 'TOP PICKS', emoji: '🔥', items: products.slice(0, 10) },
     { title: 'Fav Items', sub: 'FAN FAVOURITES', emoji: '❤️', items: [...products].reverse().slice(0, 10) },
     { title: 'Combo Deals', sub: 'BUNDLE & SAVE', emoji: '🎁', items: products.slice(0, 10) },
@@ -279,7 +279,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setTab, onProductPress, 
         <Text style={styles.craftSub}>CRAFTSMANSHIP</Text>
         <Text style={styles.craftTitle}>From Earth to Sacred Artifact</Text>
         <Text style={styles.craftDesc}>
-          Every Aroham product follows a sacred 5-step ritual: sourcing pristine natural elements, strict quality purification, lab verification, astrologer customization, and authentic temple consecration under mantra rounds.
+          Every Nakshra product follows a sacred 5-step ritual: sourcing pristine natural elements, strict quality purification, lab verification, astrologer customization, and authentic temple consecration under mantra rounds.
         </Text>
       </View>
 
@@ -312,9 +312,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setTab, onProductPress, 
         </View>
       ))}
 
-      {/* The Aroham Difference (Why Choose Us) */}
+      {/* The Nakshra Difference (Why Choose Us) */}
       <View style={styles.differenceSection}>
-        <Text style={styles.diffSub}>THE AROHAM DIFFERENCE</Text>
+        <Text style={styles.diffSub}>THE Nakshra DIFFERENCE</Text>
         <Text style={styles.diffTitle}>Not just products.{'\n'}<Text style={styles.diffTitleGold}>Sacred instruments.</Text></Text>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.diffScroll}>
@@ -460,7 +460,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setTab, onProductPress, 
         <Text style={styles.newsletterDesc}>Auspicious dates, Vedic wisdom, exclusive offers & early access to new products.</Text>
         {newsletterJoined ? (
           <View style={styles.newsletterJoinedBox}>
-            <Text style={styles.newsletterJoinedText}>✓ Welcome to the Aroham community!</Text>
+            <Text style={styles.newsletterJoinedText}>✓ Welcome to the Nakshra community!</Text>
           </View>
         ) : (
           <View style={styles.newsletterForm}>

@@ -1,8 +1,8 @@
-# Design a Premium Cart Page for "Aroham" – Luxury Vedic Astrology & Vastu Marketplace
+# Design a Premium Cart Page for "Nakshra" – Luxury Vedic Astrology & Vastu Marketplace
 
 You are an award-winning Product Designer creating a premium e-commerce experience.
 
-Design a **Cart Page** for **Aroham**, maintaining complete visual consistency with the homepage.
+Design a **Cart Page** for **Nakshra**, maintaining complete visual consistency with the homepage.
 
 The cart should feel elegant, trustworthy, luxurious, and calming while encouraging users to complete their purchase. The experience should resemble premium brands like Apple, Aesop, Rituals, and Forest Essentials rather than a typical ecommerce website.
 
@@ -14,7 +14,7 @@ The page should emphasize **authenticity, trust, craftsmanship, and spiritual va
 
 # Brand Identity
 
-Aroham is India's premium Vedic Astrology & Vastu platform.
+Nakshra is India's premium Vedic Astrology & Vastu platform.
 
 Every product is positioned as:
 
@@ -572,4 +572,4 @@ Users should feel:
 * The purchase feels meaningful rather than commercial.
 * I'm excited to complete my order.
 
-Create a polished, production-ready, responsive, pixel-perfect cart page with modern UI components, premium visual hierarchy, elegant spacing, smooth micro-interactions, and a seamless continuation of the Aroham homepage design system.
+Create a polished, production-ready, responsive, pixel-perfect cart page with modern UI components, premium visual hierarchy, elegant spacing, smooth micro-interactions, and a seamless continuation of the Nakshra homepage design system.

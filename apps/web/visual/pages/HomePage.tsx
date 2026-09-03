@@ -3,14 +3,14 @@ import { NavagrahaHero } from "@visual/components/home/NavagrahaHero";
 import { ShopConsultCards } from "@visual/components/home/ShopConsultCards";
 import { HowItsMade } from "@visual/components/home/HowItsMade";
 import { ProductsAndCombos } from "@visual/components/home/ProductsAndCombos";
-import { WhyAroham } from "@visual/components/home/WhyAroham";
+import { WhyNakshra } from "@visual/components/home/WhyNakshra";
 import { VideoTestimonials } from "@visual/components/home/VideoTestimonials";
 import { CommunityComments } from "@visual/components/home/CommunityComments";
 import { Newsletter } from "@visual/components/home/Newsletter";
-import { COMBOS } from "@aroham/shared-config/data";
-import { ArohamProduct } from "@aroham/shared-types/product";
-import { useCart } from "@aroham/shared-state";
-import { useProducts } from "@aroham/shared-hooks/useProducts";
+import { COMBOS } from "@nakshra/shared-config/data";
+import { NakshraProduct } from "@nakshra/shared-types/product";
+import { useCart } from "@nakshra/shared-state";
+import { useProducts } from "@nakshra/shared-hooks/useProducts";
 import { AstroChatWidget } from "@visual/components/product/AstroChatWidget";
 
 export function HomePage() {
@@ -19,7 +19,7 @@ export function HomePage() {
   const { products } = useProducts();
 
   const goToShop = () => navigate("/shop");
-  const goToProduct = (p: ArohamProduct) => navigate(`/shop/${p.slug}`);
+  const goToProduct = (p: NakshraProduct) => navigate(`/shop/${p.slug}`);
 
   const handleAddCombo = (name: string) => {
     const combo = COMBOS.find(c => c.name === name);
@@ -35,7 +35,7 @@ export function HomePage() {
       <ShopConsultCards products={products} onShop={goToShop} onProductClick={goToProduct} />
       <HowItsMade />
       <ProductsAndCombos products={products} onProductClick={goToProduct} onAddToCart={p => addToCart(p)} onAddCombo={handleAddCombo} />
-      <WhyAroham />
+      <WhyNakshra />
       <VideoTestimonials />
       <CommunityComments products={products} />
       <Newsletter />

@@ -4,7 +4,7 @@
  * procedural planet textures, Saturn rings, orbit ellipses, starfield.
  */
 import { useEffect, useRef, useState, useCallback } from "react";
-import { GOLD, SAFFRON, SERIF } from "@aroham/shared-config/theme";
+import { GOLD, SAFFRON, SERIF } from "@nakshra/shared-config/theme";
 
 // ─────────────────────────────────────────────────────────
 //  Planet data

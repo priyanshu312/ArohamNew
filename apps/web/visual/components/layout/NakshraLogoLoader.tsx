@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { MAROON, GOLD, SAFFRON, IVORY, SERIF, SANS } from "@aroham/shared-config/theme";
+import { MAROON, GOLD, SAFFRON, IVORY, SERIF, SANS } from "@nakshra/shared-config/theme";
 
-export function ArohamLogoLoader({ text = "Loading Sacred Experience...", fullScreen = true }: { text?: string; fullScreen?: boolean }) {
+export function NakshraLogoLoader({ text = "Loading Sacred Experience...", fullScreen = true }: { text?: string; fullScreen?: boolean }) {
   const [dots, setDots] = useState("");
 
   useEffect(() => {
@@ -23,7 +23,7 @@ export function ArohamLogoLoader({ text = "Loading Sacred Experience...", fullSc
       }}
     >
       <style>{`
-        @keyframes arohamLogoPulse {
+        @keyframes NakshraLogoPulse {
           0%, 100% {
             transform: scale(1);
             box-shadow: 0 0 35px 10px rgba(200, 160, 68, 0.35), 0 0 70px 20px rgba(255, 153, 51, 0.2);
@@ -33,11 +33,11 @@ export function ArohamLogoLoader({ text = "Loading Sacred Experience...", fullSc
             box-shadow: 0 0 65px 22px rgba(200, 160, 68, 0.55), 0 0 110px 40px rgba(255, 153, 51, 0.35);
           }
         }
-        @keyframes arohamGlowRing {
+        @keyframes NakshraGlowRing {
           0% { transform: scale(0.85); opacity: 0.8; }
           100% { transform: scale(1.6); opacity: 0; }
         }
-        @keyframes arohamTextShimmer {
+        @keyframes NakshraTextShimmer {
           0% { background-position: -200% 0; }
           100% { background-position: 200% 0; }
         }
@@ -53,7 +53,7 @@ export function ArohamLogoLoader({ text = "Loading Sacred Experience...", fullSc
           className="absolute w-24 h-24 rounded-full pointer-events-none"
           style={{
             border: `2px solid ${GOLD}`,
-            animation: "arohamGlowRing 2s cubic-bezier(0.1, 0.8, 0.3, 1) infinite"
+            animation: "NakshraGlowRing 2s cubic-bezier(0.1, 0.8, 0.3, 1) infinite"
           }}
         />
 
@@ -63,7 +63,7 @@ export function ArohamLogoLoader({ text = "Loading Sacred Experience...", fullSc
           style={{
             background: `linear-gradient(135deg, ${MAROON} 0%, #4A121A 50%, ${SAFFRON} 100%)`,
             border: `2.5px solid ${GOLD}`,
-            animation: "arohamLogoPulse 2.2s ease-in-out infinite",
+            animation: "NakshraLogoPulse 2.2s ease-in-out infinite",
             color: IVORY
           }}
         >
@@ -81,10 +81,10 @@ export function ArohamLogoLoader({ text = "Loading Sacred Experience...", fullSc
             backgroundSize: "200% auto",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
-            animation: "arohamTextShimmer 3s linear infinite"
+            animation: "NakshraTextShimmer 3s linear infinite"
           }}
         >
-          Aroham
+          Nakshra
         </h2>
 
         <p className="text-xs font-semibold tracking-widest uppercase mb-4" style={{ color: SAFFRON, letterSpacing: "0.2em" }}>
@@ -106,7 +106,7 @@ export function ArohamLogoLoader({ text = "Loading Sacred Experience...", fullSc
           style={{
             background: `linear-gradient(90deg, ${SAFFRON}, ${GOLD})`,
             width: "60%",
-            animation: "arohamTextShimmer 1.5s ease-in-out infinite"
+            animation: "NakshraTextShimmer 1.5s ease-in-out infinite"
           }}
         />
       </div>

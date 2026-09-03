@@ -1,18 +1,18 @@
 {
-  "name": "@aroham/shared-hooks",
+  "name": "@nakshra/shared-hooks",
   "version": "0.0.1",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "dependencies": {
-    "@aroham/shared-api": "workspace:*",
-    "@aroham/shared-auth": "workspace:*",
-    "@aroham/shared-config": "workspace:*",
-    "@aroham/shared-services": "workspace:*",
-    "@aroham/shared-state": "workspace:*",
-    "@aroham/shared-types": "workspace:*",
-    "@aroham/shared-utils": "workspace:*",
+    "@nakshra/shared-api": "workspace:*",
+    "@nakshra/shared-auth": "workspace:*",
+    "@nakshra/shared-config": "workspace:*",
+    "@nakshra/shared-services": "workspace:*",
+    "@nakshra/shared-state": "workspace:*",
+    "@nakshra/shared-types": "workspace:*",
+    "@nakshra/shared-utils": "workspace:*",
     "react": "18.3.1"
   }
 }

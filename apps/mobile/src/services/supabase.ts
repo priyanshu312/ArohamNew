@@ -1,1 +1,1 @@
-export { supabase } from '@aroham/shared-services';
+export { supabase } from '@nakshra/shared-services';

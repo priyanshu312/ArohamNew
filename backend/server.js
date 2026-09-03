@@ -1,4 +1,4 @@
-// server.js — Aroham backend entry point
+// server.js — Nakshra backend entry point
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
@@ -70,11 +70,11 @@ app.use("/api/recommendations", require("./routes/recommendations"));
 app.use("/api/kundli", require("./routes/kundli"));
 
 
-app.get("/api/health", (req, res) => res.json({ status: "ok", service: "aroham-backend" }));
+app.get("/api/health", (req, res) => res.json({ status: "ok", service: "Nakshra-backend" }));
 
 const PORT = process.env.PORT || 5000;
 if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => console.log(`🕉️  Aroham backend running on http://localhost:${PORT}`));
+  app.listen(PORT, () => console.log(`🕉️  Nakshra backend running on http://localhost:${PORT}`));
 }
 
 // Export the app for Vercel serverless deployment

@@ -41,7 +41,7 @@ export const BLOG_POSTS: BlogPost[] = [
     excerpt: "The Nepal Origin 5 Mukhi Rudraksha is celebrated across ancient scriptures as the ultimate bead for health, mental clarity, and protection from negative planetary influences.",
     content: [
       "The holy 5 Mukhi Rudraksha bead represents Lord Kalagni Rudra. It regulates blood pressure, enhances mental focus, and calms the nervous system through natural electromagnetic resonance.",
-      "Each Mukhi bead in Aroham's store is 100% lab-certified Nepalese origin and consecrated with 108 mantra chanting rounds by expert pandits prior to dispatch.",
+      "Each Mukhi bead in Nakshra's store is 100% lab-certified Nepalese origin and consecrated with 108 mantra chanting rounds by expert pandits prior to dispatch.",
       "Wearing this bead around your neck or in a silver casing brings profound spiritual alignment and shields the wearer from sudden misfortunes."
     ],
     keyTakeaway: "Always ensure your Rudraksha is lab-certified Nepalese origin and fully mantra-energized to experience genuine spiritual benefits.",

@@ -1,7 +1,7 @@
 import React from 'react';
-import { CartProvider as BaseCartProvider, useCart as useBaseCart, AppliedCoupon } from '@aroham/shared-state';
-import { ArohamProduct } from '@aroham/shared-types/product';
-import { CartItem } from '@aroham/shared-types/cart';
+import { CartProvider as BaseCartProvider, useCart as useBaseCart, AppliedCoupon } from '@nakshra/shared-state';
+import { NakshraProduct } from '@nakshra/shared-types/product';
+import { CartItem } from '@nakshra/shared-types/cart';
 import { useAuth } from './AuthContext';
 
 interface CustomCartContextType {
@@ -20,7 +20,7 @@ interface CustomCartContextType {
   closeCart: () => void;
   // Returns false (and redirects to sign-in) instead of adding when the user is logged out,
   // so callers can skip whatever they'd normally do next (open the cart drawer, go to checkout).
-  addToCart: (product: ArohamProduct, qty?: number, openSidebar?: boolean) => boolean;
+  addToCart: (product: NakshraProduct, qty?: number, openSidebar?: boolean) => boolean;
   removeFromCart: (id: number) => void;
   updateQty: (id: number, deltaOrQty: number) => void;
   clearCart: () => void;
@@ -35,7 +35,7 @@ export const useCart = (): CustomCartContextType => {
   const base = useBaseCart();
   const { isLoggedIn, openAuth } = useAuth();
 
-  const addToCart = (product: ArohamProduct, qty?: number, openSidebar?: boolean) => {
+  const addToCart = (product: NakshraProduct, qty?: number, openSidebar?: boolean) => {
     if (!isLoggedIn) {
       openAuth();
       return false;

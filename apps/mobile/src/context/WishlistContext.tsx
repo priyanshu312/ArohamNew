@@ -1,6 +1,6 @@
 import React from 'react';
-import { WishlistProvider as BaseWishlistProvider, useWishlist as useBaseWishlist } from '@aroham/shared-state';
-import { ArohamProduct } from '@aroham/shared-types/product';
+import { WishlistProvider as BaseWishlistProvider, useWishlist as useBaseWishlist } from '@nakshra/shared-state';
+import { NakshraProduct } from '@nakshra/shared-types/product';
 import { useAuth } from './AuthContext';
 
 export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -13,12 +13,12 @@ export const useWishlist = () => {
   const base = useBaseWishlist();
   const { isLoggedIn, openAuth } = useAuth();
 
-  const addToWishlist = (product: ArohamProduct) => {
+  const addToWishlist = (product: NakshraProduct) => {
     if (!isLoggedIn) { openAuth(); return; }
     base.addToWishlist(product);
   };
 
-  const toggleWishlist = (product: ArohamProduct) => {
+  const toggleWishlist = (product: NakshraProduct) => {
     if (!isLoggedIn) { openAuth(); return; }
     base.toggleWishlist(product);
   };

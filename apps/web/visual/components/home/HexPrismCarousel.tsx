@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@aroham/shared-config/theme";
-import { ArohamProduct } from "@aroham/shared-types/product";
+import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@nakshra/shared-config/theme";
+import { NakshraProduct } from "@nakshra/shared-types/product";
 
-export function HexPrismCarousel({ products, onProductClick }: { products: ArohamProduct[]; onProductClick: (p: ArohamProduct) => void }) {
+export function HexPrismCarousel({ products, onProductClick }: { products: NakshraProduct[]; onProductClick: (p: NakshraProduct) => void }) {
   const [current, setCurrent] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth < 640 : false);

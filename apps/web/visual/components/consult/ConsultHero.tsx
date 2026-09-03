@@ -1,6 +1,6 @@
 import { Sparkles, Search } from "lucide-react";
 import { useNavigate } from "react-router";
-import { SERIF, SANS } from "@aroham/shared-config/theme";
+import { SERIF, SANS } from "@nakshra/shared-config/theme";
 import { useTranslation } from "react-i18next";
 
 interface ConsultHeroProps {

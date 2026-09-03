@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { Star, ChevronLeft, ChevronRight } from "lucide-react";
-import { MAROON, GOLD, IVORY, SANS, SERIF } from "@aroham/shared-config/theme";
-import { COMMENTS_DATA } from "@aroham/shared-config/data";
-import { ArohamProduct } from "@aroham/shared-types/product";
+import { MAROON, GOLD, IVORY, SANS, SERIF } from "@nakshra/shared-config/theme";
+import { COMMENTS_DATA } from "@nakshra/shared-config/data";
+import { NakshraProduct } from "@nakshra/shared-types/product";
 import { FloatingInput } from "@visual/components/auth/FloatingInput";
 import { FloatingSelect } from "@visual/components/auth/FloatingSelect";
-import { supabase } from "@aroham/shared-services";
+import { supabase } from "@nakshra/shared-services";
 import { useTranslation } from "react-i18next";
 
-export function CommunityComments({ products = [] }: { products?: ArohamProduct[] }) {
+export function CommunityComments({ products = [] }: { products?: NakshraProduct[] }) {
   const [liked, setLiked] = useState<Record<string | number, boolean>>({});
   const [showForm, setShowForm] = useState(false);
   const [review, setReview] = useState({ name: "", rating: 5, text: "", product: "" });
@@ -22,7 +22,7 @@ export function CommunityComments({ products = [] }: { products?: ArohamProduct[
   // Custom user-submitted reviews list + default comments
   const [customReviews, setCustomReviews] = useState<any[]>(() => {
     try {
-      const cached = localStorage.getItem("aroham_custom_reviews");
+      const cached = localStorage.getItem("Nakshra_custom_reviews");
       return cached ? JSON.parse(cached) : [];
     } catch (e) {
       return [];
@@ -34,7 +34,7 @@ export function CommunityComments({ products = [] }: { products?: ArohamProduct[
     Promise.resolve(
       supabase.from("reviews").select("*").order("created_at", { ascending: false })
     ).then(({ data, error }) => {
-      const cachedStr = localStorage.getItem("aroham_custom_reviews");
+      const cachedStr = localStorage.getItem("Nakshra_custom_reviews");
       const cached: any[] = cachedStr ? JSON.parse(cachedStr) : [];
       const combinedMap = new Map();
 
@@ -62,7 +62,7 @@ export function CommunityComments({ products = [] }: { products?: ArohamProduct[
 
       const merged = Array.from(combinedMap.values());
       setCustomReviews(merged);
-      localStorage.setItem("aroham_custom_reviews", JSON.stringify(merged));
+      localStorage.setItem("Nakshra_custom_reviews", JSON.stringify(merged));
     }).catch(() => {});
   }, []);
 
@@ -128,7 +128,7 @@ export function CommunityComments({ products = [] }: { products?: ArohamProduct[
       // Add to local state and localStorage immediately
       const updatedList = [newRev, ...customReviews];
       setCustomReviews(updatedList);
-      localStorage.setItem("aroham_custom_reviews", JSON.stringify(updatedList));
+      localStorage.setItem("Nakshra_custom_reviews", JSON.stringify(updatedList));
 
       setSubmitted(true);
       setTimeout(() => {
@@ -140,7 +140,7 @@ export function CommunityComments({ products = [] }: { products?: ArohamProduct[
       console.error("Error saving review: ", e);
       const updatedList = [newRev, ...customReviews];
       setCustomReviews(updatedList);
-      localStorage.setItem("aroham_custom_reviews", JSON.stringify(updatedList));
+      localStorage.setItem("Nakshra_custom_reviews", JSON.stringify(updatedList));
       setSubmitted(true);
       setTimeout(() => {
         if (scrollRef.current) {

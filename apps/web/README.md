@@ -1,7 +1,7 @@
 
-  # Aroham Final product (Copy) (Copy) (Copy) (Copy)
+  # Nakshra Final product (Copy) (Copy) (Copy) (Copy)
 
-  This is a code bundle for Aroham Final product (Copy) (Copy) (Copy) (Copy). The original project is available at https://www.figma.com/design/Mt8PN9kFBA00rsVJ2adSDe/Aroham-Final-product--Copy---Copy---Copy---Copy-.
+  This is a code bundle for Nakshra Final product (Copy) (Copy) (Copy) (Copy). The original project is available at https://www.figma.com/design/Mt8PN9kFBA00rsVJ2adSDe/Nakshra-Final-product--Copy---Copy---Copy---Copy-.
 
   ## Running the code
 

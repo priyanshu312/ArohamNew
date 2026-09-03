@@ -4,9 +4,9 @@ import {
   StyleSheet, ActivityIndicator, FlatList, TextInput
 } from 'react-native';
 import { MAROON, GOLD } from '../constants/theme';
-import { ArohamProduct } from '../types';
-import { useProducts } from '@aroham/shared-hooks/useProducts';
-import { CATEGORIES as SHARED_CATEGORIES, PURPOSES } from '@aroham/shared-config/data';
+import { NakshraProduct } from '../types';
+import { useProducts } from '@nakshra/shared-hooks/useProducts';
+import { CATEGORIES as SHARED_CATEGORIES, PURPOSES } from '@nakshra/shared-config/data';
 import { ProductCard } from '../components/ProductCard';
 
 const CATEGORIES = ['All', ...SHARED_CATEGORIES];
@@ -29,7 +29,7 @@ function isSameCategory(prodCategory?: string, filterCat?: string): boolean {
 
 // Same collection-matching heuristic as web's ShopPage.tsx (title-based shelves from Home
 // map onto rules here rather than a real "collection" field on the product).
-function matchesCollection(p: ArohamProduct, collectionLower: string): boolean {
+function matchesCollection(p: NakshraProduct, collectionLower: string): boolean {
   if (collectionLower.includes('discount') || collectionLower.includes('sale') || collectionLower.includes('off')) {
     return !!(p.original && p.original > p.price);
   }
@@ -48,8 +48,8 @@ function matchesCollection(p: ArohamProduct, collectionLower: string): boolean {
 }
 
 interface ShopScreenProps {
-  onProductPress: (p: ArohamProduct) => void;
-  onAddToCart: (p: ArohamProduct) => void;
+  onProductPress: (p: NakshraProduct) => void;
+  onAddToCart: (p: NakshraProduct) => void;
   searchQuery?: string;
   collection?: string;
 }

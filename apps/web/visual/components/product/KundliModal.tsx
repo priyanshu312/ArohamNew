@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { X, Sparkles, Calendar, Clock, MapPin, User, Download, CheckCircle, AlertCircle } from "lucide-react";
-import { MAROON, GOLD, IVORY, SANS, SERIF } from "@aroham/shared-config/theme";
+import { MAROON, GOLD, IVORY, SANS, SERIF } from "@nakshra/shared-config/theme";
 
 interface KundliModalProps {
   isOpen: boolean;

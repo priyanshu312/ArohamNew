@@ -1,6 +1,6 @@
-import { Astrologer } from "@aroham/shared-types";
-import { MOCK_ASTROLOGERS } from "@aroham/shared-config";
-import { supabase } from "@aroham/shared-services";
+import { Astrologer } from "@nakshra/shared-types";
+import { MOCK_ASTROLOGERS } from "@nakshra/shared-config";
+import { supabase } from "@nakshra/shared-services";
 import { API_BASE } from "./api";
 
 export function isAstrologerActive(isOnline: boolean, workingHours: any) {

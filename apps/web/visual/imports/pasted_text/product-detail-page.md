@@ -1,4 +1,4 @@
-You are an award-winning Senior Product Designer and Creative Director designing the flagship Product Detail Page (PDP) for **Aroham**, India's premium Vedic Astrology & Vastu platform.
+You are an award-winning Senior Product Designer and Creative Director designing the flagship Product Detail Page (PDP) for **Nakshra**, India's premium Vedic Astrology & Vastu platform.
 
 This is the MOST IMPORTANT page of the entire website.
 
@@ -29,7 +29,7 @@ The page should make customers feel they are purchasing an authentic spiritual a
 
 ──────────────────────────────
 
-Maintain COMPLETE consistency with the existing Aroham design system.
+Maintain COMPLETE consistency with the existing Nakshra design system.
 
 Reuse:
 
@@ -257,7 +257,7 @@ Soft shadow.
 
 Sections
 
-Why Buy From Aroham?
+Why Buy From Nakshra?
 
 Temple Energized
 
@@ -433,7 +433,7 @@ Experience Positive Energy
 
 TEMPLE ENERGIZATION
 
-This should become one of the signature sections of Aroham.
+This should become one of the signature sections of Nakshra.
 
 Large storytelling section.
 
@@ -559,7 +559,7 @@ Recently Viewed.
 
 ──────────────────────────────
 
-DISCOVER THE AROHAM ECOSYSTEM
+DISCOVER THE Nakshra ECOSYSTEM
 
 Beautiful editorial section.
 
@@ -635,7 +635,7 @@ FINAL DESIGN GOAL
 
 The customer should finish reading this page with these thoughts:
 
-"I completely trust Aroham."
+"I completely trust Nakshra."
 
 "I understand why this product is different."
 
@@ -649,4 +649,4 @@ The customer should finish reading this page with these thoughts:
 
 "It feels like buying a sacred artifact from India's most trusted Vedic platform."
 
-Create a production-ready, pixel-perfect Product Detail Page with luxury editorial design, immersive storytelling, exceptional UX, responsive layouts, premium visual hierarchy, and complete consistency with the Aroham design system.
+Create a production-ready, pixel-perfect Product Detail Page with luxury editorial design, immersive storytelling, exceptional UX, responsive layouts, premium visual hierarchy, and complete consistency with the Nakshra design system.

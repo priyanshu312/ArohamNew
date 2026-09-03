@@ -1,5 +1,5 @@
-import { supabase, firebaseAuth } from "@aroham/shared-services";
-import { getEnv } from "@aroham/shared-utils/env";
+import { supabase, firebaseAuth } from "@nakshra/shared-services";
+import { getEnv } from "@nakshra/shared-utils/env";
 
 const isLocal = typeof window !== "undefined" && window.location && (
   window.location.hostname === "localhost" ||
@@ -11,7 +11,7 @@ const isLocal = typeof window !== "undefined" && window.location && (
 // local web dev, where the previous code always fell back to localhost regardless
 // of environment — a latent bug that made the deployed web app silently target
 // localhost whenever no env var was set.
-export const API_BASE = getEnv("VITE_API_BASE", getEnv("EXPO_PUBLIC_API_BASE", isLocal ? "http://localhost:5000/api" : "https://aroham.onrender.com/api"));
+export const API_BASE = getEnv("VITE_API_BASE", getEnv("EXPO_PUBLIC_API_BASE", isLocal ? "http://localhost:5000/api" : "https://Nakshra.onrender.com/api"));
 
 export async function api(endpoint: string, options: RequestInit = {}) {
   // Get token from Firebase Auth first, fallback to Supabase
@@ -32,7 +32,7 @@ export async function api(endpoint: string, options: RequestInit = {}) {
   // Local development fallback: if no real auth token exists, use mock session ID
   if (!token && typeof window !== "undefined") {
     try {
-      const mockSession = localStorage.getItem("aroham_mock_session");
+      const mockSession = localStorage.getItem("Nakshra_mock_session");
       if (mockSession) {
         const parsed = JSON.parse(mockSession);
         if (parsed?.id) {

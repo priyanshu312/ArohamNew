@@ -1,1 +1,1 @@
-export * from "@aroham/shared-types";
+export * from "@nakshra/shared-types";

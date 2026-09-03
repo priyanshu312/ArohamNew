@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput, Activi
 import { MAROON, GOLD } from '../constants/theme';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
-import { trackOrder as apiTrackOrder, api } from '@aroham/shared-api';
+import { trackOrder as apiTrackOrder, api } from '@nakshra/shared-api';
 import { supabase } from '../services/supabase';
 
 interface ProfileMainProps {
@@ -27,7 +27,7 @@ export const ProfileScreens: React.FC<ProfileMainProps> = ({ onTrackOrder, onPol
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.centerScroll}>
         <View style={styles.authCard}>
-          <Text style={styles.authTitle}>🕉️ Welcome to Aroham</Text>
+          <Text style={styles.authTitle}>🕉️ Welcome to Nakshra</Text>
           <Text style={styles.authDesc}>Join India's most trusted ecosystem for authentic Vedic solutions & remedies.</Text>
 
           <TouchableOpacity style={styles.loginBtn} onPress={() => openAuth()}>
@@ -245,7 +245,7 @@ const RETURN_SECTIONS = [
 ];
 
 const PRIVACY_SECTIONS = [
-  { h: '1. Introduction', b: 'This Privacy Policy explains how Aroham ("we," "us," or "our") collects, uses, discloses, and safeguards your information when you visit aroham.in or purchase our products. By accessing or using the Site, you consent to the data practices described in this policy.' },
+  { h: '1. Introduction', b: 'This Privacy Policy explains how Nakshra ("we," "us," or "our") collects, uses, discloses, and safeguards your information when you visit Nakshra.in or purchase our products. By accessing or using the Site, you consent to the data practices described in this policy.' },
   { h: '2. Information We Collect', b: 'Personal Information: full name, email, phone number, shipping/billing address, date of birth (optional, used for personalized energization rituals), payment information (processed securely by third-party gateways; we do not store your card details).\n\nAutomatically Collected: IP address, browser type/version, operating system, pages visited, device identifiers.\n\nFrom Third Parties: information from authentication providers if you link your account through them.' },
   { h: '3. How We Use Your Information', b: 'To process/fulfill orders (including energization and shipping), manage your account, communicate about orders/support, send promotional communications (opt-out anytime), personalize your experience, improve our products/services, detect and prevent fraud, and comply with legal obligations.' },
   { h: '4. Cookies and Tracking Technologies', b: 'We use cookies and similar tracking technologies to facilitate site functionality, remember preferences, analyze traffic, and improve marketing. You may configure your browser to refuse cookies, which may limit some features.' },
@@ -253,29 +253,29 @@ const PRIVACY_SECTIONS = [
   { h: '6. Data Security', b: 'We implement industry-standard administrative, technical, and physical security measures to protect your personal information. No method of transmission or storage is 100% secure.' },
   { h: '7. Data Retention', b: 'We retain your personal information for as long as your account is active or as needed to provide services, comply with legal obligations, resolve disputes, and enforce agreements. Contact us to request deletion.' },
   { h: '8. Your Rights', b: 'Access: request a copy of the data we hold about you.\nCorrection: request correction of inaccurate/incomplete data.\nDeletion: request deletion, subject to legal retention requirements.\nOpt-Out: unsubscribe from marketing communications at any time.' },
-  { h: '9. Third-Party Links', b: 'The Site may link to third-party websites not owned or controlled by Aroham. We are not responsible for their privacy practices.' },
+  { h: '9. Third-Party Links', b: 'The Site may link to third-party websites not owned or controlled by Nakshra. We are not responsible for their privacy practices.' },
   { h: "10. Children's Privacy", b: 'Our Site is not intended for individuals under 18. We do not knowingly collect data from children; if we become aware we have, we will delete it promptly.' },
   { h: '11. Changes to This Policy', b: 'We may update this Privacy Policy at any time. Changes are effective immediately upon posting with an updated "Last Updated" date. Continued use constitutes acceptance.' },
-  { h: '12. Contact Us', b: 'Questions about this Privacy Policy: Aroham, priyanshubansal720@gmail.com' },
+  { h: '12. Contact Us', b: 'Questions about this Privacy Policy: Nakshra, priyanshubansal720@gmail.com' },
 ];
 
 const TERMS_SECTIONS = [
-  { h: '1. Acceptance of Terms', b: 'By accessing or using aroham.in (the "Services"), you agree to be bound by these Terms of Service. If you do not agree, you must not use the Site. We may modify these Terms at any time; continued use constitutes acceptance.' },
+  { h: '1. Acceptance of Terms', b: 'By accessing or using Nakshra.in (the "Services"), you agree to be bound by these Terms of Service. If you do not agree, you must not use the Site. We may modify these Terms at any time; continued use constitutes acceptance.' },
   { h: '2. Eligibility', b: 'You must be at least 18 years of age to use this Site or make a purchase, and represent that you have the legal capacity to enter a binding agreement.' },
   { h: '3. User Accounts', b: "You are responsible for maintaining the confidentiality of your account credentials and all activity under your account, and for providing accurate, current, complete information. We may suspend or terminate accounts with inaccurate information." },
   { h: '4. Products and Services', b: "Product Descriptions: colours/dimensions may vary from your device's display; descriptions are subject to change.\n\nEnergization & Spiritual Claims: our products are energized through traditional Vedic rituals (Pran Pratishtha), but outcomes are based on traditional belief and individual faith — we make no guarantees of specific spiritual, health, financial, or astrological outcomes. Products are not a substitute for medical, legal, or financial advice.\n\nPricing & Availability: prices are in INR, inclusive of applicable taxes unless stated otherwise. We may modify prices, discontinue products, or cancel orders placed at an incorrect price." },
   { h: '5. Orders and Payment', b: 'Placing an order is an offer to purchase, subject to acceptance and availability. We may refuse or cancel any order. Payments are processed via secure third-party gateways (e.g. Razorpay) — we do not store your card details.' },
-  { h: '6. Shipping and Delivery', b: 'See our Shipping Policy for energization timelines and delivery windows. Aroham is not responsible for delays caused by courier services, customs, natural disasters, or other circumstances beyond our reasonable control.' },
+  { h: '6. Shipping and Delivery', b: 'See our Shipping Policy for energization timelines and delivery windows. Nakshra is not responsible for delays caused by courier services, customs, natural disasters, or other circumstances beyond our reasonable control.' },
   { h: '7. Returns, Refunds, and Cancellations', b: 'See our Return & Refund Policy. In summary: returns accepted within 7 days for unused items in original condition; refunds processed within 5-7 business days; custom-energized products may be exempt unless damaged in transit; cancellations permitted before dispatch.' },
-  { h: '8. Intellectual Property', b: 'All Site content (text, graphics, logos, images, product photography, UI design, software) is the property of Aroham or its suppliers and protected by Indian and international IP law. No reproduction/distribution without prior written consent.' },
+  { h: '8. Intellectual Property', b: 'All Site content (text, graphics, logos, images, product photography, UI design, software) is the property of Nakshra or its suppliers and protected by Indian and international IP law. No reproduction/distribution without prior written consent.' },
   { h: '9. Prohibited Conduct', b: 'You agree not to: use the Site unlawfully; attempt unauthorized access to accounts or systems; use bots/scrapers; submit false or fraudulent orders/reviews; disrupt Site integrity; impersonate any person or entity.' },
-  { h: '10. Limitation of Liability', b: 'To the fullest extent permitted by law, Aroham is not liable for indirect, incidental, special, consequential, or punitive damages arising from your use of the Site, third-party conduct, unauthorized access to your content, or reliance on spiritual/astrological claims. Our total liability for any claim will not exceed the amount you paid for the specific product giving rise to the claim.' },
+  { h: '10. Limitation of Liability', b: 'To the fullest extent permitted by law, Nakshra is not liable for indirect, incidental, special, consequential, or punitive damages arising from your use of the Site, third-party conduct, unauthorized access to your content, or reliance on spiritual/astrological claims. Our total liability for any claim will not exceed the amount you paid for the specific product giving rise to the claim.' },
   { h: '11. Disclaimer of Warranties', b: 'The Site and all products are provided "as is" and "as available" without warranties of any kind, including merchantability, fitness for a particular purpose, and non-infringement.' },
-  { h: '12. Indemnification', b: 'You agree to indemnify and hold harmless Aroham and its officers, directors, employees, and affiliates from claims arising from your use of the Site or violation of these Terms or third-party rights.' },
+  { h: '12. Indemnification', b: 'You agree to indemnify and hold harmless Nakshra and its officers, directors, employees, and affiliates from claims arising from your use of the Site or violation of these Terms or third-party rights.' },
   { h: '13. Governing Law and Jurisdiction', b: 'These Terms are governed by the laws of India. Disputes are subject to the exclusive jurisdiction of the courts in Varanasi, Uttar Pradesh, India.' },
   { h: '14. Severability', b: 'If any provision of these Terms is found unlawful or unenforceable, that provision is severable and does not affect the remaining provisions.' },
-  { h: '15. Entire Agreement', b: 'These Terms, together with our Privacy Policy, Shipping Policy, and Return Policy, constitute the entire agreement between you and Aroham regarding use of the Site.' },
-  { h: '16. Contact Information', b: 'Questions about these Terms: Aroham, priyanshubansal720@gmail.com' },
+  { h: '15. Entire Agreement', b: 'These Terms, together with our Privacy Policy, Shipping Policy, and Return Policy, constitute the entire agreement between you and Nakshra regarding use of the Site.' },
+  { h: '16. Contact Information', b: 'Questions about these Terms: Nakshra, priyanshubansal720@gmail.com' },
 ];
 
 type PolicyTab = 'faq' | 'shipping' | 'returns' | 'contact' | 'privacy' | 'terms';
@@ -395,7 +395,7 @@ export const PoliciesScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => 
               </TouchableOpacity>
               <View style={{ marginTop: 14 }}>
                 <Text style={styles.contactLabel}>📍 Spiritual Center</Text>
-                <Text style={styles.contactValue}>Aroham Vedic Center, Varanasi, Uttar Pradesh, India</Text>
+                <Text style={styles.contactValue}>Nakshra Vedic Center, Varanasi, Uttar Pradesh, India</Text>
               </View>
             </View>
 
@@ -403,7 +403,7 @@ export const PoliciesScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => 
             {sent ? (
               <View style={styles.policyTextCard}>
                 <Text style={styles.policyTitle}>✨ Message Sent Successfully</Text>
-                <Text style={styles.policyBody}>Thank you for reaching out to Aroham. Our support team will get back to you shortly.</Text>
+                <Text style={styles.policyBody}>Thank you for reaching out to Nakshra. Our support team will get back to you shortly.</Text>
                 <TouchableOpacity onPress={() => { setSent(false); setContactName(''); setContactEmail(''); setContactMessage(''); }} style={{ marginTop: 10 }}>
                   <Text style={styles.addNewBtnTextLike}>Send Another Message</Text>
                 </TouchableOpacity>

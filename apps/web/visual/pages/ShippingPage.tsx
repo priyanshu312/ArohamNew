@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Lock, ChevronLeft, ChevronRight, CheckCircle, Truck, Trash2, Edit2 } from "lucide-react";
-import { MAROON, GOLD, IVORY, SANS, SERIF } from "@aroham/shared-config/theme";
-import { INDIA_STATES } from "@aroham/shared-config/data";
+import { MAROON, GOLD, IVORY, SANS, SERIF } from "@nakshra/shared-config/theme";
+import { INDIA_STATES } from "@nakshra/shared-config/data";
 import { FloatingInput } from "@visual/components/auth/FloatingInput";
 import { FloatingSelect } from "@visual/components/auth/FloatingSelect";
-import { useCart } from "@aroham/shared-state";
-import { useAuth } from "@aroham/shared-auth";
-import { api } from "@aroham/shared-api";
-import { supabase } from "@aroham/shared-services";
+import { useCart } from "@nakshra/shared-state";
+import { useAuth } from "@nakshra/shared-auth";
+import { api } from "@nakshra/shared-api";
+import { supabase } from "@nakshra/shared-services";
 
 function CheckoutHeader() {
   const navigate = useNavigate();
@@ -17,7 +17,7 @@ function CheckoutHeader() {
       <div className="max-w-7xl mx-auto px-5 lg:px-10 h-14 lg:h-16 flex items-center justify-between">
         <button onClick={() => navigate("/")} className="flex items-center gap-2.5 group">
           <div className="w-7 h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: `linear-gradient(135deg,${MAROON},#E78B2F)`, color: IVORY, fontFamily: SERIF }}>ॐ</div>
-          <span className="hidden sm:inline text-lg lg:text-xl font-semibold tracking-wide" style={{ fontFamily: SERIF, color: MAROON }}>Aroham</span>
+          <span className="hidden sm:inline text-lg lg:text-xl font-semibold tracking-wide" style={{ fontFamily: SERIF, color: MAROON }}>Nakshra</span>
         </button>
         <span className="text-xs font-medium tracking-widest uppercase" style={{ color: "#9A8A78", letterSpacing: "0.12em" }}>Secure Checkout</span>
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ background: "rgba(200,160,68,0.1)", border: "1px solid rgba(200,160,68,0.22)" }}>
@@ -28,7 +28,7 @@ function CheckoutHeader() {
   );
 }
 
-import { getShiprocketDeliveryEstimate, ShippingEstimate } from "@aroham/shared-api/shipping";
+import { getShiprocketDeliveryEstimate, ShippingEstimate } from "@nakshra/shared-api/shipping";
 
 export function ShippingPage() {
   const navigate = useNavigate();
@@ -64,7 +64,7 @@ export function ShippingPage() {
 
       // 1. Read pre-filled shipping form (account-separated)
       try {
-        const formKey = user?.id ? `aroham_saved_shipping_form_${user.id}` : "aroham_saved_shipping_form_guest";
+        const formKey = user?.id ? `Nakshra_saved_shipping_form_${user.id}` : "Nakshra_saved_shipping_form_guest";
         const savedForm = localStorage.getItem(formKey);
         if (savedForm) {
           const parsed = JSON.parse(savedForm);
@@ -76,13 +76,13 @@ export function ShippingPage() {
       // 2. Read local cache
       try {
         if (user?.id) {
-          const uStr = localStorage.getItem(`aroham_user_addresses_${user.id}`);
+          const uStr = localStorage.getItem(`Nakshra_user_addresses_${user.id}`);
           if (uStr) {
             const parsed = JSON.parse(uStr);
             if (Array.isArray(parsed) && parsed.length > 0) localAddrs = parsed;
           }
         } else {
-          const gStr = localStorage.getItem("aroham_saved_addresses_list");
+          const gStr = localStorage.getItem("Nakshra_saved_addresses_list");
           if (gStr) {
             const parsed = JSON.parse(gStr);
             if (Array.isArray(parsed) && parsed.length > 0) localAddrs = parsed;
@@ -192,9 +192,9 @@ export function ShippingPage() {
         // Persist combined addresses in local storage
         try {
           if (user?.id) {
-            localStorage.setItem(`aroham_user_addresses_${user.id}`, JSON.stringify(combined));
+            localStorage.setItem(`Nakshra_user_addresses_${user.id}`, JSON.stringify(combined));
           } else {
-            localStorage.setItem("aroham_saved_addresses_list", JSON.stringify(combined));
+            localStorage.setItem("Nakshra_saved_addresses_list", JSON.stringify(combined));
           }
         } catch (e) {}
       } else {
@@ -258,7 +258,7 @@ export function ShippingPage() {
 
     // Save to LocalStorage for automatic pre-fill next time (account-separated)
     try {
-      const formKey = user?.id ? `aroham_saved_shipping_form_${user.id}` : "aroham_saved_shipping_form_guest";
+      const formKey = user?.id ? `Nakshra_saved_shipping_form_${user.id}` : "Nakshra_saved_shipping_form_guest";
       localStorage.setItem(formKey, JSON.stringify(form));
       const newAddrItem = {
         id: editingAddrId || Date.now(),
@@ -284,9 +284,9 @@ export function ShippingPage() {
         const filtered = prev.filter(a => a.id !== editingAddrId);
         const updated = [newAddrItem, ...filtered];
         if (user?.id) {
-          localStorage.setItem(`aroham_user_addresses_${user.id}`, JSON.stringify(updated));
+          localStorage.setItem(`Nakshra_user_addresses_${user.id}`, JSON.stringify(updated));
         } else {
-          localStorage.setItem("aroham_saved_addresses_list", JSON.stringify(updated));
+          localStorage.setItem("Nakshra_saved_addresses_list", JSON.stringify(updated));
         }
         return updated;
       });
@@ -353,7 +353,7 @@ export function ShippingPage() {
         ...savedObj
       };
 
-      sessionStorage.setItem("aroham_shipping_addr", JSON.stringify(finalAddrObj));
+      sessionStorage.setItem("Nakshra_shipping_addr", JSON.stringify(finalAddrObj));
       navigate("/checkout/payment");
     } catch (e: any) {
       const fallbackObj = {
@@ -368,7 +368,7 @@ export function ShippingPage() {
         deliveryDate: est?.deliveryDate || "3–5 business days",
         specialRequest: form.specialRequest
       };
-      sessionStorage.setItem("aroham_shipping_addr", JSON.stringify(fallbackObj));
+      sessionStorage.setItem("Nakshra_shipping_addr", JSON.stringify(fallbackObj));
       navigate("/checkout/payment");
     } finally {
       setSavingAddress(false);
@@ -419,7 +419,7 @@ export function ShippingPage() {
     // 1. Update state & localStorage immediately with type-safe string matching
     setSavedAddresses(prev => {
       const updated = prev.filter(a => String(a.id) !== String(addrId));
-      localStorage.setItem("aroham_saved_addresses_list", JSON.stringify(updated));
+      localStorage.setItem("Nakshra_saved_addresses_list", JSON.stringify(updated));
       if (updated.length === 0) {
         setShowForm(true);
       }
@@ -469,7 +469,7 @@ export function ShippingPage() {
   // Restore address from sessionStorage if returning to page
   useEffect(() => {
     try {
-      const stored = sessionStorage.getItem("aroham_shipping_addr");
+      const stored = sessionStorage.getItem("Nakshra_shipping_addr");
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed) {
@@ -513,7 +513,7 @@ export function ShippingPage() {
     // 1. If user is selecting from saved addresses (!showForm)
     if (!showForm) {
       if (selected) {
-        sessionStorage.setItem("aroham_shipping_addr", JSON.stringify({ ...selected, specialRequest: form.specialRequest }));
+        sessionStorage.setItem("Nakshra_shipping_addr", JSON.stringify({ ...selected, specialRequest: form.specialRequest }));
         navigate("/checkout/payment");
         return;
       } else if (savedAddresses.length > 0) {
@@ -527,7 +527,7 @@ export function ShippingPage() {
           deliveryDate: est?.deliveryDate || fallback.deliveryDate || "3–5 business days",
           specialRequest: form.specialRequest
         };
-        sessionStorage.setItem("aroham_shipping_addr", JSON.stringify(addrObj));
+        sessionStorage.setItem("Nakshra_shipping_addr", JSON.stringify(addrObj));
         navigate("/checkout/payment");
         return;
       }
@@ -574,9 +574,9 @@ export function ShippingPage() {
       const updated = [newAddressObj, ...prev.filter(a => String(a.id) !== String(newAddressObj.id))];
       try {
         if (user?.id) {
-          localStorage.setItem(`aroham_user_addresses_${user.id}`, JSON.stringify(updated));
+          localStorage.setItem(`Nakshra_user_addresses_${user.id}`, JSON.stringify(updated));
         } else {
-          localStorage.setItem("aroham_saved_addresses_list", JSON.stringify(updated));
+          localStorage.setItem("Nakshra_saved_addresses_list", JSON.stringify(updated));
         }
       } catch (e) {}
       return updated;
@@ -620,7 +620,7 @@ export function ShippingPage() {
       }
     }
 
-    sessionStorage.setItem("aroham_shipping_addr", JSON.stringify(newAddressObj));
+    sessionStorage.setItem("Nakshra_shipping_addr", JSON.stringify(newAddressObj));
     navigate("/checkout/payment");
   };
 

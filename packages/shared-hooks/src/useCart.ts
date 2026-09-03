@@ -1,1 +1,1 @@
-export { useCart } from "@aroham/shared-state";
+export { useCart } from "@nakshra/shared-state";

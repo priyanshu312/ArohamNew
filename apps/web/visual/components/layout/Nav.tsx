@@ -1,19 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { ShoppingCart, Heart, Search, User, Menu, X } from "lucide-react";
-import { MAROON, GOLD, SAFFRON, IVORY, SANS, SERIF } from "@aroham/shared-config/theme";
-import { useCart } from "@aroham/shared-state";
-import { useAuth } from "@aroham/shared-auth";
-import { useWishlist } from "@aroham/shared-state";
+import { MAROON, GOLD, SAFFRON, IVORY, SANS, SERIF } from "@nakshra/shared-config/theme";
+import { useCart } from "@nakshra/shared-state";
+import { useAuth } from "@nakshra/shared-auth";
+import { useWishlist } from "@nakshra/shared-state";
 import { SearchModal } from "./SearchModal";
 import { LanguageSelector } from "./LanguageSelector";
-<<<<<<< Updated upstream
-import { useTranslation } from "@visual/context/LanguageContext";
-import { KundliModal } from "../product/KundliModal";
-=======
 import { useTranslation } from "react-i18next";
-
->>>>>>> Stashed changes
+import { KundliModal } from "../product/KundliModal";
 
 export function Nav() {
   const navigate = useNavigate();
@@ -73,7 +68,7 @@ export function Nav() {
           <button onClick={() => navigate("/")} className={`flex items-center gap-2.5 group transition-all duration-500 overflow-hidden whitespace-nowrap ${isSearchOpen ? 'opacity-0 max-w-0 pointer-events-none lg:opacity-100 lg:max-w-none lg:pointer-events-auto' : 'opacity-100 max-w-none'}`}>
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-transform group-hover:scale-105 flex-shrink-0"
               style={{ background: `linear-gradient(135deg,${MAROON},${SAFFRON})`, color: IVORY, fontFamily: SERIF }}>ॐ</div>
-            <span className="text-xl font-semibold tracking-wide" style={{ fontFamily: SERIF, color: solid ? MAROON : "#FFD700" }}>Aroham</span>
+            <span className="text-xl font-semibold tracking-wide" style={{ fontFamily: SERIF, color: solid ? MAROON : "#FFD700" }}>Nakshra</span>
           </button>
           
           <div className={`hidden lg:flex items-center gap-12 transition-all duration-500 overflow-hidden whitespace-nowrap ${isSearchOpen ? 'opacity-100 max-w-none pointer-events-auto' : 'opacity-100 max-w-none'}`}>

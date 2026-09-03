@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { MAROON, GOLD, SANS } from "@aroham/shared-config/theme";
+import { MAROON, GOLD, SANS } from "@nakshra/shared-config/theme";
 import * as Select from "@radix-ui/react-select";
 
 export function FloatingSelect({ label, options, value, onChange }: {

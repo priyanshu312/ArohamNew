@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MAROON } from "@aroham/shared-config/theme";
+import { MAROON } from "@nakshra/shared-config/theme";
 
 export function WhatsAppButton() {
   return null;

@@ -1,4 +1,4 @@
-import { MAROON, GOLD, SERIF } from "@aroham/shared-config/theme";
+import { MAROON, GOLD, SERIF } from "@nakshra/shared-config/theme";
 import { LayoutGrid, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 

@@ -22,7 +22,7 @@ export const AstrologerOnboardingStatus: React.FC<AstrologerOnboardingStatusProp
 
     // 1. Try local storage sync first
     try {
-      const localCurrent = localStorage.getItem("aroham_astro_onboarding_app_current");
+      const localCurrent = localStorage.getItem("Nakshra_astro_onboarding_app_current");
       if (localCurrent) {
         const parsed = JSON.parse(localCurrent);
         if (parsed.id === appId || !appId) {
@@ -43,7 +43,7 @@ export const AstrologerOnboardingStatus: React.FC<AstrologerOnboardingStatusProp
           setDocuments(data.documents || []);
 
           // Sync back to local current
-          localStorage.setItem("aroham_astro_onboarding_app_current", JSON.stringify(data.application));
+          localStorage.setItem("Nakshra_astro_onboarding_app_current", JSON.stringify(data.application));
         }
       } else if (res.status === 404 && app) {
         // Automatically sync the local application to the backend if the backend doesn't have it
@@ -90,7 +90,7 @@ export const AstrologerOnboardingStatus: React.FC<AstrologerOnboardingStatusProp
   const round1Iv = interviews.find(i => i.round_number === 1) || {
     scheduled_date: "Today",
     scheduled_time: "3:30 PM",
-    meeting_link: "https://meet.google.com/aroham-round1",
+    meeting_link: "https://meet.google.com/Nakshra-round1",
     interviewer_name: "Senior Vedic Evaluator",
     instructions: "Please make sure you are in a quiet room with strong internet connection."
   };
@@ -98,7 +98,7 @@ export const AstrologerOnboardingStatus: React.FC<AstrologerOnboardingStatusProp
   const round2Iv = interviews.find(i => i.round_number === 2) || {
     scheduled_date: "Tomorrow",
     scheduled_time: "4:00 PM",
-    meeting_link: "https://meet.google.com/aroham-round2",
+    meeting_link: "https://meet.google.com/Nakshra-round2",
     interviewer_name: "Head of Astrology Network",
     instructions: "Evaluation on live Prashna reading & remedy recommendation."
   };
@@ -176,7 +176,7 @@ export const AstrologerOnboardingStatus: React.FC<AstrologerOnboardingStatusProp
               </div>
               <h2 className="text-2xl font-bold font-serif text-rose-900">Application Under Review / Not Selected</h2>
               <p className="text-xs text-rose-800/80 max-w-md mx-auto font-medium">
-                {app?.rejection_reason || "Thank you for applying to Aroham. Our team has reviewed your application. Currently we are unable to process your onboarding further."}
+                {app?.rejection_reason || "Thank you for applying to Nakshra. Our team has reviewed your application. Currently we are unable to process your onboarding further."}
               </p>
             </div>
           )}
@@ -196,7 +196,7 @@ export const AstrologerOnboardingStatus: React.FC<AstrologerOnboardingStatusProp
                   Application Under Evaluation
                 </h2>
                 <p className="text-xs text-amber-950/70 max-w-lg mx-auto font-medium mt-2 leading-relaxed">
-                  Thank you for applying to partner with Aroham Astrology Network. Our senior evaluation team is reviewing your profile, qualifications, and background details. You will receive interview details shortly.
+                  Thank you for applying to partner with Nakshra Astrology Network. Our senior evaluation team is reviewing your profile, qualifications, and background details. You will receive interview details shortly.
                 </p>
               </div>
 
@@ -352,7 +352,7 @@ export const AstrologerOnboardingStatus: React.FC<AstrologerOnboardingStatusProp
                   Congratulations!
                 </h2>
                 <p className="text-xs sm:text-sm text-amber-950/80 max-w-md mx-auto font-medium mt-2 leading-relaxed">
-                  You have successfully completed all onboarding stages. Your account has been verified & approved. You are now an official astrologer on Aroham.
+                  You have successfully completed all onboarding stages. Your account has been verified & approved. You are now an official astrologer on Nakshra.
                 </p>
               </div>
 

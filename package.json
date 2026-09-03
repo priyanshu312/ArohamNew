@@ -1,5 +1,5 @@
 {
-  "name": "aroham",
+  "name": "Nakshra",
   "private": true,
   "version": "0.0.1",
   "packageManager": "pnpm@9.15.9",
@@ -7,8 +7,8 @@
     "node": "18.x"
   },
   "scripts": {
-    "dev:web": "turbo run dev --filter=@aroham/web",
-    "dev:mobile": "turbo run dev --filter=@aroham/mobile",
+    "dev:web": "turbo run dev --filter=@nakshra/web",
+    "dev:mobile": "turbo run dev --filter=@nakshra/mobile",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck"

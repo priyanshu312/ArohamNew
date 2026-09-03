@@ -1,6 +1,6 @@
-import { ArohamProduct } from "./product";
+import { NakshraProduct } from "./product";
 
 export interface CartItem {
-  product: ArohamProduct;
+  product: NakshraProduct;
   qty: number;
 }

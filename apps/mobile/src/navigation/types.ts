@@ -1,7 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps, NavigatorScreenParams } from '@react-navigation/native';
-import { ArohamProduct, Astrologer, Address, CartItem } from '../types';
+import { NakshraProduct, Astrologer, Address, CartItem } from '../types';
 
 export type OrderConfirmationDetails = {
   orderId: string;
@@ -12,7 +12,7 @@ export type OrderConfirmationDetails = {
 
 export type RootStackParamList = {
   Tabs: NavigatorScreenParams<TabParamList> | undefined;
-  ProductDetail: { product: ArohamProduct };
+  ProductDetail: { product: NakshraProduct };
   ChatRoom: { astrologer: Astrologer };
   CheckoutShipping: undefined;
   CheckoutPayment: { address: Address };

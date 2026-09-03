@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, FlatList, Dimensions } from 'react-native';
 import { MAROON, GOLD } from '../constants/theme';
-import { ArohamProduct } from '../types';
+import { NakshraProduct } from '../types';
 import { useWishlist } from '../context/WishlistContext';
 import { useCart } from '../context/CartContext';
 
 interface WishlistScreenProps {
   onBack: () => void;
-  onProductPress: (p: ArohamProduct) => void;
+  onProductPress: (p: NakshraProduct) => void;
   onShopPress: () => void;
 }
 
@@ -15,7 +15,7 @@ export const WishlistScreen: React.FC<WishlistScreenProps> = ({ onBack, onProduc
   const { wishlist, removeFromWishlist } = useWishlist();
   const { addToCart } = useCart();
 
-  const handleAddToCart = (product: ArohamProduct) => {
+  const handleAddToCart = (product: NakshraProduct) => {
     if (addToCart(product, 1, false)) removeFromWishlist(product.id);
   };
 

@@ -49,8 +49,8 @@ router.post("/", async (req, res) => {
     console.error("[Chat API Gorse Error]:", err.message);
   }
 
-  // 3. Inject refined Aroham System Prompt
-  let systemPrompt = `You are Aroham's Sacred AI AstroGuide — an empathetic, deeply knowledgeable Vedic astrological advisor.
+  // 3. Inject refined Nakshra System Prompt
+  let systemPrompt = `You are Nakshra's Sacred AI AstroGuide — an empathetic, deeply knowledgeable Vedic astrological advisor.
 Your role is to offer warm, uplifting, non-deterministic astrological insights and sacred remedy recommendations.
 
 Key Instructions:
@@ -65,7 +65,7 @@ Key Instructions:
 
   if (recommendedProducts.length > 0) {
     const productText = recommendedProducts.map(p => `- Name: ${p.name}, Price: ${p.price}, Description: ${p.desc}`).join("\n");
-    systemPrompt += `\n\nOur Machine Learning engine recommends these sacred store items for this devotee:\n${productText}\n\nYou MUST naturally weave a recommendation for 1 or 2 of these items into your guidance. Dedicate a section titled "💎 Recommended Sacred Remedies" at the bottom of your message, format the product name in bold, explain why it supports them, and mention it is available in the Aroham Store.`;
+    systemPrompt += `\n\nOur Machine Learning engine recommends these sacred store items for this devotee:\n${productText}\n\nYou MUST naturally weave a recommendation for 1 or 2 of these items into your guidance. Dedicate a section titled "💎 Recommended Sacred Remedies" at the bottom of your message, format the product name in bold, explain why it supports them, and mention it is available in the Nakshra Store.`;
   }
 
   const userProfile = global.kundaliProfiles ? global.kundaliProfiles[userId] : null;

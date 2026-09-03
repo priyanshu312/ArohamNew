@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router";
 import { X, Star, CheckCircle, Shield, ArrowRight, User as UserIcon, Calendar, ChevronDown, Sparkles, Lock, Verified } from "lucide-react";
-import { MAROON, GOLD, SAFFRON, IVORY, SANS, SERIF } from "@aroham/shared-config/theme";
+import { MAROON, GOLD, SAFFRON, IVORY, SANS, SERIF } from "@nakshra/shared-config/theme";
 import { AuthInput } from "./AuthInput";
 import { OtpBoxes } from "./OtpBoxes";
 import { Countdown } from "./Countdown";
-import { useAuth } from "@aroham/shared-auth";
-import { firebaseAuth, db } from "@aroham/shared-services";
-import { supabase } from "@aroham/shared-services";
-import { api } from "@aroham/shared-api";
-import { generateUUID } from "@aroham/shared-utils/uuid";
+import { useAuth } from "@nakshra/shared-auth";
+import { firebaseAuth, db } from "@nakshra/shared-services";
+import { supabase } from "@nakshra/shared-services";
+import { api } from "@nakshra/shared-api";
+import { generateUUID } from "@nakshra/shared-utils/uuid";
 import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from "firebase/firestore";
 import * as Select from "@radix-ui/react-select";
 import * as Popover from "@radix-ui/react-popover";
@@ -26,7 +26,7 @@ const LEFT_PANELS = {
   signup:        { img: "/images/auth-bg.png", headline: "Your Spiritual Journey Begins.",    sub: "Join India's most trusted ecosystem for authentic Vedic solutions.", items: ["Temple Energized", "Expert Guidance", "Personalized Path"] },
   otp:           { img: "/images/auth-bg.png", headline: "Securing Your Sacred Path.",        sub: "Verifying your identity with encrypted SMS authentication.", items: ["Instant Verification", "Privacy Protected", "100% Secure"] },
   "profile-setup":{ img: "/images/auth-bg.png", headline: "Complete Your Profile.",          sub: "Share your details to unlock personalized cosmic guidance.", items: ["Personalized Horoscope", "Order Tracking", "Exclusive Offers"] },
-  success:       { img: "/images/auth-bg.png", headline: "Welcome to Aroham.",                sub: "Your journey toward harmony and prosperity begins now.", items: ["Explore Sacred Products", "Book Consultation", "Divine Blessings"] },
+  success:       { img: "/images/auth-bg.png", headline: "Welcome to Nakshra.",                sub: "Your journey toward harmony and prosperity begins now.", items: ["Explore Sacred Products", "Book Consultation", "Divine Blessings"] },
 };
 
 export function AuthPage() {
@@ -46,7 +46,7 @@ export function AuthPage() {
     }
   };
 
-  const initialTabFromUrl = searchParams.get("tab") || searchParams.get("mode") || sessionStorage.getItem("aroham_auth_tab");
+  const initialTabFromUrl = searchParams.get("tab") || searchParams.get("mode") || sessionStorage.getItem("Nakshra_auth_tab");
   const initialTab = initialTabFromUrl === "signup" ? "signup" : "signin";
 
   const initialRoleFromUrl = searchParams.get("role") === "astrologer" || searchParams.get("mode") === "astrologer";
@@ -69,7 +69,7 @@ export function AuthPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [authNotice, setAuthNotice] = useState<string>(() => {
     try {
-      return sessionStorage.getItem("aroham_auth_notice") || "";
+      return sessionStorage.getItem("Nakshra_auth_notice") || "";
     } catch (e) {
       return "";
     }
@@ -84,7 +84,7 @@ export function AuthPage() {
     setOtp(Array(6).fill(""));
     setErrorMsg("");
     try {
-      sessionStorage.setItem("aroham_auth_tab", t);
+      sessionStorage.setItem("Nakshra_auth_tab", t);
       setSearchParams({ tab: t }, { replace: true });
     } catch (e) {}
   };
@@ -197,12 +197,12 @@ export function AuthPage() {
 
     // 3. If live DB returned user, update Local Storage cache
     if (existingUser) {
-      localStorage.setItem(`aroham_registered_user_phone_${last10}`, JSON.stringify(existingUser));
-      localStorage.setItem(`aroham_registered_user_phone_${phoneDigits}`, JSON.stringify(existingUser));
+      localStorage.setItem(`Nakshra_registered_user_phone_${last10}`, JSON.stringify(existingUser));
+      localStorage.setItem(`Nakshra_registered_user_phone_${phoneDigits}`, JSON.stringify(existingUser));
     } else {
       // User does not exist in DB (deleted or not registered) — wipe stale local storage cache
-      localStorage.removeItem(`aroham_registered_user_phone_${last10}`);
-      localStorage.removeItem(`aroham_registered_user_phone_${phoneDigits}`);
+      localStorage.removeItem(`Nakshra_registered_user_phone_${last10}`);
+      localStorage.removeItem(`Nakshra_registered_user_phone_${phoneDigits}`);
     }
 
     if (existingUser && String(existingUser.status).toUpperCase() === "BLOCKED") {
@@ -280,14 +280,14 @@ export function AuthPage() {
               };
 
               try {
-                const existingAstros = JSON.parse(localStorage.getItem("aroham_registered_astrologers") || "[]");
+                const existingAstros = JSON.parse(localStorage.getItem("Nakshra_registered_astrologers") || "[]");
                 const idx = existingAstros.findIndex((a: any) => a.id === astroData.id);
                 if (idx !== -1) {
                   existingAstros[idx] = { ...existingAstros[idx], ...astroProfile };
                 } else {
                   existingAstros.unshift(astroProfile);
                 }
-                localStorage.setItem("aroham_registered_astrologers", JSON.stringify(existingAstros));
+                localStorage.setItem("Nakshra_registered_astrologers", JSON.stringify(existingAstros));
                 window.dispatchEvent(new Event("storage"));
               } catch (e) {}
 
@@ -301,7 +301,7 @@ export function AuthPage() {
               });
 
               if (astroProfile.bio && astroProfile.bio !== "PENDING_WIZARD_COMPLETION" && astroProfile.bio.trim() !== "") {
-                localStorage.setItem(`aroham_astro_wizard_done_${astroData.id}`, "true");
+                localStorage.setItem(`Nakshra_astro_wizard_done_${astroData.id}`, "true");
               }
 
               closeAuth(true);
@@ -352,12 +352,12 @@ export function AuthPage() {
           }
 
           if (existingUser) {
-            localStorage.setItem(`aroham_registered_user_phone_${last10}`, JSON.stringify(existingUser));
-            localStorage.setItem(`aroham_registered_user_phone_${phoneDigits}`, JSON.stringify(existingUser));
+            localStorage.setItem(`Nakshra_registered_user_phone_${last10}`, JSON.stringify(existingUser));
+            localStorage.setItem(`Nakshra_registered_user_phone_${phoneDigits}`, JSON.stringify(existingUser));
           } else {
             // User does not exist in DB (deleted or not registered) — wipe stale local storage cache
-            localStorage.removeItem(`aroham_registered_user_phone_${last10}`);
-            localStorage.removeItem(`aroham_registered_user_phone_${phoneDigits}`);
+            localStorage.removeItem(`Nakshra_registered_user_phone_${last10}`);
+            localStorage.removeItem(`Nakshra_registered_user_phone_${phoneDigits}`);
           }
 
           if (existingUser && String(existingUser.status).toUpperCase() === "BLOCKED") {
@@ -385,9 +385,9 @@ export function AuthPage() {
           };
 
           try {
-            const existingAstros = JSON.parse(localStorage.getItem("aroham_registered_astrologers") || "[]");
+            const existingAstros = JSON.parse(localStorage.getItem("Nakshra_registered_astrologers") || "[]");
             const updatedAstros = [newAstrologer, ...existingAstros.filter((a: any) => a.id !== newAstrologer.id)];
-            localStorage.setItem("aroham_registered_astrologers", JSON.stringify(updatedAstros));
+            localStorage.setItem("Nakshra_registered_astrologers", JSON.stringify(updatedAstros));
             window.dispatchEvent(new Event("storage"));
           } catch (e) {}
 
@@ -450,9 +450,9 @@ export function AuthPage() {
             email: existingUser.email || email.trim() || null,
             phone: phoneDigits
           };
-          localStorage.setItem(`aroham_registered_user_phone_${phoneDigits}`, JSON.stringify(userObj));
+          localStorage.setItem(`Nakshra_registered_user_phone_${phoneDigits}`, JSON.stringify(userObj));
           if (existingUser.email) {
-            localStorage.setItem(`aroham_registered_user_email_${existingUser.email}`, JSON.stringify(userObj));
+            localStorage.setItem(`Nakshra_registered_user_email_${existingUser.email}`, JSON.stringify(userObj));
           }
 
           setLoading(false);
@@ -489,7 +489,7 @@ export function AuthPage() {
           };
 
           // Save local cache
-          localStorage.setItem(`aroham_registered_user_phone_${phoneDigits}`, JSON.stringify(userProfile));
+          localStorage.setItem(`Nakshra_registered_user_phone_${phoneDigits}`, JSON.stringify(userProfile));
 
           // Direct client-side Supabase DB upsert to guarantee persistence in users table
           try {
@@ -560,9 +560,9 @@ export function AuthPage() {
         };
 
         try {
-          const existingAstros = JSON.parse(localStorage.getItem("aroham_registered_astrologers") || "[]");
+          const existingAstros = JSON.parse(localStorage.getItem("Nakshra_registered_astrologers") || "[]");
           const updatedAstros = [newAstrologer, ...existingAstros.filter((a: any) => a.id !== newAstrologer.id)];
-          localStorage.setItem("aroham_registered_astrologers", JSON.stringify(updatedAstros));
+          localStorage.setItem("Nakshra_registered_astrologers", JSON.stringify(updatedAstros));
           window.dispatchEvent(new Event("storage"));
         } catch (e) {}
 
@@ -634,7 +634,7 @@ export function AuthPage() {
       };
 
       if (phoneDigits) {
-        localStorage.setItem(`aroham_registered_user_phone_${phoneDigits}`, JSON.stringify(userProfile));
+        localStorage.setItem(`Nakshra_registered_user_phone_${phoneDigits}`, JSON.stringify(userProfile));
       }
 
       // Direct client-side Supabase DB upsert to guarantee persistence in users table for normal seekers
@@ -680,7 +680,7 @@ export function AuthPage() {
           </div>
           <button
             type="button"
-            onClick={() => { setAuthNotice(""); sessionStorage.removeItem("aroham_auth_notice"); }}
+            onClick={() => { setAuthNotice(""); sessionStorage.removeItem("Nakshra_auth_notice"); }}
             className="p-1 text-amber-900/60 hover:text-[#5B1F24]"
           >
             <X size={14} />
@@ -807,7 +807,7 @@ export function AuthPage() {
       </div>
 
       <p className="text-xs text-center leading-relaxed px-4" style={{ color: "#7A6A58" }}>
-        {t("auth.terms_agree", "By continuing, you agree to Aroham's")}{" "}
+        {t("auth.terms_agree", "By continuing, you agree to Nakshra's")}{" "}
         <Link to="/terms" onClick={e => e.stopPropagation()} className="font-semibold underline decoration-dotted" style={{ color: MAROON }}>
           {t("auth.terms_link", "Terms of Service")}
         </Link>
@@ -1017,7 +1017,7 @@ export function AuthPage() {
 
       <div className="space-y-3">
         <h2 className="mb-2" style={{ fontFamily: SERIF, fontSize: "2.25rem", fontWeight: 600, color: MAROON }}>
-          Welcome to Aroham
+          Welcome to Nakshra
         </h2>
         <p className="text-sm leading-relaxed max-w-sm mx-auto" style={{ color: "#7A6A58" }}>
           Your sacred journey begins now. Explore authentic Vedic products and personalized cosmic guidance.
@@ -1041,7 +1041,7 @@ export function AuthPage() {
         style={{ background: `linear-gradient(135deg,${MAROON},#7A2A30)`, color: IVORY }}
       >
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700" />
-        <span>Explore Aroham</span>
+        <span>Explore Nakshra</span>
         <ArrowRight size={18} />
       </button>
     </div>
@@ -1114,11 +1114,11 @@ export function AuthPage() {
   return (
     <div role="dialog" aria-modal="true" aria-label="Sign in" className="fixed inset-0 z-50 flex flex-col" style={{ background: IVORY, fontFamily: SANS }}>
       <style>{`
-        @keyframes aroham-float      { 0%,100%{ transform: translate3d(0,0,0) scale(1); } 50%{ transform: translate3d(0,-30px,0) scale(1.07); } }
-        @keyframes aroham-float-slow { 0%,100%{ transform: translate3d(0,0,0); }          50%{ transform: translate3d(22px,26px,0); } }
-        @keyframes aroham-kenburns   { 0%{ transform: scale(1) translate(0,0); }          100%{ transform: scale(1.12) translate(-2%,-2%); } }
-        @keyframes aroham-fade       { from{ opacity:0; transform: scale(1.05); }          to{ opacity:1; transform: scale(1); } }
-        @keyframes aroham-rise       { from{ opacity:0; transform: translateY(18px); }     to{ opacity:1; transform: translateY(0); } }
+        @keyframes Nakshra-float      { 0%,100%{ transform: translate3d(0,0,0) scale(1); } 50%{ transform: translate3d(0,-30px,0) scale(1.07); } }
+        @keyframes Nakshra-float-slow { 0%,100%{ transform: translate3d(0,0,0); }          50%{ transform: translate3d(22px,26px,0); } }
+        @keyframes Nakshra-kenburns   { 0%{ transform: scale(1) translate(0,0); }          100%{ transform: scale(1.12) translate(-2%,-2%); } }
+        @keyframes Nakshra-fade       { from{ opacity:0; transform: scale(1.05); }          to{ opacity:1; transform: scale(1); } }
+        @keyframes Nakshra-rise       { from{ opacity:0; transform: translateY(18px); }     to{ opacity:1; transform: translateY(0); } }
       `}</style>
 
       <div id="recaptcha-container" className="fixed bottom-0 right-0 z-50 pointer-events-none" />
@@ -1131,7 +1131,7 @@ export function AuthPage() {
           className="flex items-center gap-2 group cursor-pointer transition-transform hover:opacity-90"
         >
           <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-sm transition-transform group-hover:scale-105" style={{ background: `linear-gradient(135deg,${SAFFRON},${GOLD})`, color: "#1A0D0E" }}>ॐ</div>
-          <span className="font-semibold text-lg" style={{ fontFamily: SERIF, color: MAROON }}>Aroham</span>
+          <span className="font-semibold text-lg" style={{ fontFamily: SERIF, color: MAROON }}>Nakshra</span>
         </Link>
         <div className="flex items-center gap-3">
           <LanguageSelector solid />
@@ -1146,8 +1146,8 @@ export function AuthPage() {
         {/* Left Visual Panel */}
         <div className="hidden lg:flex w-1/2 relative flex-col justify-between p-12 overflow-hidden">
           {/* Keyed crossfade + slow Ken-Burns zoom on each state change */}
-          <div key={panel.img} className="absolute inset-0" style={{ animation: "aroham-fade 0.9s ease" }}>
-            <img src={panel.img} alt="Aroham sacred imagery" fetchPriority="high" decoding="sync" className="absolute inset-0 w-full h-full object-cover" />
+          <div key={panel.img} className="absolute inset-0" style={{ animation: "Nakshra-fade 0.9s ease" }}>
+            <img src={panel.img} alt="Nakshra sacred imagery" fetchPriority="high" decoding="sync" className="absolute inset-0 w-full h-full object-cover" />
           </div>
           <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(20,8,12,0.94) 0%, rgba(20,8,12,0.45) 55%, rgba(20,8,12,0.15) 100%)" }} />
           <div className="absolute inset-x-0 top-0 h-40" style={{ background: "linear-gradient(to bottom, rgba(20,8,12,0.55), transparent)" }} />
@@ -1160,7 +1160,7 @@ export function AuthPage() {
           </div>
 
           {/* Headline + floating glass trust card */}
-          <div key={panel.headline} className="relative z-10 space-y-5" style={{ animation: "aroham-rise 0.6s ease" }}>
+          <div key={panel.headline} className="relative z-10 space-y-5" style={{ animation: "Nakshra-rise 0.6s ease" }}>
             <div className="inline-flex items-center gap-3 px-4 py-3 rounded-2xl" style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.18)", backdropFilter: "blur(14px)", boxShadow: "0 12px 40px rgba(0,0,0,0.25)" }}>
               <div className="flex items-center gap-0.5">
                 {Array.from({ length: 5 }).map((_, i) => (
@@ -1190,9 +1190,9 @@ export function AuthPage() {
         <div className="w-full lg:w-1/2 relative flex flex-col px-4 sm:px-12 md:px-16 py-6 sm:py-10 overflow-y-auto">
           {/* Ambient floating gradient orbs */}
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="absolute rounded-full" style={{ width: 360, height: 360, top: -100, right: -70, background: "radial-gradient(circle, rgba(200,160,68,0.28), transparent 70%)", filter: "blur(24px)", animation: "aroham-float 15s ease-in-out infinite" }} />
-            <div className="absolute rounded-full" style={{ width: 320, height: 320, bottom: -90, left: -80, background: "radial-gradient(circle, rgba(231,139,47,0.22), transparent 70%)", filter: "blur(24px)", animation: "aroham-float-slow 19s ease-in-out infinite" }} />
-            <div className="absolute rounded-full" style={{ width: 240, height: 240, top: "42%", left: "52%", background: "radial-gradient(circle, rgba(91,31,36,0.1), transparent 70%)", filter: "blur(28px)", animation: "aroham-float 22s ease-in-out infinite" }} />
+            <div className="absolute rounded-full" style={{ width: 360, height: 360, top: -100, right: -70, background: "radial-gradient(circle, rgba(200,160,68,0.28), transparent 70%)", filter: "blur(24px)", animation: "Nakshra-float 15s ease-in-out infinite" }} />
+            <div className="absolute rounded-full" style={{ width: 320, height: 320, bottom: -90, left: -80, background: "radial-gradient(circle, rgba(231,139,47,0.22), transparent 70%)", filter: "blur(24px)", animation: "Nakshra-float-slow 19s ease-in-out infinite" }} />
+            <div className="absolute rounded-full" style={{ width: 240, height: 240, top: "42%", left: "52%", background: "radial-gradient(circle, rgba(91,31,36,0.1), transparent 70%)", filter: "blur(28px)", animation: "Nakshra-float 22s ease-in-out infinite" }} />
           </div>
 
           <div className="relative max-w-md mx-auto w-full my-auto py-4 sm:py-6">

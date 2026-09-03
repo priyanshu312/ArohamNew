@@ -6,10 +6,10 @@ import {
 } from 'react-native';
 import { MAROON, GOLD } from '../constants/theme';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '@aroham/shared-services';
-import { api } from '@aroham/shared-api';
-import { generateUUID } from '@aroham/shared-utils/uuid';
-import { safeLocalStorage, safeSessionStorage } from '@aroham/shared-utils/storage';
+import { supabase } from '@nakshra/shared-services';
+import { api } from '@nakshra/shared-api';
+import { generateUUID } from '@nakshra/shared-utils/uuid';
+import { safeLocalStorage, safeSessionStorage } from '@nakshra/shared-utils/storage';
 
 interface AuthModalProps {
   visible: boolean;
@@ -52,7 +52,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   // (writes this key to session storage before redirecting here) — same banner web shows.
   const [authNotice, setAuthNotice] = useState(() => {
     try {
-      return safeSessionStorage.getItem('aroham_auth_notice') || '';
+      return safeSessionStorage.getItem('Nakshra_auth_notice') || '';
     } catch (e) {
       return '';
     }
@@ -83,7 +83,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   const dismissAuthNotice = () => {
     setAuthNotice('');
-    safeSessionStorage.removeItem('aroham_auth_notice');
+    safeSessionStorage.removeItem('Nakshra_auth_notice');
   };
 
   // Backend lookup first (service-role key, bypasses RLS), Supabase fallback — same dual-path
@@ -137,7 +137,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     } catch (e) {}
 
     const userProfile = { id: finalUserId, fullName, email: email.trim() || null, phone: cleanPhone };
-    safeLocalStorage.setItem(`aroham_registered_user_phone_${cleanPhone}`, JSON.stringify(userProfile));
+    safeLocalStorage.setItem(`Nakshra_registered_user_phone_${cleanPhone}`, JSON.stringify(userProfile));
 
     try {
       await supabase.from('users').upsert({
@@ -228,11 +228,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     const existingUser = await lookupExistingUser(cleanPhone, last10);
 
     if (existingUser) {
-      safeLocalStorage.setItem(`aroham_registered_user_phone_${last10}`, JSON.stringify(existingUser));
-      safeLocalStorage.setItem(`aroham_registered_user_phone_${cleanPhone}`, JSON.stringify(existingUser));
+      safeLocalStorage.setItem(`Nakshra_registered_user_phone_${last10}`, JSON.stringify(existingUser));
+      safeLocalStorage.setItem(`Nakshra_registered_user_phone_${cleanPhone}`, JSON.stringify(existingUser));
     } else {
-      safeLocalStorage.removeItem(`aroham_registered_user_phone_${last10}`);
-      safeLocalStorage.removeItem(`aroham_registered_user_phone_${cleanPhone}`);
+      safeLocalStorage.removeItem(`Nakshra_registered_user_phone_${last10}`);
+      safeLocalStorage.removeItem(`Nakshra_registered_user_phone_${cleanPhone}`);
     }
 
     if (existingUser && String(existingUser.status).toUpperCase() === 'BLOCKED') {
@@ -439,7 +439,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <View style={styles.brandLogoDisc}>
               <Text style={styles.brandLogoOm}>ॐ</Text>
             </View>
-            <Text style={styles.brandName}>Aroham</Text>
+            <Text style={styles.brandName}>Nakshra</Text>
           </View>
           <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
             <Text style={styles.closeText}>Skip</Text>
@@ -555,7 +555,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 )}
 
                 <Text style={styles.termsText}>
-                  By continuing, you agree to Aroham's Terms of Service and Privacy Policy
+                  By continuing, you agree to Nakshra's Terms of Service and Privacy Policy
                 </Text>
 
                 <TouchableOpacity

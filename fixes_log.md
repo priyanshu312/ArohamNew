@@ -1,4 +1,4 @@
-# Aroham Bug Fixes & Optimizations Log
+# Nakshra Bug Fixes & Optimizations Log
 
 1. The Checkout Login Loop (Cart Sidebar)
 
@@ -74,6 +74,6 @@ What We Fixed: Restructured the `CartContext.tsx` logic with a protective `isLog
 
 13. Profile Details persist after Logout
 
-The Bug: Our lightning-fast profile page cache (`aroham_user_profile`) wasn't being cleared when the user signed out, leaving details stored in the browser memory.
+The Bug: Our lightning-fast profile page cache (`Nakshra_user_profile`) wasn't being cleared when the user signed out, leaving details stored in the browser memory.
 
-What We Fixed: Added `sessionStorage.removeItem("aroham_user_profile")` directly to the main `logout()` function in `AuthContext.tsx`.
+What We Fixed: Added `sessionStorage.removeItem("Nakshra_user_profile")` directly to the main `logout()` function in `AuthContext.tsx`.

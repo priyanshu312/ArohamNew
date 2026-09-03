@@ -1,10 +1,10 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useRef } from "react";
-import { ArohamProduct } from "@aroham/shared-types/product";
-import { CartItem } from "@aroham/shared-types/cart";
-import { useAuth } from "@aroham/shared-auth";
-import { api } from "@aroham/shared-api";
-import { supabase } from "@aroham/shared-services";
-import { safeLocalStorage, safeSessionStorage } from "@aroham/shared-utils/storage";
+import { NakshraProduct } from "@nakshra/shared-types/product";
+import { CartItem } from "@nakshra/shared-types/cart";
+import { useAuth } from "@nakshra/shared-auth";
+import { api } from "@nakshra/shared-api";
+import { supabase } from "@nakshra/shared-services";
+import { safeLocalStorage, safeSessionStorage } from "@nakshra/shared-utils/storage";
 
 export interface AppliedCoupon {
   code: string;
@@ -14,7 +14,7 @@ export interface AppliedCoupon {
 }
 
 export const VALID_COUPONS: Record<string, { type: "percent" | "flat"; value: number; label: string }> = {
-  AROHAM10: { type: "percent", value: 10, label: "10% OFF sacred items" },
+  Nakshra10: { type: "percent", value: 10, label: "10% OFF sacred items" },
   SACRED15: { type: "percent", value: 15, label: "15% OFF sacred items" },
   FIRST100: { type: "flat", value: 100, label: "₹100 Instant Discount" },
   DIVINE20: { type: "percent", value: 20, label: "20% OFF divine discount" },
@@ -32,7 +32,7 @@ interface CartContextValue {
   showCart: boolean;
   openCart: () => void;
   closeCart: () => void;
-  addToCart: (product: ArohamProduct, qty?: number, openSidebar?: boolean) => void;
+  addToCart: (product: NakshraProduct, qty?: number, openSidebar?: boolean) => void;
   removeFromCart: (id: number) => void;
   updateQty: (id: number, delta: number) => void;
   clearCart: () => void;
@@ -67,22 +67,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (justLoggedOut) {
       // User just logged out — clear current view
       setItems([]);
-      safeLocalStorage.removeItem("aroham_cart");
-      safeLocalStorage.removeItem("aroham_buy_now_intent");
+      safeLocalStorage.removeItem("Nakshra_cart");
+      safeLocalStorage.removeItem("Nakshra_buy_now_intent");
       setTimeout(() => { isLoggingOut.current = false; }, 100);
     } else if (user?.id) {
       // User logged in — restore saved account cart!
-      const userCart = safeLocalStorage.getItem(`aroham_user_cart_${user.id}`);
+      const userCart = safeLocalStorage.getItem(`Nakshra_user_cart_${user.id}`);
       if (userCart) {
         try { setItems(JSON.parse(userCart)); } catch (e) {}
       } else {
-        const local = safeLocalStorage.getItem("aroham_cart");
+        const local = safeLocalStorage.getItem("Nakshra_cart");
         if (local) {
           try { setItems(JSON.parse(local)); } catch (e) {}
         }
       }
     } else {
-      const local = safeLocalStorage.getItem("aroham_cart");
+      const local = safeLocalStorage.getItem("Nakshra_cart");
       if (local) {
         try { setItems(JSON.parse(local)); } catch (e) {}
       }
@@ -91,9 +91,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isLoggingOut.current) {
-      safeLocalStorage.setItem("aroham_cart", JSON.stringify(items));
+      safeLocalStorage.setItem("Nakshra_cart", JSON.stringify(items));
       if (user?.id) {
-        safeLocalStorage.setItem(`aroham_user_cart_${user.id}`, JSON.stringify(items));
+        safeLocalStorage.setItem(`Nakshra_user_cart_${user.id}`, JSON.stringify(items));
         // Non-blocking sync to Supabase user_carts DB
         Promise.resolve(
           supabase.from("user_carts").upsert({
@@ -108,7 +108,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(() => {
     try {
-      const saved = safeSessionStorage.getItem("aroham_applied_coupon");
+      const saved = safeSessionStorage.getItem("Nakshra_applied_coupon");
       return saved ? JSON.parse(saved) : null;
     } catch (e) {
       return null;
@@ -156,7 +156,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const cleanCode = code.trim().toUpperCase();
     const found = couponsMap[cleanCode] || VALID_COUPONS[cleanCode];
     if (!found) {
-      return { success: false, message: "Invalid coupon code. Try AROHAM10 or FIRST100" };
+      return { success: false, message: "Invalid coupon code. Try Nakshra10 or FIRST100" };
     }
     const coupon: AppliedCoupon = {
       code: cleanCode,
@@ -165,16 +165,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
       label: found.label
     };
     setAppliedCoupon(coupon);
-    safeSessionStorage.setItem("aroham_applied_coupon", JSON.stringify(coupon));
+    safeSessionStorage.setItem("Nakshra_applied_coupon", JSON.stringify(coupon));
     return { success: true, message: `Coupon ${cleanCode} applied!` };
   };
 
   const removeCoupon = () => {
     setAppliedCoupon(null);
-    safeSessionStorage.removeItem("aroham_applied_coupon");
+    safeSessionStorage.removeItem("Nakshra_applied_coupon");
   };
 
-  const addToCart = async (product: ArohamProduct, qty: number = 1, openSidebar: boolean = false) => {
+  const addToCart = async (product: NakshraProduct, qty: number = 1, openSidebar: boolean = false) => {
     setItems(prev => {
       const existing = prev.find(i => i.product.id === product.id);
       if (existing) return prev.map(i => i.product.id === product.id ? { ...i, qty: i.qty + qty } : i);
@@ -224,7 +224,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (isLoggedIn) {
       await api("/cart", { method: "DELETE" }).catch(e => console.error("Error clearing cart", e));
     } else {
-      safeLocalStorage.removeItem("aroham_cart");
+      safeLocalStorage.removeItem("Nakshra_cart");
     }
   };
 

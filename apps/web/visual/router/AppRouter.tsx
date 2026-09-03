@@ -6,7 +6,7 @@ import { WhatsAppButton } from "@visual/components/layout/WhatsAppButton";
 import { AstroChatWidget } from "@visual/components/product/AstroChatWidget";
 import { CartSidebar } from "@visual/components/cart/CartSidebar";
 import { AuthPage } from "@visual/components/auth/AuthPage";
-import { ArohamLogoLoader } from "@visual/components/layout/ArohamLogoLoader";
+import { NakshraLogoLoader } from "@visual/components/layout/NakshraLogoLoader";
 import { HomePage } from "@visual/pages/HomePage";
 import { ShopPage } from "@visual/pages/ShopPage";
 import { ProductDetailPage } from "@visual/pages/ProductDetailPage";
@@ -25,8 +25,8 @@ import { PrivacyPolicyPage } from "@visual/pages/PrivacyPolicyPage";
 import { TermsOfServicePage } from "@visual/pages/TermsOfServicePage";
 import { BlogPage } from "@visual/pages/BlogPage";
 import { WishlistPage } from "@visual/pages/WishlistPage";
-import { useCart } from "@aroham/shared-state";
-import { useAuth } from "@aroham/shared-auth";
+import { useCart } from "@nakshra/shared-state";
+import { useAuth } from "@nakshra/shared-auth";
 
 function ScrollManager() {
   const location = useLocation();
@@ -87,7 +87,7 @@ function MainLayout() {
       
       {/* Slow network / Offline loader */}
       {isOffline && (
-        <ArohamLogoLoader text="Connecting to Sacred Database... Please check internet connection" fullScreen={true} />
+        <NakshraLogoLoader text="Connecting to Sacred Database... Please check internet connection" fullScreen={true} />
       )}
 
       {/* Route transition loader */}

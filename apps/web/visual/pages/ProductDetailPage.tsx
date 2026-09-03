@@ -1,21 +1,21 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
 import { Star, ShoppingCart, Share2, Heart, ChevronLeft, ChevronRight, Sparkles, Flame, Gem, Award, Shield, Package, Truck, CheckCircle, Mail, Phone, ChevronDown } from "lucide-react";
-import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@aroham/shared-config/theme";
-import { CONTACT_INFO } from "@aroham/shared-config/contact";
-import { useCart } from "@aroham/shared-state";
-import { useAuth } from "@aroham/shared-auth";
-import { useWishlist } from "@aroham/shared-state";
-import { useProducts } from "@aroham/shared-hooks/useProducts";
-import { ArohamProduct } from "@aroham/shared-types/product";
-import { DEFAULT_PRODUCTS } from "@aroham/shared-config/products";
-import { getShiprocketDeliveryEstimate } from "@aroham/shared-api/shipping";
+import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@nakshra/shared-config/theme";
+import { CONTACT_INFO } from "@nakshra/shared-config/contact";
+import { useCart } from "@nakshra/shared-state";
+import { useAuth } from "@nakshra/shared-auth";
+import { useWishlist } from "@nakshra/shared-state";
+import { useProducts } from "@nakshra/shared-hooks/useProducts";
+import { NakshraProduct } from "@nakshra/shared-types/product";
+import { DEFAULT_PRODUCTS } from "@nakshra/shared-config/products";
+import { getShiprocketDeliveryEstimate } from "@nakshra/shared-api/shipping";
 
 const PROD_TABS = ["Description", "Benefits", "How to Use", "Temple Ritual", "Reviews"];
 const REVIEWS_DATA = [
   { name: "Sunita R.",  city: "Delhi",  rating: 5, text: "The quality is outstanding. I can feel the positive energy radiating from the yantra. Temple energization makes a real difference.", verified: true, date: "2 weeks ago" },
   { name: "Rahul K.",   city: "Chennai",rating: 5, text: "Received beautifully packaged with the authenticity certificate. The craftsmanship is exceptional — worth every rupee.",             verified: true, date: "1 month ago" },
-  { name: "Meera P.",   city: "Pune",   rating: 4, text: "Very happy with my purchase. Delivery was prompt and the product matches the description perfectly. Highly recommend Aroham.",    verified: true, date: "3 weeks ago" },
+  { name: "Meera P.",   city: "Pune",   rating: 4, text: "Very happy with my purchase. Delivery was prompt and the product matches the description perfectly. Highly recommend Nakshra.",    verified: true, date: "3 weeks ago" },
 ];
 
 export function ProductDetailPage() {
@@ -25,7 +25,7 @@ export function ProductDetailPage() {
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { isLoggedIn, openAuth } = useAuth();
   const { products, loading: productsLoading } = useProducts();
-  const [product, setProduct] = useState<ArohamProduct | null>(null);
+  const [product, setProduct] = useState<NakshraProduct | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [recommendations, setRecommendations] = useState<any[]>([]);
 
@@ -449,7 +449,7 @@ export function ProductDetailPage() {
                   } as any);
 
                   // Dispatch add_to_cart Telemetry
-                  const activeUserId = user?.id || localStorage.getItem("aroham_guest_user_id") || "anonymous_user";
+                  const activeUserId = user?.id || localStorage.getItem("Nakshra_guest_user_id") || "anonymous_user";
                   const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || "http://localhost:5000";
                   fetch(`${apiBase}/api/telemetry/event`, {
                     method: "POST",
@@ -525,7 +525,7 @@ export function ProductDetailPage() {
           <div className="lg:sticky lg:top-24 self-start space-y-4">
             <div className="rounded-2xl overflow-hidden" style={{ background: "#FFFFFF", border: "1px solid rgba(91,31,36,0.08)", boxShadow: "0 4px 24px rgba(91,31,36,0.07)" }}>
               <div className="px-5 py-4" style={{ background: `linear-gradient(135deg,${MAROON},#7A2A30)` }}>
-                <p className="text-xs font-semibold" style={{ color: GOLD }}>Why Buy from Aroham?</p>
+                <p className="text-xs font-semibold" style={{ color: GOLD }}>Why Buy from Nakshra?</p>
               </div>
               <div className="p-4 space-y-3">
                 {[{ icon: "🪔", t: "Temple Energized", d: "Pran Pratishtha by certified pandits" }, { icon: "📜", t: "Authenticity Certificate", d: "Included with every product" }, { icon: "✋", t: "Handcrafted Quality", d: "By master artisans" }, { icon: "⭐", t: "Expert Recommended", d: "By Jyotish scholars" }, { icon: "📦", t: "Premium Packaging", d: "Luxury gift box" }, { icon: "↩️", t: "Easy Returns", d: "7-day hassle-free returns" }].map(({ icon, t, d }) => (

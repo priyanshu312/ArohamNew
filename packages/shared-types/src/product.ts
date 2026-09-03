@@ -1,4 +1,4 @@
-export interface ArohamProduct {
+export interface NakshraProduct {
   id: number;
   slug: string;
   name: string;

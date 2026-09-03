@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MAROON, SAFFRON } from "@aroham/shared-config/theme";
+import { MAROON, SAFFRON } from "@nakshra/shared-config/theme";
 import { AuthInput } from "./AuthInput";
 
 export function PasswordInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {

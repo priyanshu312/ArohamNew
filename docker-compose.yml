@@ -3,7 +3,7 @@ version: '3.8'
 services:
   gorse:
     image: zhenghaoz/gorse-in-one
-    container_name: aroham_gorse_engine
+    container_name: Nakshra_gorse_engine
     ports:
       - "8088:8088"
     restart: unless-stopped

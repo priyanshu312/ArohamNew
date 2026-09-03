@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router";
 import { X, Heart, ShoppingBag, ChevronLeft } from "lucide-react";
-import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@aroham/shared-config/theme";
-import { useWishlist } from "@aroham/shared-state";
-import { useCart } from "@aroham/shared-state";
+import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@nakshra/shared-config/theme";
+import { useWishlist } from "@nakshra/shared-state";
+import { useCart } from "@nakshra/shared-state";
 
 export function WishlistPage() {
   const navigate = useNavigate();

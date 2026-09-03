@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GOLD, SANS } from "@aroham/shared-config/theme";
+import { GOLD, SANS } from "@nakshra/shared-config/theme";
 
 export function AuthInput({ label, type = "text", value, onChange, right, name, autoComplete, placeholder }: {
   label: string; type?: string; value: string;

@@ -1,14 +1,14 @@
 import { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
-import { ArohamProduct } from "@aroham/shared-types/product";
-import { supabase } from "@aroham/shared-services";
-import { useAuth } from "@aroham/shared-auth";
-import { safeLocalStorage } from "@aroham/shared-utils/storage";
+import { NakshraProduct } from "@nakshra/shared-types/product";
+import { supabase } from "@nakshra/shared-services";
+import { useAuth } from "@nakshra/shared-auth";
+import { safeLocalStorage } from "@nakshra/shared-utils/storage";
 
 interface WishlistContextValue {
-  wishlist: ArohamProduct[];
-  addToWishlist: (product: ArohamProduct) => void;
+  wishlist: NakshraProduct[];
+  addToWishlist: (product: NakshraProduct) => void;
   removeFromWishlist: (productId: number) => void;
-  toggleWishlist: (product: ArohamProduct) => void;
+  toggleWishlist: (product: NakshraProduct) => void;
   isInWishlist: (productId: number) => boolean;
 }
 
@@ -16,7 +16,7 @@ const WishlistContext = createContext<WishlistContextValue | null>(null);
 
 export function WishlistProvider({ children }: { children: ReactNode }) {
   const { isLoggedIn, user } = useAuth();
-  const [wishlist, setWishlist] = useState<ArohamProduct[]>([]);
+  const [wishlist, setWishlist] = useState<NakshraProduct[]>([]);
   
   // Track previous login state to detect logout
   const prevIsLoggedIn = useRef<boolean | null>(null);
@@ -30,18 +30,18 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
     if (justLoggedOut) {
       setWishlist([]);
-      safeLocalStorage.removeItem("aroham_wishlist");
+      safeLocalStorage.removeItem("Nakshra_wishlist");
       setTimeout(() => { isLoggingOut.current = false; }, 100);
     } else if (user?.id) {
       // 1. Load user-specific local storage cache first for instant load
-      const userKey = `aroham_user_wishlist_${user.id}`;
+      const userKey = `Nakshra_user_wishlist_${user.id}`;
       const userCached = safeLocalStorage.getItem(userKey);
-      let initialList: ArohamProduct[] = [];
+      let initialList: NakshraProduct[] = [];
       if (userCached) {
         try { initialList = JSON.parse(userCached); } catch (e) {}
       } else {
         // Fallback to guest list to carry it over on login
-        const guestCached = safeLocalStorage.getItem("aroham_wishlist");
+        const guestCached = safeLocalStorage.getItem("Nakshra_wishlist");
         if (guestCached) {
           try { initialList = JSON.parse(guestCached); } catch (e) {}
         }
@@ -69,7 +69,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
         }, () => {});
     } else {
       // Load guest wishlist
-      const guestCached = safeLocalStorage.getItem("aroham_wishlist");
+      const guestCached = safeLocalStorage.getItem("Nakshra_wishlist");
       if (guestCached) {
         try { setWishlist(JSON.parse(guestCached)); } catch (e) {}
       }
@@ -80,9 +80,9 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isLoggingOut.current) return;
 
-    safeLocalStorage.setItem("aroham_wishlist", JSON.stringify(wishlist));
+    safeLocalStorage.setItem("Nakshra_wishlist", JSON.stringify(wishlist));
     if (user?.id) {
-      safeLocalStorage.setItem(`aroham_user_wishlist_${user.id}`, JSON.stringify(wishlist));
+      safeLocalStorage.setItem(`Nakshra_user_wishlist_${user.id}`, JSON.stringify(wishlist));
       // Upsert to Supabase
       Promise.resolve(
         supabase.from("user_wishlists").upsert({
@@ -94,7 +94,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     }
   }, [wishlist, user?.id]);
 
-  const addToWishlist = (product: ArohamProduct) => {
+  const addToWishlist = (product: NakshraProduct) => {
     setWishlist(prev => {
       if (prev.some(p => p.id === product.id)) return prev;
       return [...prev, product];
@@ -105,7 +105,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     setWishlist(prev => prev.filter(p => p.id !== productId));
   };
 
-  const toggleWishlist = (product: ArohamProduct) => {
+  const toggleWishlist = (product: NakshraProduct) => {
     const exists = wishlist.some(p => p.id === product.id);
     if (exists) {
       removeFromWishlist(product.id);

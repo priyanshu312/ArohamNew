@@ -1,14 +1,14 @@
 {
-  "name": "@aroham/shared-api",
+  "name": "@nakshra/shared-api",
   "version": "0.0.1",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "dependencies": {
-    "@aroham/shared-config": "workspace:*",
-    "@aroham/shared-services": "workspace:*",
-    "@aroham/shared-types": "workspace:*",
-    "@aroham/shared-utils": "workspace:*"
+    "@nakshra/shared-config": "workspace:*",
+    "@nakshra/shared-services": "workspace:*",
+    "@nakshra/shared-types": "workspace:*",
+    "@nakshra/shared-utils": "workspace:*"
   }
 }

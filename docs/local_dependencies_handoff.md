@@ -1,6 +1,6 @@
 # ⚠️ Local Environment & Account Dependencies Handoff
 
-This document outlines everything in the `ArohamNew` codebase that is tightly coupled to the original developer's local PC environment, specific cloud accounts, or hardcoded testing values. 
+This document outlines everything in the `NakshraNew` codebase that is tightly coupled to the original developer's local PC environment, specific cloud accounts, or hardcoded testing values. 
 
 The next developer working on this project MUST review this list to configure their own environment properly.
 
@@ -33,5 +33,5 @@ The recommendation engine requires Gorse to be running locally via Docker. It is
 * **Dependency:** Without this container, the backend will fallback to Supabase bestsellers (Tier 3 fallback).
 
 ## 4. Session & Storage Dependencies
-* **Browser Storage:** The frontend uses `sessionStorage` (key: `aroham_astro_chat_history`) to maintain chat history and `localStorage` (key: `aroham_guest_user_id`) to track anonymous users for Gorse ML. Clearing your browser cache will reset these.
+* **Browser Storage:** The frontend uses `sessionStorage` (key: `Nakshra_astro_chat_history`) to maintain chat history and `localStorage` (key: `Nakshra_guest_user_id`) to track anonymous users for Gorse ML. Clearing your browser cache will reset these.
 * **Global Memory Cache:** The backend stores generated Kundali profiles in a Node.js `global.kundaliProfiles` object. Restarting the backend server (`node server.js`) will wipe this memory cache, requiring you to generate a new Kundli PDF to test recommendation boosting.

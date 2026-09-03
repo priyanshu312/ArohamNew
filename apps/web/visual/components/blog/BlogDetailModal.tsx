@@ -1,8 +1,8 @@
-import { MAROON, GOLD, SERIF, IVORY } from "@aroham/shared-config/theme";
+import { MAROON, GOLD, SERIF, IVORY } from "@nakshra/shared-config/theme";
 import { X, Clock, Share2, ShoppingBag, Sparkles } from "lucide-react";
 import { BlogPost } from "@visual/data/blogData";
-import { useCart } from "@aroham/shared-state";
-import { ArohamProduct } from "@aroham/shared-types/product";
+import { useCart } from "@nakshra/shared-state";
+import { NakshraProduct } from "@nakshra/shared-types/product";
 import { useTranslation } from "react-i18next";
 
 interface BlogDetailModalProps {
@@ -19,7 +19,7 @@ export function BlogDetailModal({ post, onClose }: BlogDetailModalProps) {
   const handleAddToCart = () => {
     if (!post.recommendedProduct) return;
 
-    const prod: ArohamProduct = {
+    const prod: NakshraProduct = {
       id: typeof post.recommendedProduct.id === "number" ? post.recommendedProduct.id : Math.floor(Math.random() * 8000) + 1000,
       slug: post.recommendedProduct.slug,
       name: post.recommendedProduct.title,

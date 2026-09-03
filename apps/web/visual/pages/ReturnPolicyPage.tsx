@@ -1,4 +1,4 @@
-import { MAROON, GOLD, SERIF } from "@aroham/shared-config/theme";
+import { MAROON, GOLD, SERIF } from "@nakshra/shared-config/theme";
 import { useTranslation } from "react-i18next";
 
 export function ReturnPolicyPage() {

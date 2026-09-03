@@ -1,17 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { ChevronRight } from "lucide-react";
-import { MAROON, SAFFRON, GOLD, IVORY, SANS, SERIF } from "@aroham/shared-config/theme";
+import { MAROON, SAFFRON, GOLD, IVORY, SANS, SERIF } from "@nakshra/shared-config/theme";
 
-import { ArohamProduct } from "@aroham/shared-types/product";
+import { NakshraProduct } from "@nakshra/shared-types/product";
 import { ProductCard } from "@visual/components/product/ProductCard";
 import { useTranslation } from "react-i18next";
 
 export function ProductsAndCombos({ products, onProductClick, onAddCombo: _onAddCombo, onAddToCart }: {
-  products: ArohamProduct[];
-  onProductClick: (p: ArohamProduct) => void;
+  products: NakshraProduct[];
+  onProductClick: (p: NakshraProduct) => void;
   onAddCombo: (name: string) => void;
-  onAddToCart: (p: ArohamProduct) => void;
+  onAddToCart: (p: NakshraProduct) => void;
 }) {
   const navigate = useNavigate();
   const [wish, setWish] = useState<Record<string, boolean>>({});
@@ -21,7 +21,7 @@ export function ProductsAndCombos({ products, onProductClick, onAddCombo: _onAdd
 
   if (!products || products.length === 0) return null;
 
-  const shelves: [string, string, string, ArohamProduct[], string][] = [
+  const shelves: [string, string, string, NakshraProduct[], string][] = [
     [t("products.bestselling", "Bestselling Products"), t("products.top_picks", "Top Picks"), "🔥 " + t("products.trending", "Trending"), products.slice(0, 6), SAFFRON],
     [t("products.fav_items", "Fav Items"), t("products.fan_favourites", "Fan Favourites"), "❤️ " + t("products.loved", "Loved"), [...products].reverse().slice(0, 6), "#E74C3C"],
     [t("products.combo_deals", "Combo Deals"), t("products.bundle_save", "Bundle & Save"), "🎁 " + t("products.kits", "Kits"), products.slice(0, 6), GOLD],

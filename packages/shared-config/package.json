@@ -1,11 +1,11 @@
 {
-  "name": "@aroham/shared-config",
+  "name": "@nakshra/shared-config",
   "version": "0.0.1",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "dependencies": {
-    "@aroham/shared-types": "workspace:*"
+    "@nakshra/shared-types": "workspace:*"
   }
 }

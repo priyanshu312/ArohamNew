@@ -1,8 +1,8 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useRef } from "react";
-import { supabase, firebaseAuth } from "@aroham/shared-services";
-import { api } from "@aroham/shared-api";
-import { setCookie, getCookie, deleteCookie } from "@aroham/shared-utils/cookies";
-import { safeLocalStorage, safeSessionStorage } from "@aroham/shared-utils/storage";
+import { supabase, firebaseAuth } from "@nakshra/shared-services";
+import { api } from "@nakshra/shared-api";
+import { setCookie, getCookie, deleteCookie } from "@nakshra/shared-utils/cookies";
+import { safeLocalStorage, safeSessionStorage } from "@nakshra/shared-utils/storage";
 
 interface UnifiedUser {
   id: string;
@@ -32,19 +32,19 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UnifiedUser | null>(() => {
     try {
-      const mockSession = safeLocalStorage.getItem("aroham_mock_session") || getCookie("aroham_session");
+      const mockSession = safeLocalStorage.getItem("Nakshra_mock_session") || getCookie("Nakshra_session");
       return mockSession ? JSON.parse(mockSession) : null;
     } catch (e) {
       return null;
     }
   });
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
-    return !!(safeLocalStorage.getItem("aroham_mock_session") || getCookie("aroham_session"));
+    return !!(safeLocalStorage.getItem("Nakshra_mock_session") || getCookie("Nakshra_session"));
   });
   const [showAuth, setShowAuth] = useState(false);
   const [session, setSession] = useState<any | null>(() => {
     try {
-      const mockSession = safeLocalStorage.getItem("aroham_mock_session") || getCookie("aroham_session");
+      const mockSession = safeLocalStorage.getItem("Nakshra_mock_session") || getCookie("Nakshra_session");
       return mockSession ? { user: JSON.parse(mockSession) } : null;
     } catch (e) {
       return null;
@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Sync cart and orders helper
   const handleCartSync = async () => {
     setCartSynced(false);
-    const localCart = safeLocalStorage.getItem("aroham_cart");
+    const localCart = safeLocalStorage.getItem("Nakshra_cart");
     if (localCart) {
       try {
         const parsed = JSON.parse(localCart);
@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }).catch(() => {});
           }
         }
-        safeLocalStorage.removeItem("aroham_cart");
+        safeLocalStorage.removeItem("Nakshra_cart");
       } catch (e) {
         console.error("Failed to sync cart", e);
       }
@@ -79,11 +79,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const userId = userData?.id;
     if (!userId) return;
     try {
-      const guestOrdersStr = safeLocalStorage.getItem("aroham_guest_orders");
+      const guestOrdersStr = safeLocalStorage.getItem("Nakshra_guest_orders");
       if (guestOrdersStr) {
         const guestOrders = JSON.parse(guestOrdersStr);
         if (Array.isArray(guestOrders) && guestOrders.length > 0) {
-          const userOrdersKey = `aroham_user_orders_${userId}`;
+          const userOrdersKey = `Nakshra_user_orders_${userId}`;
           const existingUserOrdersStr = safeLocalStorage.getItem(userOrdersKey);
           const existingUserOrders = existingUserOrdersStr ? JSON.parse(existingUserOrdersStr) : [];
           const merged = [...existingUserOrders];
@@ -140,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const checkBlockedAndInit = async () => {
-      const rawSession = safeLocalStorage.getItem("aroham_mock_session") || getCookie("aroham_session");
+      const rawSession = safeLocalStorage.getItem("Nakshra_mock_session") || getCookie("Nakshra_session");
       if (rawSession) {
         try {
           const parsed = JSON.parse(rawSession);
@@ -168,8 +168,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(parsed);
           setIsLoggedIn(true);
           setSession({ user: parsed });
-          safeLocalStorage.setItem("aroham_mock_session", JSON.stringify(parsed));
-          setCookie("aroham_session", JSON.stringify(parsed), 365);
+          safeLocalStorage.setItem("Nakshra_mock_session", JSON.stringify(parsed));
+          setCookie("Nakshra_session", JSON.stringify(parsed), 365);
 
           handleCartSync();
           if (parsed?.id) {
@@ -177,8 +177,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             handleUserSupabaseSync(parsed);
           }
         } catch (e) {
-          safeLocalStorage.removeItem("aroham_mock_session");
-          deleteCookie("aroham_session");
+          safeLocalStorage.removeItem("Nakshra_mock_session");
+          deleteCookie("Nakshra_session");
         }
       }
     };
@@ -198,8 +198,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(u as any);
           setIsLoggedIn(true);
           setSession(sbSession);
-          safeLocalStorage.setItem("aroham_mock_session", JSON.stringify(u));
-          setCookie("aroham_session", JSON.stringify(u), 365);
+          safeLocalStorage.setItem("Nakshra_mock_session", JSON.stringify(u));
+          setCookie("Nakshra_session", JSON.stringify(u), 365);
         }
       } catch (e) {}
     };
@@ -217,8 +217,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(u as any);
         setIsLoggedIn(true);
         setSession(sbSession);
-        safeLocalStorage.setItem("aroham_mock_session", JSON.stringify(u));
-        setCookie("aroham_session", JSON.stringify(u), 365);
+        safeLocalStorage.setItem("Nakshra_mock_session", JSON.stringify(u));
+        setCookie("Nakshra_session", JSON.stringify(u), 365);
       }
     });
 
@@ -240,7 +240,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!data || !data.id || String(data.status).toUpperCase() === "BLOCKED") {
           console.warn("[AuthWatcher] User was deleted or blocked in database. Force logging out.");
           await logout();
-          safeSessionStorage.setItem("aroham_auth_notice", "Your account is no longer active.");
+          safeSessionStorage.setItem("Nakshra_auth_notice", "Your account is no longer active.");
           if (typeof window !== "undefined" && window.location) {
             window.location.href = "/";
           }
@@ -256,8 +256,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (userData) {
       setUser(userData);
       setSession({ user: userData });
-      safeLocalStorage.setItem("aroham_mock_session", JSON.stringify(userData));
-      setCookie("aroham_session", JSON.stringify(userData), 365);
+      safeLocalStorage.setItem("Nakshra_mock_session", JSON.stringify(userData));
+      setCookie("Nakshra_session", JSON.stringify(userData), 365);
 
       handleCartSync();
       if (userData?.id) {
@@ -270,33 +270,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try { await firebaseAuth.signOut(); } catch (e) {}
     try { await supabase.auth.signOut(); } catch (e) {}
-    safeLocalStorage.removeItem("aroham_mock_session");
-    deleteCookie("aroham_session");
+    safeLocalStorage.removeItem("Nakshra_mock_session");
+    deleteCookie("Nakshra_session");
     
     // Clear all cart & order caches from localStorage
-    safeLocalStorage.removeItem("aroham_cart");
-    safeLocalStorage.removeItem("aroham_buy_now_intent");
+    safeLocalStorage.removeItem("Nakshra_cart");
+    safeLocalStorage.removeItem("Nakshra_buy_now_intent");
     if (user?.id) {
-      safeLocalStorage.removeItem(`aroham_user_cart_${user.id}`);
-      safeLocalStorage.removeItem(`aroham_user_orders_${user.id}`);
+      safeLocalStorage.removeItem(`Nakshra_user_cart_${user.id}`);
+      safeLocalStorage.removeItem(`Nakshra_user_orders_${user.id}`);
       if (user.user_metadata?.phone) {
         const pDigits = String(user.user_metadata.phone).replace(/\D/g, "");
-        safeLocalStorage.removeItem(`aroham_registered_user_phone_${pDigits}`);
-        safeLocalStorage.removeItem(`aroham_registered_user_phone_${pDigits.slice(-10)}`);
+        safeLocalStorage.removeItem(`Nakshra_registered_user_phone_${pDigits}`);
+        safeLocalStorage.removeItem(`Nakshra_registered_user_phone_${pDigits.slice(-10)}`);
       }
     }
     
     // Clear all user-specific data from sessionStorage to prevent cross-account leakage
-    safeSessionStorage.removeItem("aroham_user_profile");
-    safeSessionStorage.removeItem("aroham_shipping_addr");
-    safeSessionStorage.removeItem("aroham_last_order_id");
-    safeSessionStorage.removeItem("aroham_last_order_items");
-    safeSessionStorage.removeItem("aroham_order_total");
-    safeSessionStorage.removeItem("aroham_payment_mode");
+    safeSessionStorage.removeItem("Nakshra_user_profile");
+    safeSessionStorage.removeItem("Nakshra_shipping_addr");
+    safeSessionStorage.removeItem("Nakshra_last_order_id");
+    safeSessionStorage.removeItem("Nakshra_last_order_items");
+    safeSessionStorage.removeItem("Nakshra_order_total");
+    safeSessionStorage.removeItem("Nakshra_payment_mode");
     
     // Clear live chat/consultation fallback states
-    safeLocalStorage.removeItem("aroham_latest_live_session");
-    safeLocalStorage.removeItem("aroham_accepted_session_ids");
+    safeLocalStorage.removeItem("Nakshra_latest_live_session");
+    safeLocalStorage.removeItem("Nakshra_accepted_session_ids");
     
     setIsLoggedIn(false);
     setUser(null);

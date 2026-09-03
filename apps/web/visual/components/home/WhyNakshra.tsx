@@ -1,10 +1,10 @@
 import { Flame, Gem, Star, Shield, Package, Award, Mail, Phone, MessageCircle } from "lucide-react";
-import { MAROON, GOLD, SAFFRON, IVORY, SANS, SERIF } from "@aroham/shared-config/theme";
-import { CONTACT_INFO } from "@aroham/shared-config/contact";
-import { pyramidImg, baglaImg, navratnaImg, gemstonImg, yantraPlateImg, pendantSilImg } from "@aroham/shared-config/data";
+import { MAROON, GOLD, SAFFRON, IVORY, SANS, SERIF } from "@nakshra/shared-config/theme";
+import { CONTACT_INFO } from "@nakshra/shared-config/contact";
+import { pyramidImg, baglaImg, navratnaImg, gemstonImg, yantraPlateImg, pendantSilImg } from "@nakshra/shared-config/data";
 import { useTranslation } from "react-i18next";
 
-export function WhyAroham() {
+export function WhyNakshra() {
   const { t } = useTranslation();
 
   const WHY_ITEMS = [
@@ -33,7 +33,7 @@ export function WhyAroham() {
           <div>
             <div className="flex items-center gap-3 mb-3 lg:mb-6">
               <div style={{ width: 32, height: 1, background: `linear-gradient(to right,${GOLD},transparent)` }} />
-              <span className="text-[10px] tracking-[0.35em] uppercase font-bold" style={{ color: GOLD, fontFamily: SANS }}>{t("why.badge", "The Aroham Difference")}</span>
+              <span className="text-[10px] tracking-[0.35em] uppercase font-bold" style={{ color: GOLD, fontFamily: SANS }}>{t("why.badge", "The Nakshra Difference")}</span>
             </div>
             <p className="mb-1 lg:mb-2 text-[10px] lg:text-sm font-medium tracking-widest uppercase" style={{ color: "rgba(250,247,242,0.28)", fontFamily: SANS, letterSpacing: "0.22em" }}>{t("why.title", "Why Choose Us")}</p>
             <h2 style={{ fontFamily: SERIF, fontSize: "clamp(1.9rem,6vw,5rem)", fontWeight: 600, color: IVORY, lineHeight: 1.05, letterSpacing: "-0.02em" }}>
@@ -44,7 +44,7 @@ export function WhyAroham() {
             </h2>
           </div>
           <p className="hidden lg:block text-sm leading-relaxed lg:max-w-xs" style={{ color: "rgba(250,247,242,0.45)", fontFamily: SANS }}>
-            {t("why.subheading", "12,000+ families trust Aroham because we treat authenticity as a non-negotiable — not a marketing claim.")}
+            {t("why.subheading", "12,000+ families trust Nakshra because we treat authenticity as a non-negotiable — not a marketing claim.")}
           </p>
         </div>
 

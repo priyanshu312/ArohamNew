@@ -1,4 +1,4 @@
-import { MAROON, GOLD, SERIF } from "@aroham/shared-config/theme";
+import { MAROON, GOLD, SERIF } from "@nakshra/shared-config/theme";
 import { Clock, ArrowRight } from "lucide-react";
 import { BlogPost } from "@visual/data/blogData";
 import { useTranslation } from "react-i18next";

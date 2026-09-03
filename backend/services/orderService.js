@@ -4,7 +4,7 @@ const supabase = require("../config/supabase");
 
 const PROMO_CODES = [
   {
-    code: "AROHAM10",
+    code: "Nakshra10",
     type: "percentage",
     value: 10,
     description: "Get 10% off on all sacred items."

@@ -1,12 +1,12 @@
-# Create a Premium UI/UX Design for "Aroham" – Luxury Vedic Astrology & Vastu Marketplace
+# Create a Premium UI/UX Design for "Nakshra" – Luxury Vedic Astrology & Vastu Marketplace
 
 You are an award-winning Product Designer and Creative Director specializing in premium e-commerce experiences.
 
-Design a modern, elegant, conversion-focused website for **Aroham**, a premium Vedic Astrology & Vastu platform.
+Design a modern, elegant, conversion-focused website for **Nakshra**, a premium Vedic Astrology & Vastu platform.
 
 ## Brand Vision
 
-Aroham is not just an online store.
+Nakshra is not just an online store.
 
 It is building India's most trusted ecosystem for Vedic solutions.
 
@@ -166,7 +166,7 @@ Trust indicators below CTA:
 
 ---
 
-## 2. Why Aroham
+## 2. Why Nakshra
 
 Luxury icon cards.
 

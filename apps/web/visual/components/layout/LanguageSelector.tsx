@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { LANGUAGES, LanguageCode } from "@visual/i18n/translations";
-import { MAROON, GOLD, IVORY } from "@aroham/shared-config/theme";
+import { MAROON, GOLD, IVORY } from "@nakshra/shared-config/theme";
 
 
 interface LanguageSelectorProps {

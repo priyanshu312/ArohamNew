@@ -1,1 +1,1 @@
-export * from "@aroham/shared-config/theme";
+export * from "@nakshra/shared-config/theme";

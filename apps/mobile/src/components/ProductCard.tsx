@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
-import { ArohamProduct } from '../types';
+import { NakshraProduct } from '../types';
 import { MAROON, GOLD } from '../constants/theme';
 import { Stars } from './Stars';
 import { useWishlist } from '../context/WishlistContext';
 import { useCart } from '../context/CartContext';
 
 interface ProductCardProps {
-  product: ArohamProduct;
+  product: NakshraProduct;
   onPress?: () => void;
   onAddToCart?: () => void;
 }

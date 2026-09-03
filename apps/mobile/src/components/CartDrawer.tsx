@@ -119,7 +119,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     <View style={styles.couponInputRow}>
                       <TextInput
                         style={styles.couponInput}
-                        placeholder="Enter AROHAM10 or FIRST100"
+                        placeholder="Enter Nakshra10 or FIRST100"
                         placeholderTextColor="#8B7355"
                         value={couponCode}
                         onChangeText={setCouponCode}

@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Lock, Gem, Flame, Shield, Package, Truck, CheckCircle, Tag } from "lucide-react";
-import { MAROON, GOLD, IVORY, SERIF, PRICE_FONT } from "@aroham/shared-config/theme";
-import { CartItem } from "@aroham/shared-types/cart";
+import { MAROON, GOLD, IVORY, SERIF, PRICE_FONT } from "@nakshra/shared-config/theme";
+import { CartItem } from "@nakshra/shared-types/cart";
 import { CheckoutProgress } from "./CheckoutProgress";
-import { useCart } from "@aroham/shared-state";
+import { useCart } from "@nakshra/shared-state";
 
 export function OrderSummaryCard({ cartItems, onBack, onNext, nextLabel, step }: {
   cartItems: CartItem[];
@@ -57,7 +57,7 @@ export function OrderSummaryCard({ cartItems, onBack, onNext, nextLabel, step }:
                   type="text"
                   value={inputCode}
                   onChange={e => { setInputCode(e.target.value); setMsg(null); }}
-                  placeholder="Enter code (e.g. AROHAM10)"
+                  placeholder="Enter code (e.g. Nakshra10)"
                   className="flex-1 px-3 py-1.5 rounded-xl text-xs outline-none uppercase font-semibold"
                   style={{ border: "1px solid rgba(91,31,36,0.15)", background: "#FFFFFF", color: MAROON }}
                 />
