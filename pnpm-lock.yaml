@@ -17,36 +17,36 @@ importers:
 
   apps/mobile:
     dependencies:
-      '@aroham/shared-api':
-        specifier: workspace:*
-        version: link:../../packages/shared-api
-      '@aroham/shared-auth':
-        specifier: workspace:*
-        version: link:../../packages/shared-auth
-      '@aroham/shared-config':
-        specifier: workspace:*
-        version: link:../../packages/shared-config
-      '@aroham/shared-hooks':
-        specifier: workspace:*
-        version: link:../../packages/shared-hooks
-      '@aroham/shared-services':
-        specifier: workspace:*
-        version: link:../../packages/shared-services
-      '@aroham/shared-state':
-        specifier: workspace:*
-        version: link:../../packages/shared-state
-      '@aroham/shared-types':
-        specifier: workspace:*
-        version: link:../../packages/shared-types
-      '@aroham/shared-utils':
-        specifier: workspace:*
-        version: link:../../packages/shared-utils
-      '@aroham/shared-validation':
-        specifier: workspace:*
-        version: link:../../packages/shared-validation
       '@expo/metro-runtime':
         specifier: ~6.1.2
         version: 6.1.2(expo@54.0.37)(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.1.0))(react@19.1.0)
+      '@nakshra/shared-api':
+        specifier: workspace:*
+        version: link:../../packages/shared-api
+      '@nakshra/shared-auth':
+        specifier: workspace:*
+        version: link:../../packages/shared-auth
+      '@nakshra/shared-config':
+        specifier: workspace:*
+        version: link:../../packages/shared-config
+      '@nakshra/shared-hooks':
+        specifier: workspace:*
+        version: link:../../packages/shared-hooks
+      '@nakshra/shared-services':
+        specifier: workspace:*
+        version: link:../../packages/shared-services
+      '@nakshra/shared-state':
+        specifier: workspace:*
+        version: link:../../packages/shared-state
+      '@nakshra/shared-types':
+        specifier: workspace:*
+        version: link:../../packages/shared-types
+      '@nakshra/shared-utils':
+        specifier: workspace:*
+        version: link:../../packages/shared-utils
+      '@nakshra/shared-validation':
+        specifier: workspace:*
+        version: link:../../packages/shared-validation
       '@react-native-async-storage/async-storage':
         specifier: 2.2.0
         version: 2.2.0(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.1.0))
@@ -123,31 +123,31 @@ importers:
 
   apps/web:
     dependencies:
-      '@aroham/shared-api':
+      '@nakshra/shared-api':
         specifier: workspace:*
         version: link:../../packages/shared-api
-      '@aroham/shared-auth':
+      '@nakshra/shared-auth':
         specifier: workspace:*
         version: link:../../packages/shared-auth
-      '@aroham/shared-config':
+      '@nakshra/shared-config':
         specifier: workspace:*
         version: link:../../packages/shared-config
-      '@aroham/shared-hooks':
+      '@nakshra/shared-hooks':
         specifier: workspace:*
         version: link:../../packages/shared-hooks
-      '@aroham/shared-services':
+      '@nakshra/shared-services':
         specifier: workspace:*
         version: link:../../packages/shared-services
-      '@aroham/shared-state':
+      '@nakshra/shared-state':
         specifier: workspace:*
         version: link:../../packages/shared-state
-      '@aroham/shared-types':
+      '@nakshra/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
-      '@aroham/shared-utils':
+      '@nakshra/shared-utils':
         specifier: workspace:*
         version: link:../../packages/shared-utils
-      '@aroham/shared-validation':
+      '@nakshra/shared-validation':
         specifier: workspace:*
         version: link:../../packages/shared-validation
       '@popperjs/core':
@@ -337,28 +337,28 @@ importers:
 
   packages/shared-api:
     dependencies:
-      '@aroham/shared-config':
+      '@nakshra/shared-config':
         specifier: workspace:*
         version: link:../shared-config
-      '@aroham/shared-services':
+      '@nakshra/shared-services':
         specifier: workspace:*
         version: link:../shared-services
-      '@aroham/shared-types':
+      '@nakshra/shared-types':
         specifier: workspace:*
         version: link:../shared-types
-      '@aroham/shared-utils':
+      '@nakshra/shared-utils':
         specifier: workspace:*
         version: link:../shared-utils
 
   packages/shared-auth:
     dependencies:
-      '@aroham/shared-api':
+      '@nakshra/shared-api':
         specifier: workspace:*
         version: link:../shared-api
-      '@aroham/shared-services':
+      '@nakshra/shared-services':
         specifier: workspace:*
         version: link:../shared-services
-      '@aroham/shared-utils':
+      '@nakshra/shared-utils':
         specifier: workspace:*
         version: link:../shared-utils
       react:
@@ -371,31 +371,31 @@ importers:
 
   packages/shared-config:
     dependencies:
-      '@aroham/shared-types':
+      '@nakshra/shared-types':
         specifier: workspace:*
         version: link:../shared-types
 
   packages/shared-hooks:
     dependencies:
-      '@aroham/shared-api':
+      '@nakshra/shared-api':
         specifier: workspace:*
         version: link:../shared-api
-      '@aroham/shared-auth':
+      '@nakshra/shared-auth':
         specifier: workspace:*
         version: link:../shared-auth
-      '@aroham/shared-config':
+      '@nakshra/shared-config':
         specifier: workspace:*
         version: link:../shared-config
-      '@aroham/shared-services':
+      '@nakshra/shared-services':
         specifier: workspace:*
         version: link:../shared-services
-      '@aroham/shared-state':
+      '@nakshra/shared-state':
         specifier: workspace:*
         version: link:../shared-state
-      '@aroham/shared-types':
+      '@nakshra/shared-types':
         specifier: workspace:*
         version: link:../shared-types
-      '@aroham/shared-utils':
+      '@nakshra/shared-utils':
         specifier: workspace:*
         version: link:../shared-utils
       react:
@@ -404,7 +404,7 @@ importers:
 
   packages/shared-services:
     dependencies:
-      '@aroham/shared-utils':
+      '@nakshra/shared-utils':
         specifier: workspace:*
         version: link:../shared-utils
       '@react-native-async-storage/async-storage':
@@ -416,19 +416,19 @@ importers:
 
   packages/shared-state:
     dependencies:
-      '@aroham/shared-api':
+      '@nakshra/shared-api':
         specifier: workspace:*
         version: link:../shared-api
-      '@aroham/shared-auth':
+      '@nakshra/shared-auth':
         specifier: workspace:*
         version: link:../shared-auth
-      '@aroham/shared-services':
+      '@nakshra/shared-services':
         specifier: workspace:*
         version: link:../shared-services
-      '@aroham/shared-types':
+      '@nakshra/shared-types':
         specifier: workspace:*
         version: link:../shared-types
-      '@aroham/shared-utils':
+      '@nakshra/shared-utils':
         specifier: workspace:*
         version: link:../shared-utils
       react:
