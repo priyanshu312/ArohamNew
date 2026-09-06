@@ -1,0 +1,48 @@
+# Render Blueprint for the Nakshra backend (Express + Supabase + Razorpay).
+# Deploy: Render Dashboard -> New -> Blueprint -> pick this repo.
+# All secret values below are marked `sync: false`, so Render will prompt for
+# them on first deploy and never store them in this file.
+services:
+  - type: web
+    name: nakshra-backend
+    runtime: node
+    plan: free            # bump to `starter` or higher if puppeteer (PDF gen) OOMs on 512 MB
+    branch: main
+    rootDir: backend
+    buildCommand: pnpm install
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      # --- Supabase ---
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      # --- Razorpay ---
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      # --- Shiprocket ---
+      - key: SHIPROCKET_ENABLED
+        value: "false"
+      - key: SHIPROCKET_EMAIL
+        sync: false
+      - key: SHIPROCKET_PASSWORD
+        sync: false
+      - key: SHIPROCKET_PICKUP_PINCODE
+        sync: false
+      # --- Chat / recommendations (optional) ---
+      - key: GROQ_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        sync: false
+      - key: GORSE_URL
+        sync: false

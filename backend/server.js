@@ -73,8 +73,11 @@ app.use("/api/kundli", require("./routes/kundli"));
 app.get("/api/health", (req, res) => res.json({ status: "ok", service: "Nakshra-backend" }));
 
 const PORT = process.env.PORT || 5000;
-if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => console.log(`🕉️  Nakshra backend running on http://localhost:${PORT}`));
+// Start a normal HTTP listener everywhere except Vercel's serverless runtime.
+// Vercel sets VERCEL=1 and imports the exported app instead of running a server;
+// Render (and local dev) need an actual listener bound to process.env.PORT.
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => console.log(`🕉️  Nakshra backend running on port ${PORT}`));
 }
 
 // Export the app for Vercel serverless deployment
