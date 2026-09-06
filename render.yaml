@@ -15,7 +15,7 @@ services:
     autoDeploy: true
     envVars:
       - key: NODE_VERSION
-        value: "20"
+        value: "22"   # Supabase realtime-js needs native WebSocket (Node 22+)
       # --- Supabase ---
       - key: SUPABASE_URL
         sync: false
