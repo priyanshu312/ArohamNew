@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { User, MessageSquare } from "lucide-react";
-import { SANS, SERIF } from "@aroham/shared-config/theme";
-import { useAuth } from "@aroham/shared-auth";
-import { useCart } from "@aroham/shared-state";
-import { supabase } from "@aroham/shared-services";
-import { useProducts } from "@aroham/shared-hooks/useProducts";
-import { generateUUID } from "@aroham/shared-utils/uuid";
+import { SANS, SERIF } from "@nakshra/shared-config/theme";
+import { useAuth } from "@nakshra/shared-auth";
+import { useCart } from "@nakshra/shared-state";
+import { supabase } from "@nakshra/shared-services";
+import { useProducts } from "@nakshra/shared-hooks/useProducts";
+import { generateUUID } from "@nakshra/shared-utils/uuid";
 import { useTranslation } from "react-i18next";
 
 import { ConsultHero } from "@visual/components/consult/ConsultHero";
@@ -34,7 +34,7 @@ const isAstrologerActive = (isOnline: boolean, workingHours: any) => {
 
 const getDatabaseAstrologers = (): Astrologer[] => {
   try {
-    const customRegistered = JSON.parse(localStorage.getItem("aroham_registered_astrologers") || "[]");
+    const customRegistered = JSON.parse(localStorage.getItem("Nakshra_registered_astrologers") || "[]");
     if (Array.isArray(customRegistered)) {
       return customRegistered.filter((a: any) => a.bio && a.bio !== "PENDING_WIZARD_COMPLETION" && a.bio.trim() !== "");
     }
@@ -121,7 +121,7 @@ export function ConsultPage() {
           setAstrologers(dbFormatted);
           // Sync back to local storage so focus/storage listeners don't overwrite with old/empty cache
           try {
-            localStorage.setItem("aroham_registered_astrologers", JSON.stringify(dbFormatted));
+            localStorage.setItem("Nakshra_registered_astrologers", JSON.stringify(dbFormatted));
           } catch (e) {}
         }
       } catch (err) {}
@@ -187,7 +187,7 @@ export function ConsultPage() {
 
     // Save to localStorage for instant local/offline sync
     try {
-      localStorage.setItem("aroham_latest_live_session", JSON.stringify(createdSession));
+      localStorage.setItem("Nakshra_latest_live_session", JSON.stringify(createdSession));
       window.dispatchEvent(new Event("storage"));
     } catch (e) {}
   };
@@ -221,7 +221,7 @@ export function ConsultPage() {
 
     // Save to localStorage for instant offline/same-browser sync
     try {
-      const existingKey = `aroham_live_chat_${session.id}`;
+      const existingKey = `Nakshra_live_chat_${session.id}`;
       const existing = JSON.parse(localStorage.getItem(existingKey) || "[]");
       localStorage.setItem(existingKey, JSON.stringify([...existing, userMsg]));
       window.dispatchEvent(new Event("storage"));
@@ -267,7 +267,7 @@ export function ConsultPage() {
 
     const handleStorage = () => {
       try {
-        const latestLocal = localStorage.getItem("aroham_latest_live_session");
+        const latestLocal = localStorage.getItem("Nakshra_latest_live_session");
         if (latestLocal) {
           const parsed = JSON.parse(latestLocal);
           if (parsed.id === session.id && parsed.status !== session.status) {
@@ -275,7 +275,7 @@ export function ConsultPage() {
           }
         }
 
-        const localMsgs = JSON.parse(localStorage.getItem(`aroham_live_chat_${session.id}`) || "[]");
+        const localMsgs = JSON.parse(localStorage.getItem(`Nakshra_live_chat_${session.id}`) || "[]");
         if (Array.isArray(localMsgs) && localMsgs.length > 0) {
           setMessages(prev => {
             const merged = [...prev];

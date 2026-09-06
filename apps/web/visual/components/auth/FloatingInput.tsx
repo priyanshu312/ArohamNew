@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GOLD, SANS } from "@aroham/shared-config/theme";
+import { GOLD, SANS } from "@nakshra/shared-config/theme";
 
 export function FloatingInput({ label, type="text", value, onChange, required=false }: {
   label:string; type?:string; value:string; onChange:(v:string)=>void; required?:boolean;

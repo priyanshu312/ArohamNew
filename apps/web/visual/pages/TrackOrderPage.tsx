@@ -1,10 +1,10 @@
-import { MAROON, SERIF, IVORY, GOLD } from "@aroham/shared-config/theme";
+import { MAROON, SERIF, IVORY, GOLD } from "@nakshra/shared-config/theme";
 import { FloatingInput } from "@visual/components/auth/FloatingInput";
 import { useState } from "react";
 import { PackageSearch, Loader2, ChevronLeft, Truck, MapPin, Clock, CheckCircle2, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { api } from "@aroham/shared-api";
+import { api } from "@nakshra/shared-api";
 
 interface TrackingResult {
   orderId: string;
@@ -59,7 +59,7 @@ export function TrackOrderPage() {
       }
     } catch {
       // Fallback: check sessionStorage for local order reference
-      const localOrderId = sessionStorage.getItem("aroham_last_order_id");
+      const localOrderId = sessionStorage.getItem("Nakshra_last_order_id");
       if (orderId.trim() === localOrderId) {
         setTrackedOrder({
           orderId: orderId.trim(),

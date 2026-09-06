@@ -1,7 +1,7 @@
-import { ArohamProduct, Astrologer } from "@aroham/shared-types";
+import { NakshraProduct, Astrologer } from "@nakshra/shared-types";
 
 // Fallback data used when the backend API and Supabase are both unreachable.
-export const MOCK_PRODUCTS: ArohamProduct[] = [
+export const MOCK_PRODUCTS: NakshraProduct[] = [
   {
     id: 27,
     slug: "botswana-agate-bracelet",

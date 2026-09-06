@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GOLD, SANS } from "@aroham/shared-config/theme";
+import { GOLD, SANS } from "@nakshra/shared-config/theme";
 
 export function CardInput({value,onChange,placeholder,maxLength,type="text"}:{value:string;onChange:(v:string)=>void;placeholder:string;maxLength?:number;type?:string;}){
   const[focused,setFocused]=useState(false);

@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { getEnv } from "@aroham/shared-utils/env";
+import { getEnv } from "@nakshra/shared-utils/env";
 
 // Keys from connection_points.md (supporting environment overrides)
 const supabaseUrl = getEnv("VITE_SUPABASE_URL", getEnv("EXPO_PUBLIC_SUPABASE_URL", "https://lzzdfsphevmzbkkoskxb.supabase.co"));
@@ -27,6 +27,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: false,
-    storageKey: "aroham_supabase_auth",
+    storageKey: "Nakshra_supabase_auth",
   },
 });

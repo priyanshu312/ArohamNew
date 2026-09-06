@@ -1,6 +1,6 @@
-import { ArohamProduct } from "@aroham/shared-types/product";
+import { NakshraProduct } from "@nakshra/shared-types/product";
 
-export const DEFAULT_PRODUCTS: ArohamProduct[] = [
+export const DEFAULT_PRODUCTS: NakshraProduct[] = [
   {
     id: 1,
     slug: "bagla-mukhi-yantra",

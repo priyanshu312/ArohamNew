@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { CheckCircle, Loader2 } from "lucide-react";
-import { MAROON, GOLD, IVORY, SANS, SERIF } from "@aroham/shared-config/theme";
-import { supabase } from "@aroham/shared-services";
-import { db } from "@aroham/shared-services";
+import { MAROON, GOLD, IVORY, SANS, SERIF } from "@nakshra/shared-config/theme";
+import { supabase } from "@nakshra/shared-services";
+import { db } from "@nakshra/shared-services";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useTranslation } from "react-i18next";
 
@@ -47,7 +47,7 @@ export function Newsletter() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: email.trim(),
-            subject: "🎉 New Aroham Community Signup!",
+            subject: "🎉 New Nakshra Community Signup!",
             message: `User with email ${email.trim()} has just joined India's Spiritual Community.`
           })
         }).catch(() => {});
@@ -71,7 +71,7 @@ export function Newsletter() {
         <p className="text-xs sm:text-sm mb-4 sm:mb-6" style={{ color: "#7A6A58" }}>{t("newsletter.subtitle", "Auspicious dates, Vedic wisdom, exclusive offers & early access to new products.")}</p>
         {joined ? (
           <div className="flex items-center justify-center gap-2 py-4 px-6 rounded-2xl" style={{ background: "rgba(200,160,68,0.1)", border: `1px solid rgba(200,160,68,0.3)` }}>
-            <CheckCircle size={18} style={{ color: GOLD }} /><span className="text-sm font-medium" style={{ color: MAROON }}>Welcome to the Aroham community!</span>
+            <CheckCircle size={18} style={{ color: GOLD }} /><span className="text-sm font-medium" style={{ color: MAROON }}>Welcome to the Nakshra community!</span>
           </div>
         ) : (
           <form className="flex gap-3 flex-col sm:flex-row" onSubmit={handleSubmit}>

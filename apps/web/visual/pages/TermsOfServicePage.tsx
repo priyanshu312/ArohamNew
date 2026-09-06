@@ -1,4 +1,4 @@
-import { MAROON, GOLD, SERIF } from "@aroham/shared-config/theme";
+import { MAROON, GOLD, SERIF } from "@nakshra/shared-config/theme";
 import { useTranslation } from "react-i18next";
 
 export function TermsOfServicePage() {
@@ -8,7 +8,7 @@ export function TermsOfServicePage() {
     {
       title: "UPDATION",
       content:
-        "The Website may update/amend/modify these Terms of Usage from time to time. The User is responsible to check and go through the Terms of Usage periodically to remain in compliance with these terms before you access the website or avail services made available on the website of Aroham."
+        "The Website may update/amend/modify these Terms of Usage from time to time. The User is responsible to check and go through the Terms of Usage periodically to remain in compliance with these terms before you access the website or avail services made available on the website of Nakshra."
     },
     {
       title: "USER CONSENT",
@@ -28,17 +28,17 @@ export function TermsOfServicePage() {
     {
       title: "ASTROLOGICAL CONSULTATIONS & SERVICE PROVIDERS",
       content:
-        "Service providers listed on Aroham operate in their personal capacity when offering predictions, advice, and consultations. Astrological consultations are intended solely for personal insight and reflection and do not constitute medical, legal, or financial advice."
+        "Service providers listed on Nakshra operate in their personal capacity when offering predictions, advice, and consultations. Astrological consultations are intended solely for personal insight and reflection and do not constitute medical, legal, or financial advice."
     },
     {
       title: "WEBSITE CONTENT & SPIRITUAL PRODUCTS",
       content:
-        "All sacred items sold on Aroham undergo traditional Vedic energization (Pran Pratishtha) by qualified Pandits. Aroham makes no warranties regarding specific medical, financial, or personal outcomes from spiritual advice or product usage."
+        "All sacred items sold on Nakshra undergo traditional Vedic energization (Pran Pratishtha) by qualified Pandits. Nakshra makes no warranties regarding specific medical, financial, or personal outcomes from spiritual advice or product usage."
     },
     {
       title: "PRIVACY POLICY",
       content:
-        "By using Aroham, you acknowledge and consent to the collection and use of your personal data as outlined in our Privacy Policy, in compliance with the Information Technology Act, 2000 and applicable data protection laws."
+        "By using Nakshra, you acknowledge and consent to the collection and use of your personal data as outlined in our Privacy Policy, in compliance with the Information Technology Act, 2000 and applicable data protection laws."
     },
     {
       title: "DELIVERY, CANCELLATION AND REFUND",
@@ -53,17 +53,17 @@ export function TermsOfServicePage() {
     {
       title: "BANK ACCOUNT & PAYMENT INFORMATION",
       content:
-        "Payments on Aroham are processed through authorized, secure third-party payment gateways. Users represent and warrant that they possess lawful authority to use the credit/debit card or banking credentials provided during payment."
+        "Payments on Nakshra are processed through authorized, secure third-party payment gateways. Users represent and warrant that they possess lawful authority to use the credit/debit card or banking credentials provided during payment."
     },
     {
       title: "DISCLAIMER / LIMITATION OF LIABILITY / WARRANTY",
       content:
-        "The Website and all services are provided on an 'as is' basis. Aroham's total cumulative liability to any user for any cause whatsoever will at all times be limited to the amount paid by the user to the Website for the specific service or product."
+        "The Website and all services are provided on an 'as is' basis. Nakshra's total cumulative liability to any user for any cause whatsoever will at all times be limited to the amount paid by the user to the Website for the specific service or product."
     },
     {
       title: "INDEMNIFICATION & PROPRIETARY RIGHTS",
       content:
-        "You agree to indemnify, defend, and hold harmless Aroham, its officers, directors, and partners from any third-party claims arising from your breach of these terms. All content, designs, and text are proprietary property of Aroham."
+        "You agree to indemnify, defend, and hold harmless Nakshra, its officers, directors, and partners from any third-party claims arising from your breach of these terms. All content, designs, and text are proprietary property of Nakshra."
     },
     {
       title: "GOVERNING LAW & JURISDICTION",
@@ -87,7 +87,7 @@ export function TermsOfServicePage() {
           {/* Header Preamble matching Astrotalk format */}
           <div className="space-y-4 text-sm md:text-base text-[#4A3A2A]">
             <p>
-              This website is owned and operated by Aroham ("us", "We", "the Company" or "Aroham" which also includes its affiliates) (<a href="mailto:priyanshubansal720@gmail.com" style={{ color: GOLD }} className="hover:underline">priyanshubansal720@gmail.com</a>). The Platform may be provided or be accessible via multiple websites or applications whether owned and/or operated by us or by third parties, including, without limitation, the website <a href="https://aroham.in" style={{ color: GOLD }} className="hover:underline font-semibold">aroham.in</a> and its related apps.
+              This website is owned and operated by Nakshra ("us", "We", "the Company" or "Nakshra" which also includes its affiliates) (<a href="mailto:priyanshubansal720@gmail.com" style={{ color: GOLD }} className="hover:underline">priyanshubansal720@gmail.com</a>). The Platform may be provided or be accessible via multiple websites or applications whether owned and/or operated by us or by third parties, including, without limitation, the website <a href="https://Nakshra.in" style={{ color: GOLD }} className="hover:underline font-semibold">Nakshra.in</a> and its related apps.
             </p>
             <p>
               Following Terms and Conditions (the "Agreement") govern your access and use of our online platform through which consulting, information related to Indian Astrology, temple-energized products and other allied spiritual sciences (collectively, the "Spiritual Advisory Services") are administered and accessible to any person.
@@ -136,7 +136,7 @@ export function TermsOfServicePage() {
               If you have any questions about these Terms of Service, please contact us at:
             </p>
             <div className="p-5 rounded-2xl border border-amber-900/10 bg-[#FAF7F2]/80 shadow-xs">
-              <p className="font-bold text-[#5B1F24] text-base">Aroham</p>
+              <p className="font-bold text-[#5B1F24] text-base">Nakshra</p>
               <p className="text-sm mt-1 text-[#4A3A2A]">
                 Email: <a href="mailto:priyanshubansal720@gmail.com" style={{ color: GOLD }} className="hover:underline font-semibold">priyanshubansal720@gmail.com</a>
               </p>

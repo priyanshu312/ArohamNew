@@ -25,7 +25,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
         <SafeAreaView style={{ flex: 1, backgroundColor: '#5B1F24', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
           <Text style={{ fontSize: 40, marginBottom: 12 }}>🕉️</Text>
           <Text style={{ color: '#C8A044', fontSize: 20, fontWeight: '800', marginBottom: 8, textAlign: 'center' }}>
-            Aroham Sacred App
+            Nakshra Sacred App
           </Text>
           <Text style={{ color: '#FFFFFF', fontSize: 13, textAlign: 'center', marginBottom: 20, lineHeight: 18 }}>
             {this.state.error?.message || "Something went wrong. Tap to reload."}

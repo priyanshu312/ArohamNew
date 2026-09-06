@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Image, ActivityIndicator, Dimensions, Alert, Platform } from 'react-native';
 import { MAROON, GOLD } from '../constants/theme';
 import { Address, CartItem } from '../types';
-import { api } from '@aroham/shared-api';
+import { api } from '@nakshra/shared-api';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 
@@ -297,12 +297,12 @@ export const CheckoutPaymentScreen: React.FC<PaymentProps> = ({
 
     const options = {
       description: 'Sacred Products – Temple Energized',
-      image: 'https://aroham.in/favicon.ico',
+      image: 'https://Nakshra.in/favicon.ico',
       currency: 'INR',
       key: keyId,
       amount: amountPaisa,
       order_id: razorpayOrderId,
-      name: 'Aroham',
+      name: 'Nakshra',
       prefill: {
         email: user?.email || '',
         contact: cleanPhone,
@@ -361,7 +361,7 @@ export const CheckoutPaymentScreen: React.FC<PaymentProps> = ({
             <View style={styles.couponInputRow}>
               <TextInput
                 style={styles.couponInput}
-                placeholder="Coupon code (e.g. AROHAM10)"
+                placeholder="Coupon code (e.g. Nakshra10)"
                 placeholderTextColor="#9a8c7a"
                 autoCapitalize="characters"
                 value={couponInput}

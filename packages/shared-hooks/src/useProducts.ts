@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { api } from "@aroham/shared-api";
-import { supabase } from "@aroham/shared-services";
-import { ArohamProduct } from "@aroham/shared-types/product";
-import { DEFAULT_PRODUCTS } from "@aroham/shared-config/products";
-import { safeSessionStorage } from "@aroham/shared-utils/storage";
+import { api } from "@nakshra/shared-api";
+import { supabase } from "@nakshra/shared-services";
+import { NakshraProduct } from "@nakshra/shared-types/product";
+import { DEFAULT_PRODUCTS } from "@nakshra/shared-config/products";
+import { safeSessionStorage } from "@nakshra/shared-utils/storage";
 
 function formatImageUrl(url: any) {
   if (!url || typeof url !== "string") return url;
@@ -14,7 +14,7 @@ function formatImageUrl(url: any) {
   return url;
 }
 
-function mapSupaProducts(data: any[]): ArohamProduct[] {
+function mapSupaProducts(data: any[]): NakshraProduct[] {
   return data.map((p: any) => {
     const rawPrice = Number(p.price) || 0;
     const priceVal = rawPrice > 10000 ? rawPrice / 100 : rawPrice;
@@ -45,8 +45,8 @@ function mapSupaProducts(data: any[]): ArohamProduct[] {
 }
 
 export function useProducts() {
-  const [products, setProducts] = useState<ArohamProduct[]>(() => {
-    const cached = safeSessionStorage.getItem("aroham_products_cache");
+  const [products, setProducts] = useState<NakshraProduct[]>(() => {
+    const cached = safeSessionStorage.getItem("Nakshra_products_cache");
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
@@ -64,7 +64,7 @@ export function useProducts() {
         const data = await api("/products");
         if (Array.isArray(data) && data.length > 0) {
           setProducts(data);
-          safeSessionStorage.setItem("aroham_products_cache", JSON.stringify(data));
+          safeSessionStorage.setItem("Nakshra_products_cache", JSON.stringify(data));
           setLoading(false);
           return;
         }
@@ -82,7 +82,7 @@ export function useProducts() {
         if (!error && Array.isArray(supaData) && supaData.length > 0) {
           const mapped = mapSupaProducts(supaData);
           setProducts(mapped);
-          safeSessionStorage.setItem("aroham_products_cache", JSON.stringify(mapped));
+          safeSessionStorage.setItem("Nakshra_products_cache", JSON.stringify(mapped));
           setLoading(false);
           return;
         }
@@ -91,7 +91,7 @@ export function useProducts() {
       }
 
       // 3. Fallback to cached or default items if database is unreachable
-      const cached = safeSessionStorage.getItem("aroham_products_cache");
+      const cached = safeSessionStorage.getItem("Nakshra_products_cache");
       if (cached) {
         try {
           const parsed = JSON.parse(cached);

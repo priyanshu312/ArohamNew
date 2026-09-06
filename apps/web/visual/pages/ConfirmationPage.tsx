@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Lock, CheckCircle, Package, Mail, ArrowRight, Truck } from "lucide-react";
-import { MAROON, GOLD, SAFFRON, IVORY, SANS, SERIF, PRICE_FONT } from "@aroham/shared-config/theme";
-import { useCart } from "@aroham/shared-state";
-import { api } from "@aroham/shared-api";
+import { MAROON, GOLD, SAFFRON, IVORY, SANS, SERIF, PRICE_FONT } from "@nakshra/shared-config/theme";
+import { useCart } from "@nakshra/shared-state";
+import { api } from "@nakshra/shared-api";
 
 function CheckoutHeader() {
   const navigate = useNavigate();
@@ -12,7 +12,7 @@ function CheckoutHeader() {
       <div className="max-w-7xl mx-auto px-5 lg:px-10 h-14 lg:h-16 flex items-center justify-between">
         <button onClick={() => navigate("/")} className="flex items-center gap-2.5 group">
           <div className="w-7 h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: `linear-gradient(135deg,${MAROON},#E78B2F)`, color: IVORY, fontFamily: SERIF }}>ॐ</div>
-          <span className="hidden sm:inline text-lg lg:text-xl font-semibold tracking-wide" style={{ fontFamily: SERIF, color: MAROON }}>Aroham</span>
+          <span className="hidden sm:inline text-lg lg:text-xl font-semibold tracking-wide" style={{ fontFamily: SERIF, color: MAROON }}>Nakshra</span>
         </button>
         <span className="text-xs font-medium tracking-widest uppercase" style={{ color: "#9A8A78" }}>Secure Checkout</span>
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ background: "rgba(200,160,68,0.1)", border: "1px solid rgba(200,160,68,0.22)" }}>
@@ -53,11 +53,11 @@ export function ConfirmationPage() {
   const [visible, setVisible] = useState(true);
   const [timelineReached, setTimelineReached] = useState(2);
   const [orderItems, setOrderItems] = useState<{ id: number; name: string; img: string; price: number; qty: number }[]>([]);
-  const cachedTotal = sessionStorage.getItem("aroham_order_total");
+  const cachedTotal = sessionStorage.getItem("Nakshra_order_total");
   const [totalAmount, setTotalAmount] = useState<number>(cachedTotal ? parseFloat(cachedTotal) : 0);
   const [loading, setLoading] = useState(true);
 
-  const orderId = sessionStorage.getItem("aroham_last_order_id") || "—";
+  const orderId = sessionStorage.getItem("Nakshra_last_order_id") || "—";
   const displayOrderId = orderId !== "—" ? `ARH-${orderId}` : "Confirmed";
 
   // Calculate dynamic estimated delivery date (4 days from today)
@@ -76,7 +76,7 @@ export function ConfirmationPage() {
     if (orderId && orderId !== "—") {
       // Try to load items from the session storage saved by PaymentPage
       try {
-        const savedItems = sessionStorage.getItem("aroham_last_order_items");
+        const savedItems = sessionStorage.getItem("Nakshra_last_order_items");
         if (savedItems) {
           const parsed = JSON.parse(savedItems);
           if (Array.isArray(parsed)) {
@@ -135,7 +135,7 @@ export function ConfirmationPage() {
               <span className="h-px w-12 sm:w-16" style={{ background: `linear-gradient(90deg,${GOLD},transparent)` }} />
             </div>
             <h1 className="mb-2 sm:mb-3 mx-auto max-w-2xl" style={{ fontFamily: SERIF, fontSize: "clamp(1.4rem,4vw,3rem)", fontWeight: 500, color: MAROON, lineHeight: 1.15 }}>Your Sacred Order Has Been Confirmed</h1>
-            <p className="text-xs sm:text-sm leading-relaxed max-w-md mx-auto" style={{ color: "#7A6A58" }}>Thank you for placing your trust in Aroham.<br />Your spiritual journey begins today.</p>
+            <p className="text-xs sm:text-sm leading-relaxed max-w-md mx-auto" style={{ color: "#7A6A58" }}>Thank you for placing your trust in Nakshra.<br />Your spiritual journey begins today.</p>
           </div>
         </div>
       </div>

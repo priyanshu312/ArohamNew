@@ -1,4 +1,4 @@
-import { MAROON, GOLD } from "@aroham/shared-config/theme";
+import { MAROON, GOLD } from "@nakshra/shared-config/theme";
 
 const STEPS = ["Cart", "Shipping", "Payment", "Confirmation"];
 

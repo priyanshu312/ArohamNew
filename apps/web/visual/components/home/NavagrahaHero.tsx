@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { MAROON, GOLD, SAFFRON, IVORY, SANS, SERIF } from "@aroham/shared-config/theme";
-import { GRAHAS } from "@aroham/shared-config/data";
+import { MAROON, GOLD, SAFFRON, IVORY, SANS, SERIF } from "@nakshra/shared-config/theme";
+import { GRAHAS } from "@nakshra/shared-config/data";
 import { useTranslation } from "react-i18next";
 
 

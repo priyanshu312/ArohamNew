@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router";
 import { X, ChevronLeft, ChevronRight, Minus, Plus, Trash2, Lock } from "lucide-react";
-import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@aroham/shared-config/theme";
-import { useCart } from "@aroham/shared-state";
-import { useAuth } from "@aroham/shared-auth";
+import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@nakshra/shared-config/theme";
+import { useCart } from "@nakshra/shared-state";
+import { useAuth } from "@nakshra/shared-auth";
 import { useEffect, useState } from "react";
 
 export function CartSidebar() {

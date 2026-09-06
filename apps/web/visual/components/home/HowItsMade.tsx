@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { ChevronRight, Pickaxe, Hammer, PenTool, Flame, BadgeCheck } from "lucide-react";
-import { GOLD, IVORY, MAROON, SANS, SERIF } from "@aroham/shared-config/theme";
-import { CRAFT_STEPS, CRAFT_IMAGES } from "@aroham/shared-config/data";
+import { GOLD, IVORY, MAROON, SANS, SERIF } from "@nakshra/shared-config/theme";
+import { CRAFT_STEPS, CRAFT_IMAGES } from "@nakshra/shared-config/data";
 import { useTranslation } from "react-i18next";
 
 export function HowItsMade() {
@@ -42,7 +42,7 @@ export function HowItsMade() {
           <h2 style={{ fontFamily: SERIF, fontSize: "clamp(1.75rem,4vw,2.75rem)", fontWeight: 500, color: IVORY, lineHeight: 1.15 }}>
             {t("crafts.title", "From Earth to Sacred Artifact")}
           </h2>
-          <p className="text-sm mt-2" style={{ color: "rgba(250,247,242,0.45)" }}>{t("crafts.subtitle", "Every Aroham product follows a sacred 5-step ritual process")}</p>
+          <p className="text-sm mt-2" style={{ color: "rgba(250,247,242,0.45)" }}>{t("crafts.subtitle", "Every Nakshra product follows a sacred 5-step ritual process")}</p>
         </div>
 
         <div className="flex flex-wrap justify-center gap-2 mb-12">
@@ -66,7 +66,7 @@ export function HowItsMade() {
               </div>
             </div>
             <div className="absolute bottom-5 left-5 right-5">
-              <div className="text-xs font-semibold mb-1" style={{ color: "rgba(200,160,68,0.7)" }}>Aroham Craftsmanship</div>
+              <div className="text-xs font-semibold mb-1" style={{ color: "rgba(200,160,68,0.7)" }}>Nakshra Craftsmanship</div>
               <div className="text-xl font-semibold" style={{ fontFamily: SERIF, color: IVORY, lineHeight: 1.2 }}>{s.title}</div>
             </div>
           </div>

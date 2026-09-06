@@ -41,8 +41,8 @@ router.post("/signup", async (req, res) => {
     if (!phone || !/^\d{10}$/.test(phone.trim())) {
       return res.status(400).json({ error: "Phone number must be exactly 10 digits" });
     }
-    const finalEmail = email || `${phone.trim()}@aroham.in`;
-    const userPass = password || `ArohamPass${phone.trim()}!`;
+    const finalEmail = email || `${phone.trim()}@Nakshra.in`;
+    const userPass = password || `NakshraPass${phone.trim()}!`;
 
     // Check if user already exists in public users table
     const { data: existingProfile } = await supabase

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MAROON, SERIF } from "@aroham/shared-config/theme";
+import { MAROON, SERIF } from "@nakshra/shared-config/theme";
 
 export function Countdown({ seconds, onEnd }:{seconds:number;onEnd:()=>void;}) {
   const [t,setT]=useState(seconds);

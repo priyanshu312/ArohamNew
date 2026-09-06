@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { Search, X, ArrowRight } from "lucide-react";
-import { MAROON, GOLD, IVORY, SANS, SERIF } from "@aroham/shared-config/theme";
-import { useProducts } from "@aroham/shared-hooks/useProducts";
-import { ArohamProduct } from "@aroham/shared-types/product";
+import { MAROON, GOLD, IVORY, SANS, SERIF } from "@nakshra/shared-config/theme";
+import { useProducts } from "@nakshra/shared-hooks/useProducts";
+import { NakshraProduct } from "@nakshra/shared-types/product";
 
 interface SearchModalProps {
   isOpen: boolean;

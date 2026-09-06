@@ -1,1 +1,1 @@
-export { useAuth } from "@aroham/shared-auth";
+export { useAuth } from "@nakshra/shared-auth";

@@ -1,4 +1,4 @@
-import { MAROON, GOLD, SERIF, SANS } from "@aroham/shared-config/theme";
+import { MAROON, GOLD, SERIF, SANS } from "@nakshra/shared-config/theme";
 
 export function PrivacyPolicyPage() {
   return (
@@ -15,7 +15,7 @@ export function PrivacyPolicyPage() {
           <section>
             <h2 style={{ fontFamily: SERIF, color: MAROON }} className="text-2xl font-semibold mb-3">1. Introduction</h2>
             <p>
-              This Privacy Policy explains how Aroham ("we," "us," or "our") collects, uses, discloses, and safeguards your information when you visit our website <strong>aroham.in</strong> (the "Site") or purchase our products. By accessing or using the Site, you consent to the data practices described in this policy. If you do not agree with the terms of this policy, please do not access the Site.
+              This Privacy Policy explains how Nakshra ("we," "us," or "our") collects, uses, discloses, and safeguards your information when you visit our website <strong>Nakshra.in</strong> (the "Site") or purchase our products. By accessing or using the Site, you consent to the data practices described in this policy. If you do not agree with the terms of this policy, please do not access the Site.
             </p>
           </section>
 
@@ -110,7 +110,7 @@ export function PrivacyPolicyPage() {
           <section>
             <h2 style={{ fontFamily: SERIF, color: MAROON }} className="text-2xl font-semibold mb-3">9. Third-Party Links</h2>
             <p>
-              The Site may contain links to third-party websites or services that are not owned or controlled by Aroham. We are not responsible for the privacy practices or the content of such third-party sites. We encourage you to review the privacy policies of any third-party site you visit.
+              The Site may contain links to third-party websites or services that are not owned or controlled by Nakshra. We are not responsible for the privacy practices or the content of such third-party sites. We encourage you to review the privacy policies of any third-party site you visit.
             </p>
           </section>
 
@@ -134,7 +134,7 @@ export function PrivacyPolicyPage() {
               If you have any questions or concerns about this Privacy Policy or our data practices, please contact us at:
             </p>
             <div className="mt-3 p-4 rounded-xl" style={{ background: "#FAF7F2" }}>
-              <p><strong>Aroham</strong></p>
+              <p><strong>Nakshra</strong></p>
               <p>Email: <a href="mailto:priyanshubansal720@gmail.com" style={{ color: GOLD }} className="hover:underline">priyanshubansal720@gmail.com</a></p>
             </div>
           </section>

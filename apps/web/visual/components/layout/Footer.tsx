@@ -1,14 +1,14 @@
 import { Instagram, Twitter, Facebook, Youtube } from "lucide-react";
 import { Link } from "react-router";
-import { MAROON, GOLD, SAFFRON, IVORY, SANS, SERIF } from "@aroham/shared-config/theme";
+import { MAROON, GOLD, SAFFRON, IVORY, SANS, SERIF } from "@nakshra/shared-config/theme";
 import { useTranslation } from "react-i18next";
 
 
 const SOCIAL_LINKS = [
-  { Icon: Instagram, label: "Instagram", href: "https://instagram.com/aroham.in" },
-  { Icon: Twitter,   label: "Twitter",   href: "https://twitter.com/aroham_in" },
-  { Icon: Facebook,  label: "Facebook",  href: "https://facebook.com/aroham.in" },
-  { Icon: Youtube,   label: "Youtube",   href: "https://youtube.com/@aroham" },
+  { Icon: Instagram, label: "Instagram", href: "https://instagram.com/Nakshra.in" },
+  { Icon: Twitter,   label: "Twitter",   href: "https://twitter.com/Nakshra_in" },
+  { Icon: Facebook,  label: "Facebook",  href: "https://facebook.com/Nakshra.in" },
+  { Icon: Youtube,   label: "Youtube",   href: "https://youtube.com/@Nakshra" },
 ];
 
 export function Footer() {
@@ -24,7 +24,7 @@ export function Footer() {
               <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: `linear-gradient(135deg,${MAROON},${SAFFRON})` }}>
                 <span className="text-xs font-bold" style={{ color: IVORY, fontFamily: SERIF }}>ॐ</span>
               </div>
-              <span className="text-xl font-semibold" style={{ fontFamily: SERIF, color: IVORY }}>Aroham</span>
+              <span className="text-xl font-semibold" style={{ fontFamily: SERIF, color: IVORY }}>Nakshra</span>
             </div>
             <p className="text-sm mb-4 leading-relaxed hidden lg:block" style={{ color: "rgba(250,247,242,0.5)" }}>{t("footer.tagline", "Bringing Sacred Vedic Traditions to Modern Lives.")}</p>
             <p className="text-xs mb-4 leading-relaxed lg:hidden" style={{ color: "rgba(250,247,242,0.4)" }}>{t("footer.tagline", "Bringing Sacred Vedic Traditions to Modern Lives.")}</p>
@@ -70,7 +70,7 @@ export function Footer() {
 
         </div>
         <div id="site-footer" className="pt-6 lg:pt-8 flex flex-col md:flex-row items-center justify-between gap-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          <p className="text-xs" style={{ color: "rgba(250,247,242,0.3)" }}>© 2025 Aroham. {t("footer.rights", "All rights reserved.")} Made with reverence in India.</p>
+          <p className="text-xs" style={{ color: "rgba(250,247,242,0.3)" }}>© 2025 Nakshra. {t("footer.rights", "All rights reserved.")} Made with reverence in India.</p>
           <div className="flex gap-6 text-xs" style={{ color: "rgba(250,247,242,0.3)" }}>
             <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
             <Link to="/terms" className="hover:text-white transition-colors">{t("footer.terms", "Terms & Conditions")}</Link>

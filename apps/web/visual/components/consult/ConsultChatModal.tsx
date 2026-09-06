@@ -1,7 +1,7 @@
 import { useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, Send, Sparkles, ShoppingBag, CheckCircle2 } from "lucide-react";
-import { MAROON, SERIF, SANS } from "@aroham/shared-config/theme";
+import { MAROON, SERIF, SANS } from "@nakshra/shared-config/theme";
 import { useTranslation } from "react-i18next";
 
 interface ConsultChatModalProps {

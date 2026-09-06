@@ -1,4 +1,4 @@
-import { ArohamProduct } from "@aroham/shared-types/product";
+import { NakshraProduct } from "@nakshra/shared-types/product";
 import { GOLD, MAROON } from "./theme";
 
 const baglaImg       = "https://cdn.shopify.com/s/files/1/0878/4907/4985/files/1_a144e37f-680e-430f-80bd-e7c35b9d2ebb.webp?v=1759924225";
@@ -95,12 +95,12 @@ export const VIDEO_REVIEWS = [
 ];
 
 export const COMMENTS_DATA = [
-  { name: "Arjun Mehta",   city: "Bangalore", rating: 5, text: "The Nepal Origin 1 Mukhi Rudraksha is museum-quality. The energization certificate and the care in packaging shows Aroham treats each product as sacred — not just a commodity.", product: "Nepal Origin 1 Mukhi Rudraksha", init: "AM", bg: "#8B4513", likes: 24, date: "2 weeks ago" },
+  { name: "Arjun Mehta",   city: "Bangalore", rating: 5, text: "The Nepal Origin 1 Mukhi Rudraksha is museum-quality. The energization certificate and the care in packaging shows Nakshra treats each product as sacred — not just a commodity.", product: "Nepal Origin 1 Mukhi Rudraksha", init: "AM", bg: "#8B4513", likes: 24, date: "2 weeks ago" },
   { name: "Priya Sharma",  city: "Mumbai",    rating: 5, text: "Received my Citrine Sun Ring within 3 days. The packaging was exquisite and the certificate of authenticity gave me full confidence. I can feel the energy!", product: "Citrine Sun Ring", init: "PS", bg: MAROON, likes: 31, date: "1 month ago" },
   { name: "Kavya Nair",    city: "Kochi",     rating: 5, text: "Finally a platform that treats Vedic products with the reverence they deserve. Customer support was phenomenal when I had questions about placement.", product: "Pyrite Sun Ring", init: "KN", bg: "#2D5A2D", likes: 18, date: "3 weeks ago" },
   { name: "Deepak Sharma", city: "Jaipur",    rating: 5, text: "The Bagla Mukhi Yantra is incredibly well-crafted. Gold finish is perfect and the engravings are sharp. This is clearly made by expert artisans.", product: "Bagla Mukhi Yantra", init: "DS", bg: "#2D4A8B", likes: 15, date: "1 week ago" },
   { name: "Anjali Patel",  city: "Ahmedabad", rating: 4, text: "Very good quality products. Shipping was a bit delayed but the team kept me updated. Overall a trustworthy platform for authentic Vedic items.", product: "Love & Money Metal Bracelet", init: "AP", bg: "#5A3A28", likes: 9, date: "2 months ago" },
-  { name: "Vikram Nair",   city: "Kochi",     rating: 5, text: "I was sceptical about online purchase of sacred items. But Aroham changed my mind. The Pran Pratishtha certificate is a genuine differentiator.", product: "Dhan Yog Necklace", init: "VN", bg: "#3A5A3A", likes: 22, date: "5 days ago" },
+  { name: "Vikram Nair",   city: "Kochi",     rating: 5, text: "I was sceptical about online purchase of sacred items. But Nakshra changed my mind. The Pran Pratishtha certificate is a genuine differentiator.", product: "Dhan Yog Necklace", init: "VN", bg: "#3A5A3A", likes: 22, date: "5 days ago" },
 ];
 
 export const CATEGORIES = ["Yantra", "Pendant", "Crystals", "Bracelet", "Rudraksha"];

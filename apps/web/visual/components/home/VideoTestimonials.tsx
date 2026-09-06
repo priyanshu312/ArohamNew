@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Star, ChevronLeft, ChevronRight } from "lucide-react";
-import { MAROON, GOLD, SAFFRON, IVORY, SANS, SERIF } from "@aroham/shared-config/theme";
-import { VIDEO_REVIEWS, yantraPlateImg, gemstonImg, pendantSilImg } from "@aroham/shared-config/data";
+import { MAROON, GOLD, SAFFRON, IVORY, SANS, SERIF } from "@nakshra/shared-config/theme";
+import { VIDEO_REVIEWS, yantraPlateImg, gemstonImg, pendantSilImg } from "@nakshra/shared-config/data";
 import { useTranslation } from "react-i18next";
 
 const BASE_REELS = [

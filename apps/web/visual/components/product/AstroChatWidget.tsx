@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { MessageSquare, Send, X, Sparkles, ShoppingBag, ExternalLink, Video, UserCheck, RotateCcw, Copy } from "lucide-react";
-import { MAROON, GOLD, IVORY, SANS, SERIF } from "@aroham/shared-config/theme";
-import { useAuth } from "@aroham/shared-auth";
-import { useCart } from "@aroham/shared-state";
+import { MAROON, GOLD, IVORY, SANS, SERIF } from "@nakshra/shared-config/theme";
+import { useAuth } from "@nakshra/shared-auth";
+import { useCart } from "@nakshra/shared-state";
 import { useNavigate } from "react-router";
 
 interface ProductRecommendation {
@@ -34,7 +34,7 @@ export function AstroChatWidget() {
   const [showProactive, setShowProactive] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     try {
-      const saved = sessionStorage.getItem("aroham_astro_chat_history");
+      const saved = sessionStorage.getItem("Nakshra_astro_chat_history");
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -66,10 +66,10 @@ export function AstroChatWidget() {
   const [guestId, setGuestId] = useState<string>("");
 
   useEffect(() => {
-    let saved = localStorage.getItem("aroham_guest_user_id");
+    let saved = localStorage.getItem("Nakshra_guest_user_id");
     if (!saved) {
       saved = "guest_" + Math.random().toString(36).substring(2, 10);
-      localStorage.setItem("aroham_guest_user_id", saved);
+      localStorage.setItem("Nakshra_guest_user_id", saved);
     }
     setGuestId(saved);
   }, []);
@@ -77,7 +77,7 @@ export function AstroChatWidget() {
   // Save chat history to sessionStorage whenever messages change (Option 2)
   useEffect(() => {
     try {
-      sessionStorage.setItem("aroham_astro_chat_history", JSON.stringify(messages));
+      sessionStorage.setItem("Nakshra_astro_chat_history", JSON.stringify(messages));
     } catch (e) {
       console.error("Error saving chat history to sessionStorage:", e);
     }
@@ -237,7 +237,7 @@ export function AstroChatWidget() {
               </div>
               <div>
                 <h3 className="font-bold text-sm text-white" style={{ fontFamily: SERIF }}>
-                  Aroham AstroGuide
+                  Nakshra AstroGuide
                 </h3>
                 <span className="text-[9px] text-green-400 font-bold tracking-wider uppercase block">
                   Online Advisor
@@ -248,7 +248,7 @@ export function AstroChatWidget() {
               <button
                 onClick={() => {
                   setMessages([DEFAULT_WELCOME_MSG]);
-                  sessionStorage.removeItem("aroham_astro_chat_history");
+                  sessionStorage.removeItem("Nakshra_astro_chat_history");
                 }}
                 className="p-1.5 rounded-lg bg-white/5 text-white/80 hover:bg-white/20 hover:text-white transition-all"
                 title="Start Fresh"

@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { MAROON, GOLD, STATUS_ONLINE } from '../constants/theme';
 import { Astrologer } from '../types';
-import { fetchAstrologers, isAstrologerActive } from '@aroham/shared-api';
+import { fetchAstrologers, isAstrologerActive } from '@nakshra/shared-api';
 import { supabase } from '../services/supabase';
 import { AstrologerCard } from '../components/AstrologerCard';
 import { useAuth } from '../context/AuthContext';

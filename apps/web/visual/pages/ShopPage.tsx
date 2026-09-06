@@ -4,12 +4,12 @@ import {
   Star, Heart, Eye, Filter, X, ChevronRight, ChevronDown, 
   ShoppingCart, LayoutGrid, List, Sparkles, Check, Plus, Minus, RotateCcw
 } from "lucide-react";
-import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@aroham/shared-config/theme";
+import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@nakshra/shared-config/theme";
 import * as Select from "@radix-ui/react-select";
-import { CATEGORIES, PURPOSES } from "@aroham/shared-config/data";
-import { useProducts } from "@aroham/shared-hooks/useProducts";
-import { useCart } from "@aroham/shared-state";
-import { useWishlist } from "@aroham/shared-state";
+import { CATEGORIES, PURPOSES } from "@nakshra/shared-config/data";
+import { useProducts } from "@nakshra/shared-hooks/useProducts";
+import { useCart } from "@nakshra/shared-state";
+import { useWishlist } from "@nakshra/shared-state";
 
 function isSameCategory(prodCategory?: string, filterCat?: string): boolean {
   if (!prodCategory || !filterCat) return false;
@@ -40,7 +40,7 @@ export function ShopPage() {
 
   const fetchRecommendations = () => {
     const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || "http://localhost:5000";
-    const guestId = localStorage.getItem("aroham_guest_user_id") || "guest_user";
+    const guestId = localStorage.getItem("Nakshra_guest_user_id") || "guest_user";
     fetch(`${apiBase}/api/recommendations/${guestId}`)
       .then(res => res.json())
       .then(data => {

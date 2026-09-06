@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Star, Heart, ShoppingCart } from "lucide-react";
-import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@aroham/shared-config/theme";
-import { ArohamProduct } from "@aroham/shared-types/product";
-import { useWishlist } from "@aroham/shared-state";
-import { useCart } from "@aroham/shared-state";
-import { useAuth } from "@aroham/shared-auth";
+import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@nakshra/shared-config/theme";
+import { NakshraProduct } from "@nakshra/shared-types/product";
+import { useWishlist } from "@nakshra/shared-state";
+import { useCart } from "@nakshra/shared-state";
+import { useAuth } from "@nakshra/shared-auth";
 
 export interface ProductCardProps {
-  product: ArohamProduct;
-  onProductClick: (p: ArohamProduct) => void;
-  onAddToCart?: (p: ArohamProduct) => void;
+  product: NakshraProduct;
+  onProductClick: (p: NakshraProduct) => void;
+  onAddToCart?: (p: NakshraProduct) => void;
   wishKey?: string;
   wished?: boolean;
   onToggleWish?: (key: string, e: React.MouseEvent) => void;

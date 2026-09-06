@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput, Image,
 import { MAROON, GOLD } from '../constants/theme';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../services/supabase';
-import { useProducts } from '@aroham/shared-hooks/useProducts';
+import { useProducts } from '@nakshra/shared-hooks/useProducts';
 
 type MainTab = 'overview' | 'workstation' | 'wallet' | 'reviews' | 'remedies' | 'profile';
 

@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { ChevronLeft, User, Package, Truck, CheckCircle, Edit2, Save, X, Calendar, ChevronDown, MapPin, Trash2, Plus, LogOut } from "lucide-react";
-import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@aroham/shared-config/theme";
-import { useAuth } from "@aroham/shared-auth";
-import { api } from "@aroham/shared-api";
+import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@nakshra/shared-config/theme";
+import { useAuth } from "@nakshra/shared-auth";
+import { api } from "@nakshra/shared-api";
 import * as Select from "@radix-ui/react-select";
 import * as Popover from "@radix-ui/react-popover";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
-import { supabase } from "@aroham/shared-services";
-import { db } from "@aroham/shared-services";
+import { supabase } from "@nakshra/shared-services";
+import { db } from "@nakshra/shared-services";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { INDIA_STATES } from "@aroham/shared-config/data";
+import { INDIA_STATES } from "@nakshra/shared-config/data";
 
 const ORDER_STEPS = [
   { label: "Ordered", icon: "✓" },
@@ -90,14 +90,14 @@ export function ProfilePage() {
       // 1. Check local storage
       try {
         if (user?.id) {
-          const uStr = localStorage.getItem(`aroham_user_addresses_${user.id}`);
+          const uStr = localStorage.getItem(`Nakshra_user_addresses_${user.id}`);
           if (uStr) {
             const parsed = JSON.parse(uStr);
             if (Array.isArray(parsed) && parsed.length > 0) combined = [...parsed];
           }
         } else {
           // Only load guest list if not logged in
-          const gStr = localStorage.getItem("aroham_saved_addresses_list");
+          const gStr = localStorage.getItem("Nakshra_saved_addresses_list");
           if (gStr) {
             const parsed = JSON.parse(gStr);
             if (Array.isArray(parsed) && parsed.length > 0) combined = [...parsed];
@@ -197,9 +197,9 @@ export function ProfilePage() {
         setProfileAddresses(combined);
         try {
           if (user?.id) {
-            localStorage.setItem(`aroham_user_addresses_${user.id}`, JSON.stringify(combined));
+            localStorage.setItem(`Nakshra_user_addresses_${user.id}`, JSON.stringify(combined));
           } else {
-            localStorage.setItem("aroham_saved_addresses_list", JSON.stringify(combined));
+            localStorage.setItem("Nakshra_saved_addresses_list", JSON.stringify(combined));
           }
         } catch (e) {}
       } else {
@@ -274,9 +274,9 @@ export function ProfilePage() {
     const newList = [newAddrObj, ...updatedList];
     setProfileAddresses(newList);
     if (user?.id) {
-      try { localStorage.setItem(`aroham_user_addresses_${user.id}`, JSON.stringify(newList)); } catch (e) {}
+      try { localStorage.setItem(`Nakshra_user_addresses_${user.id}`, JSON.stringify(newList)); } catch (e) {}
     } else {
-      try { localStorage.setItem("aroham_saved_addresses_list", JSON.stringify(newList)); } catch (e) {}
+      try { localStorage.setItem("Nakshra_saved_addresses_list", JSON.stringify(newList)); } catch (e) {}
     }
     setShowAddrForm(false);
     setEditingAddrId(null);
@@ -344,10 +344,10 @@ export function ProfilePage() {
     const newList = profileAddresses.filter(a => String(a.id) !== String(id));
     setProfileAddresses(newList);
     if (user?.id) {
-      try { localStorage.setItem(`aroham_user_addresses_${user.id}`, JSON.stringify(newList)); } catch (e) {}
+      try { localStorage.setItem(`Nakshra_user_addresses_${user.id}`, JSON.stringify(newList)); } catch (e) {}
       Promise.resolve(supabase.from("addresses").delete().eq("id", id)).catch(() => {});
     } else {
-      try { localStorage.setItem("aroham_saved_addresses_list", JSON.stringify(newList)); } catch (e) {}
+      try { localStorage.setItem("Nakshra_saved_addresses_list", JSON.stringify(newList)); } catch (e) {}
     }
   };
 
@@ -359,7 +359,7 @@ export function ProfilePage() {
     if (!confirm(`Are you sure you want to cancel Order #${orderId}?`)) return;
 
     // 1. Save CANCELLED status persistently in localStorage
-    localStorage.setItem(`aroham_order_status_${orderId}`, "CANCELLED");
+    localStorage.setItem(`Nakshra_order_status_${orderId}`, "CANCELLED");
 
     try {
       if (user?.id) {
@@ -381,7 +381,7 @@ export function ProfilePage() {
 
   // Fetch real profile from DB
   useEffect(() => {
-    const cachedProfile = sessionStorage.getItem("aroham_user_profile");
+    const cachedProfile = sessionStorage.getItem("Nakshra_user_profile");
     if (cachedProfile) {
       try {
         const parsed = JSON.parse(cachedProfile);
@@ -397,7 +397,7 @@ export function ProfilePage() {
           if (data && !error) {
             setProfile(data);
             initEditForm(data);
-            sessionStorage.setItem("aroham_user_profile", JSON.stringify(data));
+            sessionStorage.setItem("Nakshra_user_profile", JSON.stringify(data));
           }
         })
         .catch(console.error)
@@ -466,7 +466,7 @@ export function ProfilePage() {
 
         // 2. Fetch from user-specific local storage
         if (user?.id) {
-          const userOrdersKey = `aroham_user_orders_${user.id}`;
+          const userOrdersKey = `Nakshra_user_orders_${user.id}`;
           const localUserOrdersStr = localStorage.getItem(userOrdersKey);
           if (localUserOrdersStr) {
             try {
@@ -482,7 +482,7 @@ export function ProfilePage() {
 
         // 2b. Fetch from phone-keyed localStorage (survives user ID changes across sessions)
         if (userPhone) {
-          const phoneOrdersStr = localStorage.getItem(`aroham_phone_orders_${userPhone}`);
+          const phoneOrdersStr = localStorage.getItem(`Nakshra_phone_orders_${userPhone}`);
           if (phoneOrdersStr) {
             try {
               const parsedPhone = JSON.parse(phoneOrdersStr);
@@ -496,7 +496,7 @@ export function ProfilePage() {
         }
 
         // 3. Fetch from guest local storage fallback
-        const guestOrdersStr = localStorage.getItem("aroham_guest_orders");
+        const guestOrdersStr = localStorage.getItem("Nakshra_guest_orders");
         if (guestOrdersStr) {
           try {
             const parsedGuest = JSON.parse(guestOrdersStr);
@@ -518,14 +518,14 @@ export function ProfilePage() {
         }
 
         // 4. Fetch from recent session order fallback (guests only)
-        const localOrderId = sessionStorage.getItem("aroham_last_order_id");
-        const localItemsStr = sessionStorage.getItem("aroham_last_order_items");
-        const localTotalStr = sessionStorage.getItem("aroham_order_total");
+        const localOrderId = sessionStorage.getItem("Nakshra_last_order_id");
+        const localItemsStr = sessionStorage.getItem("Nakshra_last_order_items");
+        const localTotalStr = sessionStorage.getItem("Nakshra_order_total");
 
         if (!user?.id && localOrderId && localItemsStr && !fetchedOrders.some(o => String(o.id) === String(localOrderId))) {
           try {
             const parsedItems = JSON.parse(localItemsStr);
-            const savedStatus = localStorage.getItem(`aroham_order_status_${localOrderId}`) || "Processing";
+            const savedStatus = localStorage.getItem(`Nakshra_order_status_${localOrderId}`) || "Processing";
             
             fetchedOrders.unshift({
               id: localOrderId,
@@ -545,7 +545,7 @@ export function ProfilePage() {
 
         // Apply saved status overrides from localStorage for all orders
         fetchedOrders = fetchedOrders.map(o => {
-          const overrideStatus = localStorage.getItem(`aroham_order_status_${o.id}`);
+          const overrideStatus = localStorage.getItem(`Nakshra_order_status_${o.id}`);
           return overrideStatus ? { ...o, status: overrideStatus } : o;
         });
 
@@ -555,14 +555,14 @@ export function ProfilePage() {
         // Cache merged orders into user's localStorage
         if (user?.id && fetchedOrders.length > 0) {
           try {
-            localStorage.setItem(`aroham_user_orders_${user.id}`, JSON.stringify(fetchedOrders));
+            localStorage.setItem(`Nakshra_user_orders_${user.id}`, JSON.stringify(fetchedOrders));
           } catch (e) {}
         }
 
         // Also cache into phone-keyed localStorage for cross-session persistence
         if (userPhone && fetchedOrders.length > 0) {
           try {
-            localStorage.setItem(`aroham_phone_orders_${userPhone}`, JSON.stringify(fetchedOrders));
+            localStorage.setItem(`Nakshra_phone_orders_${userPhone}`, JSON.stringify(fetchedOrders));
           } catch (e) {}
         }
 
@@ -614,10 +614,10 @@ export function ProfilePage() {
       };
 
       // 1. Instant save to Session Storage & Local Storage
-      sessionStorage.setItem("aroham_user_profile", JSON.stringify(profileData));
+      sessionStorage.setItem("Nakshra_user_profile", JSON.stringify(profileData));
       if (editForm.phone) {
         const phoneDigits = editForm.phone.replace(/\D/g, "");
-        localStorage.setItem(`aroham_registered_user_phone_${phoneDigits}`, JSON.stringify(profileData));
+        localStorage.setItem(`Nakshra_registered_user_phone_${phoneDigits}`, JSON.stringify(profileData));
       }
 
       // Update UI profile state & finish saving instantly

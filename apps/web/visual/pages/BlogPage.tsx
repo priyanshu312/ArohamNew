@@ -4,7 +4,7 @@ import { BlogSidebar } from "@visual/components/blog/BlogSidebar";
 import { BlogCard } from "@visual/components/blog/BlogCard";
 import { BlogDetailModal } from "@visual/components/blog/BlogDetailModal";
 import { BLOG_POSTS, BlogPost } from "@visual/data/blogData";
-import { MAROON, SERIF } from "@aroham/shared-config/theme";
+import { MAROON, SERIF } from "@nakshra/shared-config/theme";
 
 const CATEGORIES = ["All", "Vedic Astrology", "Rudraksha Remedies", "Gemstones", "Vastu Wisdom", "Rituals & Pujas"];
 
@@ -29,7 +29,7 @@ export function BlogPage() {
         {/* Page Title Header */}
         <div className="mb-8 border-b border-stone-200/60 pb-6">
           <h1 style={{ fontFamily: SERIF, color: MAROON }} className="text-3xl md:text-4xl font-bold">
-            Aroham Astrology & Sacred Wisdom Blog
+            Nakshra Astrology & Sacred Wisdom Blog
           </h1>
           <p className="text-sm text-stone-500 mt-1">
             Explore authentic Vedic insights, Rudraksha remedies, Gemstone recommendations, and Vastu principles.

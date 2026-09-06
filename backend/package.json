@@ -1,7 +1,7 @@
 {
-  "name": "aroham-backend",
+  "name": "Nakshra-backend",
   "version": "1.0.0",
-  "description": "Aroham order management backend (Express + Supabase + Razorpay)",
+  "description": "Nakshra order management backend (Express + Supabase + Razorpay)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

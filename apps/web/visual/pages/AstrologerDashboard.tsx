@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
-import { supabase } from "@aroham/shared-services";
-import { MAROON, GOLD, IVORY, SANS, SERIF } from "@aroham/shared-config/theme";
-import { useAuth } from "@aroham/shared-auth";
-import { useProducts } from "@aroham/shared-hooks/useProducts";
-import { generateUUID } from "@aroham/shared-utils/uuid";
+import { supabase } from "@nakshra/shared-services";
+import { MAROON, GOLD, IVORY, SANS, SERIF } from "@nakshra/shared-config/theme";
+import { useAuth } from "@nakshra/shared-auth";
+import { useProducts } from "@nakshra/shared-hooks/useProducts";
+import { generateUUID } from "@nakshra/shared-utils/uuid";
 import { AstrologerOnboardingWizard } from "../components/astrologer/AstrologerOnboardingWizard";
 import { AstrologerOnboardingStatus } from "../components/astrologer/AstrologerOnboardingStatus";
 import {
@@ -66,7 +66,7 @@ export function AstrologerDashboard() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
-  const mockStrForId = localStorage.getItem("aroham_mock_session");
+  const mockStrForId = localStorage.getItem("Nakshra_mock_session");
   const currentUserObj = user || (mockStrForId ? JSON.parse(mockStrForId) : null);
   // Use a valid UUID syntax fallback instead of 'astro-1' to prevent Postgres syntax errors when executing queries.
   const currentAstroId = currentUserObj?.id || "00000000-0000-0000-0000-000000000001";
@@ -76,7 +76,7 @@ export function AstrologerDashboard() {
     const ids = new Set<string>();
     ids.add(currentAstroId);
     try {
-      const mockStr = localStorage.getItem("aroham_mock_session");
+      const mockStr = localStorage.getItem("Nakshra_mock_session");
       if (mockStr) {
         const mock = JSON.parse(mockStr);
         if (mock?.id) ids.add(mock.id);
@@ -98,7 +98,7 @@ export function AstrologerDashboard() {
 
   const [workingHours, setWorkingHours] = useState(() => {
     try {
-      const cached = localStorage.getItem(`aroham_astro_working_hours_${currentAstroId}`);
+      const cached = localStorage.getItem(`Nakshra_astro_working_hours_${currentAstroId}`);
       return cached ? JSON.parse(cached) : { enabled: false, start: "09:00", end: "22:00" };
     } catch (e) {
       return { enabled: false, start: "09:00", end: "22:00" };
@@ -209,7 +209,7 @@ export function AstrologerDashboard() {
 
     const finalAstroId = matchedAstro?.id || generateUUID();
     const finalAstroName = matchedAstro?.full_name || matchedAstro?.name || "Acharya Devrat Sharma";
-    const finalEmail = matchedAstro?.email || `astrologer_${phoneDigits.slice(-4)}@aroham.com`;
+    const finalEmail = matchedAstro?.email || `astrologer_${phoneDigits.slice(-4)}@Nakshra.com`;
 
     const astroUser = {
       id: finalAstroId,
@@ -244,9 +244,9 @@ export function AstrologerDashboard() {
     }
 
     try {
-      localStorage.removeItem("aroham_astro_onboarding_app_current");
-      localStorage.setItem("aroham_mock_session", JSON.stringify(astroUser));
-      localStorage.setItem("aroham_accepted_session_ids", JSON.stringify([]));
+      localStorage.removeItem("Nakshra_astro_onboarding_app_current");
+      localStorage.setItem("Nakshra_mock_session", JSON.stringify(astroUser));
+      localStorage.setItem("Nakshra_accepted_session_ids", JSON.stringify([]));
       window.dispatchEvent(new Event("storage"));
     } catch (e) {}
 
@@ -258,7 +258,7 @@ export function AstrologerDashboard() {
 
   const [profile, setProfile] = useState({
     name: user?.user_metadata?.full_name || "Acharya Astrologer",
-    email: user?.email || "acharya.vedic@aroham.com",
+    email: user?.email || "acharya.vedic@Nakshra.com",
     phone: user?.user_metadata?.phone || "9876543210",
     dob: "1988-06-15",
     title: "Senior Vedic Jyotish & Prashna Kundali Master",
@@ -275,8 +275,8 @@ export function AstrologerDashboard() {
 
   const [onboardingApp, setOnboardingApp] = useState<any>(() => {
     try {
-      const stored = localStorage.getItem(`aroham_astro_onboarding_app_${currentAstroId}`) ||
-                     localStorage.getItem("aroham_astro_onboarding_app_current");
+      const stored = localStorage.getItem(`Nakshra_astro_onboarding_app_${currentAstroId}`) ||
+                     localStorage.getItem("Nakshra_astro_onboarding_app_current");
       return stored ? JSON.parse(stored) : null;
     } catch (e) {
       return null;
@@ -284,7 +284,7 @@ export function AstrologerDashboard() {
   });
   const [bypassedOnboarding, setBypassedOnboarding] = useState(() => {
     try {
-      const stored = localStorage.getItem(`aroham_astro_wizard_done_${currentAstroId}`);
+      const stored = localStorage.getItem(`Nakshra_astro_wizard_done_${currentAstroId}`);
       return stored === "true";
     } catch (e) {
       return false;
@@ -301,7 +301,7 @@ export function AstrologerDashboard() {
           const data = await res.json();
           if (data.application) {
             setOnboardingApp(data.application);
-            localStorage.setItem(`aroham_astro_onboarding_app_${currentAstroId}`, JSON.stringify(data.application));
+            localStorage.setItem(`Nakshra_astro_onboarding_app_${currentAstroId}`, JSON.stringify(data.application));
           }
         }
       } catch (e) {}
@@ -313,7 +313,7 @@ export function AstrologerDashboard() {
   }, [currentAstroId]);
 
   useEffect(() => {
-    const wizardDone = localStorage.getItem(`aroham_astro_wizard_done_${currentAstroId}`);
+    const wizardDone = localStorage.getItem(`Nakshra_astro_wizard_done_${currentAstroId}`);
     if (wizardDone) {
       setShowProfileWizard(false);
       return;
@@ -325,7 +325,7 @@ export function AstrologerDashboard() {
 
   const [acceptedSessionIds, setAcceptedSessionIds] = useState<Set<string>>(() => {
     try {
-      const stored = localStorage.getItem("aroham_accepted_session_ids");
+      const stored = localStorage.getItem("Nakshra_accepted_session_ids");
       return stored ? new Set(JSON.parse(stored)) : new Set();
     } catch (e) {
       return new Set();
@@ -360,7 +360,7 @@ export function AstrologerDashboard() {
     };
 
     try {
-      const existing = JSON.parse(localStorage.getItem("aroham_registered_astrologers") || "[]");
+      const existing = JSON.parse(localStorage.getItem("Nakshra_registered_astrologers") || "[]");
       const idx = existing.findIndex((a: any) => a.id === currentAstroId);
       let updated = [...existing];
       if (idx !== -1) {
@@ -368,7 +368,7 @@ export function AstrologerDashboard() {
       } else {
         updated.unshift(formattedObj);
       }
-      localStorage.setItem("aroham_registered_astrologers", JSON.stringify(updated));
+      localStorage.setItem("Nakshra_registered_astrologers", JSON.stringify(updated));
       window.dispatchEvent(new Event("storage"));
     } catch (e) {}
 
@@ -395,7 +395,7 @@ export function AstrologerDashboard() {
   useEffect(() => {
     let mockSession: any = null;
     try {
-      const stored = localStorage.getItem("aroham_mock_session");
+      const stored = localStorage.getItem("Nakshra_mock_session");
       if (stored) mockSession = JSON.parse(stored);
     } catch (e) {}
 
@@ -415,13 +415,13 @@ export function AstrologerDashboard() {
 
     let currentP = { ...profile };
     try {
-      const cached = localStorage.getItem(`aroham_astro_profile_${astroId}`);
+      const cached = localStorage.getItem(`Nakshra_astro_profile_${astroId}`);
       if (cached) {
         const parsed = JSON.parse(cached);
         currentP = { ...currentP, ...parsed };
         setProfile(currentP);
         if (currentP.bio && currentP.bio !== "PENDING_WIZARD_COMPLETION" && currentP.bio.trim() !== "") {
-          localStorage.setItem(`aroham_astro_wizard_done_${astroId}`, "true");
+          localStorage.setItem(`Nakshra_astro_wizard_done_${astroId}`, "true");
           setShowProfileWizard(false);
         }
       }
@@ -452,17 +452,17 @@ export function AstrologerDashboard() {
           };
           
           setProfile(dbProfile);
-          localStorage.setItem(`aroham_astro_profile_${astroId}`, JSON.stringify(dbProfile));
+          localStorage.setItem(`Nakshra_astro_profile_${astroId}`, JSON.stringify(dbProfile));
           if (data.working_hours) {
             setWorkingHours({
               enabled: data.working_hours.enabled ?? false,
               start: data.working_hours.start || "09:00",
               end: data.working_hours.end || "22:00"
             });
-            localStorage.setItem(`aroham_astro_working_hours_${astroId}`, JSON.stringify(data.working_hours));
+            localStorage.setItem(`Nakshra_astro_working_hours_${astroId}`, JSON.stringify(data.working_hours));
           }
           if (dbProfile.bio && dbProfile.bio !== "PENDING_WIZARD_COMPLETION" && dbProfile.bio.trim() !== "") {
-            localStorage.setItem(`aroham_astro_wizard_done_${astroId}`, "true");
+            localStorage.setItem(`Nakshra_astro_wizard_done_${astroId}`, "true");
             setShowProfileWizard(false);
           }
         } else {
@@ -583,7 +583,7 @@ export function AstrologerDashboard() {
 
     const syncSeekerTypingStorage = () => {
       try {
-        const lastTyping = localStorage.getItem(`aroham_typing_${activeSession.id}_user`);
+        const lastTyping = localStorage.getItem(`Nakshra_typing_${activeSession.id}_user`);
         if (lastTyping && Date.now() - Number(lastTyping) < 3000) {
           setIsSeekerTyping(true);
           if (seekerTypingTimerRef.current) clearTimeout(seekerTypingTimerRef.current);
@@ -608,7 +608,7 @@ export function AstrologerDashboard() {
     if (!activeSession?.id) return;
 
     try {
-      localStorage.setItem(`aroham_typing_${activeSession.id}_astrologer`, String(Date.now()));
+      localStorage.setItem(`Nakshra_typing_${activeSession.id}_astrologer`, String(Date.now()));
       window.dispatchEvent(new Event("storage"));
     } catch (e) {}
 
@@ -694,12 +694,12 @@ export function AstrologerDashboard() {
   const handleLogout = async () => {
     await broadcastStatus(false);
     try {
-      localStorage.removeItem("aroham_astro_onboarding_app_current");
-      localStorage.removeItem("aroham_mock_session");
-      localStorage.removeItem(`aroham_astro_onboarding_app_${currentAstroId}`);
-      localStorage.removeItem(`aroham_astro_profile_${currentAstroId}`);
-      localStorage.removeItem(`aroham_astro_working_hours_${currentAstroId}`);
-      localStorage.removeItem(`aroham_astro_wizard_done_${currentAstroId}`);
+      localStorage.removeItem("Nakshra_astro_onboarding_app_current");
+      localStorage.removeItem("Nakshra_mock_session");
+      localStorage.removeItem(`Nakshra_astro_onboarding_app_${currentAstroId}`);
+      localStorage.removeItem(`Nakshra_astro_profile_${currentAstroId}`);
+      localStorage.removeItem(`Nakshra_astro_working_hours_${currentAstroId}`);
+      localStorage.removeItem(`Nakshra_astro_wizard_done_${currentAstroId}`);
       await logout();
     } catch (e) {}
     navigate("/auth?role=astrologer");
@@ -715,7 +715,7 @@ export function AstrologerDashboard() {
 
   const broadcastStatus = async (statusBool: boolean) => {
     try {
-      const existing = JSON.parse(localStorage.getItem("aroham_registered_astrologers") || "[]");
+      const existing = JSON.parse(localStorage.getItem("Nakshra_registered_astrologers") || "[]");
       if (Array.isArray(existing) && existing.length > 0) {
         const updated = existing.map((a: any) => {
           if (a.id === currentAstroId || !user?.id) {
@@ -723,10 +723,10 @@ export function AstrologerDashboard() {
           }
           return a;
         });
-        localStorage.setItem("aroham_registered_astrologers", JSON.stringify(updated));
+        localStorage.setItem("Nakshra_registered_astrologers", JSON.stringify(updated));
       }
 
-      localStorage.setItem("aroham_global_online_status", JSON.stringify({
+      localStorage.setItem("Nakshra_global_online_status", JSON.stringify({
         userId: currentAstroId,
         isOnline: statusBool,
         timestamp: Date.now()
@@ -756,7 +756,7 @@ export function AstrologerDashboard() {
     } catch (e) {}
 
     try {
-      const latestLocal = localStorage.getItem("aroham_latest_live_session");
+      const latestLocal = localStorage.getItem("Nakshra_latest_live_session");
       if (latestLocal) {
         const parsed = JSON.parse(latestLocal);
         if (allIds.includes(parsed.astrologer_id) || !parsed.astrologer_id) {
@@ -842,9 +842,9 @@ export function AstrologerDashboard() {
         updatedProfile.bio = "Certified Vedic Astrologer guiding seekers with sacred remedies, Kundali readings, and traditional wisdom.";
       }
       setProfile(updatedProfile);
-      localStorage.setItem(`aroham_astro_profile_${currentAstroId}`, JSON.stringify(updatedProfile));
-      localStorage.setItem(`aroham_astro_working_hours_${currentAstroId}`, JSON.stringify(workingHours));
-      localStorage.setItem(`aroham_astro_wizard_done_${currentAstroId}`, "true");
+      localStorage.setItem(`Nakshra_astro_profile_${currentAstroId}`, JSON.stringify(updatedProfile));
+      localStorage.setItem(`Nakshra_astro_working_hours_${currentAstroId}`, JSON.stringify(workingHours));
+      localStorage.setItem(`Nakshra_astro_wizard_done_${currentAstroId}`, "true");
       await syncProfileToDBAndLocal(updatedProfile);
     } catch (e) {}
 
@@ -857,8 +857,8 @@ export function AstrologerDashboard() {
     updatedSet.add(s.id);
     setAcceptedSessionIds(updatedSet);
     try {
-      localStorage.setItem("aroham_accepted_session_ids", JSON.stringify(Array.from(updatedSet)));
-      localStorage.setItem(`aroham_session_start_time_${s.id}`, Date.now().toString());
+      localStorage.setItem("Nakshra_accepted_session_ids", JSON.stringify(Array.from(updatedSet)));
+      localStorage.setItem(`Nakshra_session_start_time_${s.id}`, Date.now().toString());
     } catch (e) {}
 
     const activeObj = { ...s, status: "active" };
@@ -868,12 +868,12 @@ export function AstrologerDashboard() {
     setSessions(prev => prev.map(item => item.id === s.id ? { ...item, status: "active" } : item));
 
     try {
-      const latestLocal = localStorage.getItem("aroham_latest_live_session");
+      const latestLocal = localStorage.getItem("Nakshra_latest_live_session");
       if (latestLocal) {
         const parsed = JSON.parse(latestLocal);
         if (parsed.id === s.id) {
           parsed.status = "active";
-          localStorage.setItem("aroham_latest_live_session", JSON.stringify(parsed));
+          localStorage.setItem("Nakshra_latest_live_session", JSON.stringify(parsed));
           window.dispatchEvent(new Event("storage"));
         }
       }
@@ -920,7 +920,7 @@ export function AstrologerDashboard() {
     } catch (e) {}
 
     try {
-      const localMsgs = JSON.parse(localStorage.getItem(`aroham_live_chat_${sessionId}`) || "[]");
+      const localMsgs = JSON.parse(localStorage.getItem(`Nakshra_live_chat_${sessionId}`) || "[]");
       if (Array.isArray(localMsgs) && localMsgs.length > 0) {
         const filteredLocal = localMsgs.filter(lm => lm.text !== "Namaste! Astrologer will join your chat soon.");
         filteredLocal.forEach(lm => {
@@ -964,7 +964,7 @@ export function AstrologerDashboard() {
     } catch (e) {}
 
     try {
-      const existingKey = `aroham_live_chat_${activeSession.id}`;
+      const existingKey = `Nakshra_live_chat_${activeSession.id}`;
       const existing = JSON.parse(localStorage.getItem(existingKey) || "[]");
       const updated = [...existing, newMsg];
       localStorage.setItem(existingKey, JSON.stringify(updated));
@@ -976,7 +976,7 @@ export function AstrologerDashboard() {
     if (!activeSession) return;
 
     const endedAt = new Date().toISOString();
-    const sessionStartStr = localStorage.getItem(`aroham_session_start_time_${activeSession.id}`);
+    const sessionStartStr = localStorage.getItem(`Nakshra_session_start_time_${activeSession.id}`);
     const startTime = sessionStartStr ? parseInt(sessionStartStr) : new Date(activeSession.created_at || Date.now()).getTime();
     const endTime = Date.now();
     const durationMins = Math.max(1, Math.round((endTime - startTime) / (1000 * 60)));
@@ -1020,14 +1020,14 @@ export function AstrologerDashboard() {
     } catch {}
 
     try {
-      localStorage.removeItem(`aroham_session_start_time_${activeSession.id}`);
+      localStorage.removeItem(`Nakshra_session_start_time_${activeSession.id}`);
     } catch (e) {}
 
     setAcceptedSessionIds(prev => {
       const copy = new Set(prev);
       copy.delete(activeSession.id);
       try {
-        localStorage.setItem("aroham_accepted_session_ids", JSON.stringify(Array.from(copy)));
+        localStorage.setItem("Nakshra_accepted_session_ids", JSON.stringify(Array.from(copy)));
       } catch (e) {}
       return copy;
     });
@@ -1048,7 +1048,7 @@ export function AstrologerDashboard() {
   const pendingCount = sessions.filter(s => s.status === "pending" && !acceptedSessionIds.has(s.id)).length;
   const pendingSession = sessions.find(s => s.status === "pending" && !acceptedSessionIds.has(s.id));
 
-  const mockStr = localStorage.getItem("aroham_mock_session");
+  const mockStr = localStorage.getItem("Nakshra_mock_session");
   const currentUser = user || (mockStr ? JSON.parse(mockStr) : null);
 
   if (!currentUser) {
@@ -1062,7 +1062,7 @@ export function AstrologerDashboard() {
             <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase bg-amber-100 text-amber-800 border border-amber-300">
               Verified Scholar Access
             </span>
-            <h1 className="text-2xl font-extrabold text-[#5B1F24] mt-2" style={{ fontFamily: SERIF }}>Aroham Scholar Portal</h1>
+            <h1 className="text-2xl font-extrabold text-[#5B1F24] mt-2" style={{ fontFamily: SERIF }}>Nakshra Scholar Portal</h1>
             <p className="text-xs text-amber-900/60 mt-1 font-medium">Sign in with your registered phone number to manage your consultation workstation.</p>
           </div>
 
@@ -1148,7 +1148,7 @@ export function AstrologerDashboard() {
         application={onboardingApp}
         onEnterDashboard={() => {
           try {
-            localStorage.setItem(`aroham_astro_wizard_done_${currentAstroId}`, "true");
+            localStorage.setItem(`Nakshra_astro_wizard_done_${currentAstroId}`, "true");
           } catch (e) {}
           setBypassedOnboarding(true);
         }}
@@ -1263,7 +1263,7 @@ export function AstrologerDashboard() {
 
           <div className="hidden lg:block pt-4 border-t border-amber-900/15 mt-6 space-y-3">
             <div className="p-3.5 rounded-2xl bg-white border border-amber-900/10 text-xs shadow-xs">
-              <p className="text-xs font-bold text-[#5B1F24] mb-1" style={{ fontFamily: SERIF }}>Aroham Scholar Helpline</p>
+              <p className="text-xs font-bold text-[#5B1F24] mb-1" style={{ fontFamily: SERIF }}>Nakshra Scholar Helpline</p>
               <p className="text-[10px] text-amber-900/70 leading-relaxed">Dedicated Astrologer support available 24x7.</p>
             </div>
           </div>

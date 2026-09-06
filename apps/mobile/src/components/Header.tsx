@@ -24,7 +24,7 @@ export const Header: React.FC<HeaderProps> = ({
           <View style={styles.logoDisc}>
             <Text style={styles.logoOm}>ॐ</Text>
           </View>
-          <Text style={styles.title}>Aroham</Text>
+          <Text style={styles.title}>Nakshra</Text>
         </View>
 
         <View style={styles.right}>

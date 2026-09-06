@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { GOLD, MAROON, SERIF } from "@aroham/shared-config/theme";
+import { GOLD, MAROON, SERIF } from "@nakshra/shared-config/theme";
 
 export function OtpBoxes({ value, onChange, onComplete }: { value:string[]; onChange:(v:string[])=>void; onComplete?:(fullCode:string)=>void; }) {
   const r0=useRef<HTMLInputElement>(null),r1=useRef<HTMLInputElement>(null),

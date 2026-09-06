@@ -1,8 +1,8 @@
-import { MAROON, GOLD, SERIF, SANS, IVORY } from "@aroham/shared-config/theme";
+import { MAROON, GOLD, SERIF, SANS, IVORY } from "@nakshra/shared-config/theme";
 import { FloatingInput } from "@visual/components/auth/FloatingInput";
 import { useState } from "react";
 import { Mail, MapPin, Phone, Loader2 } from "lucide-react";
-import { supabase } from "@aroham/shared-services";
+import { supabase } from "@nakshra/shared-services";
 import { useTranslation } from "react-i18next";
 
 export function ContactUsPage() {
@@ -80,7 +80,7 @@ export function ContactUsPage() {
                   <div>
                     <div className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: "#9A8A78" }}>Spiritual Center</div>
                     <div className="text-sm font-medium leading-relaxed" style={{ color: MAROON }}>
-                      Aroham Vedic Center<br/>
+                      Nakshra Vedic Center<br/>
                       Varanasi, Uttar Pradesh, India
                     </div>
                   </div>

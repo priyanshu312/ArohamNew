@@ -1,8 +1,8 @@
-You are an award-winning Senior Product Designer and Creative Director designing the Authentication experience for **Aroham**, India's premium Vedic Astrology & Vastu platform.
+You are an award-winning Senior Product Designer and Creative Director designing the Authentication experience for **Nakshra**, India's premium Vedic Astrology & Vastu platform.
 
 This is NOT a generic ecommerce login page.
 
-It is the first experience users have after exploring the Aroham website, and it should immediately communicate trust, authenticity, premium quality, and the beginning of a meaningful spiritual journey.
+It is the first experience users have after exploring the Nakshra website, and it should immediately communicate trust, authenticity, premium quality, and the beginning of a meaningful spiritual journey.
 
 The Authentication experience should feel comparable to the onboarding experience of Apple, Airbnb, CRED, Notion, Stripe, Rituals, Aesop, and Forest Essentials.
 
@@ -18,9 +18,9 @@ The design should feel calm, luxurious, editorial, modern, and deeply trustworth
 
 ──────────────────────────────
 
-ABOUT AROHAM
+ABOUT Nakshra
 
-Aroham is building India's most trusted ecosystem for Vedic Astrology and Vastu.
+Nakshra is building India's most trusted ecosystem for Vedic Astrology and Vastu.
 
 The current platform offers authentic Vastu products.
 
@@ -114,7 +114,7 @@ HEADER
 
 Top Left
 
-Aroham Logo
+Nakshra Logo
 
 Top Right
 
@@ -148,7 +148,7 @@ Small Logo
 
 Heading
 
-Welcome to Aroham
+Welcome to Nakshra
 
 Subheading
 
@@ -226,7 +226,7 @@ Begin Your Spiritual Journey
 
 Subheading
 
-Create your secure Aroham account.
+Create your secure Nakshra account.
 
 Fields
 
@@ -310,7 +310,7 @@ Beautiful gold circular checkmark animation.
 
 Heading
 
-Welcome to Aroham
+Welcome to Nakshra
 
 Subheading
 
@@ -402,7 +402,7 @@ Below this display a floating testimonial.
 
 ★★★★★
 
-"Aroham has become my trusted destination for authentic Vedic guidance."
+"Nakshra has become my trusted destination for authentic Vedic guidance."
 
 Customer Photo
 
@@ -490,7 +490,7 @@ Securing Your Sacred Journey
 
 Subheading
 
-We're verifying your phone number to ensure every member of the Aroham community enjoys a secure and trusted experience.
+We're verifying your phone number to ensure every member of the Nakshra community enjoys a secure and trusted experience.
 
 Display reassurance cards.
 
@@ -518,7 +518,7 @@ Premium editorial artwork.
 
 Headline
 
-Welcome to Aroham
+Welcome to Nakshra
 
 Subheading
 
@@ -698,4 +698,4 @@ When users reach this page they should immediately think:
 
 "This experience is calm, modern and beautifully designed."
 
-Deliver a production-ready, pixel-perfect authentication experience with exceptional visual hierarchy, editorial typography, premium components, responsive layouts, elegant micro-interactions, and complete consistency with the rest of the Aroham design system.
+Deliver a production-ready, pixel-perfect authentication experience with exceptional visual hierarchy, editorial typography, premium components, responsive layouts, elegant micro-interactions, and complete consistency with the rest of the Nakshra design system.

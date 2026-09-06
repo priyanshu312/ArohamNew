@@ -81,7 +81,7 @@ router.post("/test-order", async (req, res) => {
         pincode: addr.pincode || "110001",
         state: addr.state || "Delhi",
         phone: addr.phone || "9999999999",
-        email: addr.email || "test@aroham.in",
+        email: addr.email || "test@Nakshra.in",
         sub_total: order.amount ? (order.amount / 100) : 100,
         items: (items || []).map(i => ({
           name: i.name || "Sacred Item",
@@ -96,13 +96,13 @@ router.post("/test-order", async (req, res) => {
       // Dummy test order
       orderData = {
         order_id: `TEST-${Date.now()}`,
-        customer_name: "Aroham Test Customer",
+        customer_name: "Nakshra Test Customer",
         address: "123 Sacred Ghats Road",
         city: "Varanasi",
         pincode: "221001",
         state: "Uttar Pradesh",
         phone: "9999999999",
-        email: "test@aroham.in",
+        email: "test@Nakshra.in",
         sub_total: 599,
         items: [{ name: "5 Mukhi Nepal Rudraksha", sku: "SKU-TEST-1", units: 1, selling_price: 599 }]
       };

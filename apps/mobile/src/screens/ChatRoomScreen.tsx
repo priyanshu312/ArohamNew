@@ -3,11 +3,11 @@ import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   StyleSheet, KeyboardAvoidingView, Platform, Image, ActivityIndicator, Alert
 } from 'react-native';
-import { Astrologer, Message, ArohamProduct } from '../types';
+import { Astrologer, Message, NakshraProduct } from '../types';
 import { MAROON, GOLD } from '../constants/theme';
-import { MOCK_PRODUCTS } from '@aroham/shared-config';
+import { MOCK_PRODUCTS } from '@nakshra/shared-config';
 import { supabase } from '../services/supabase';
-import { generateUUID } from '@aroham/shared-utils/uuid';
+import { generateUUID } from '@nakshra/shared-utils/uuid';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 
@@ -23,7 +23,7 @@ const PLACEHOLDER_TEXT = 'Namaste! Astrologer will join your chat soon.';
 interface ChatRoomScreenProps {
   astrologer: Astrologer;
   onBack: () => void;
-  onProductPress?: (p: ArohamProduct) => void;
+  onProductPress?: (p: NakshraProduct) => void;
 }
 
 export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
@@ -244,7 +244,7 @@ export const ChatRoomScreen: React.FC<ChatRoomScreenProps> = ({
     ]);
   };
 
-  const handleAddRecommendedToCart = (product: ArohamProduct) => {
+  const handleAddRecommendedToCart = (product: NakshraProduct) => {
     addToCart(product, 1, false);
   };
 

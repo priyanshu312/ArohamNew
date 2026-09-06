@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Lock, ChevronLeft, ChevronRight, ShieldCheck, Tag, ChevronDown } from "lucide-react";
-import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@aroham/shared-config/theme";
-import { generateUUID } from "@aroham/shared-utils/uuid";
-import { useCart } from "@aroham/shared-state";
-import { useAuth } from "@aroham/shared-auth";
-import { api } from "@aroham/shared-api";
-import { supabase } from "@aroham/shared-services";
+import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@nakshra/shared-config/theme";
+import { generateUUID } from "@nakshra/shared-utils/uuid";
+import { useCart } from "@nakshra/shared-state";
+import { useAuth } from "@nakshra/shared-auth";
+import { api } from "@nakshra/shared-api";
+import { supabase } from "@nakshra/shared-services";
 
 declare global {
   interface Window {
@@ -24,7 +24,7 @@ function CheckoutHeader() {
       <div className="max-w-7xl mx-auto px-5 lg:px-10 h-14 lg:h-16 flex items-center justify-between">
         <button onClick={() => navigate("/")} className="flex items-center gap-2.5 group">
           <div className="w-7 h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: `linear-gradient(135deg,${MAROON},#E78B2F)`, color: IVORY, fontFamily: SERIF }}>ॐ</div>
-          <span className="hidden sm:inline text-lg lg:text-xl font-semibold tracking-wide" style={{ fontFamily: SERIF, color: MAROON }}>Aroham</span>
+          <span className="hidden sm:inline text-lg lg:text-xl font-semibold tracking-wide" style={{ fontFamily: SERIF, color: MAROON }}>Nakshra</span>
         </button>
         <span className="text-xs font-medium tracking-widest uppercase" style={{ color: "#9A8A78" }}>Secure Checkout</span>
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ background: "rgba(200,160,68,0.1)", border: "1px solid rgba(200,160,68,0.22)" }}>
@@ -49,7 +49,7 @@ export function PaymentPage() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
     const shippingAddr = (() => {
-      try { return JSON.parse(sessionStorage.getItem("aroham_shipping_addr") || "null"); } catch { return null; }
+      try { return JSON.parse(sessionStorage.getItem("Nakshra_shipping_addr") || "null"); } catch { return null; }
     })();
 
     if (!shippingAddr || (!shippingAddr.address_line1 && !shippingAddr.line1 && !shippingAddr.address && !shippingAddr.city)) {
@@ -61,7 +61,7 @@ export function PaymentPage() {
   // Cache total in session so confirmation page doesn't flash ₹0
   useEffect(() => {
     if (total > 0) {
-      sessionStorage.setItem("aroham_order_total", String(total));
+      sessionStorage.setItem("Nakshra_order_total", String(total));
     }
   }, [total]);
 
@@ -112,7 +112,7 @@ export function PaymentPage() {
 
       // Read shipping address saved by ShippingPage
       const shippingAddr = (() => {
-        try { return JSON.parse(sessionStorage.getItem("aroham_shipping_addr") || "null"); } catch { return null; }
+        try { return JSON.parse(sessionStorage.getItem("Nakshra_shipping_addr") || "null"); } catch { return null; }
       })();
 
       if (!shippingAddr || (!shippingAddr.address_line1 && !shippingAddr.line1 && !shippingAddr.address)) {
@@ -156,7 +156,7 @@ export function PaymentPage() {
         key: rzpKey,
         amount: amountPaisa,
         currency: "INR",
-        name: "Aroham",
+        name: "Nakshra",
         description: "Sacred Products – Temple Energized",
         image: "/favicon.ico",
         handler: async function (response: any) {
@@ -211,7 +211,7 @@ export function PaymentPage() {
               // 2. Save to user localStorage
               if (user?.id) {
                 try {
-                  const uKey = `aroham_user_orders_${user.id}`;
+                  const uKey = `Nakshra_user_orders_${user.id}`;
                   const uStr = localStorage.getItem(uKey);
                   const uArr = uStr ? JSON.parse(uStr) : [];
                   const uUpdated = [orderObj, ...uArr.filter((o: any) => String(o.id) !== String(orderId))];
@@ -223,7 +223,7 @@ export function PaymentPage() {
               try {
                 const phoneKey = String(shippingAddr?.phone || user?.user_metadata?.phone || "").replace(/\D/g, "").slice(-10);
                 if (phoneKey) {
-                  const pKey = `aroham_phone_orders_${phoneKey}`;
+                  const pKey = `Nakshra_phone_orders_${phoneKey}`;
                   const pStr = localStorage.getItem(pKey);
                   const pArr = pStr ? JSON.parse(pStr) : [];
                   const pUpdated = [orderObj, ...pArr.filter((o: any) => String(o.id) !== String(orderId))];
@@ -233,7 +233,7 @@ export function PaymentPage() {
 
               // 4. Always save to guest orders fallback as backup
               try {
-                const gKey = "aroham_guest_orders";
+                const gKey = "Nakshra_guest_orders";
                 const gStr = localStorage.getItem(gKey);
                 const gArr = gStr ? JSON.parse(gStr) : [];
                 const gUpdated = [orderObj, ...gArr.filter((o: any) => String(o.id) !== String(orderId))];
@@ -243,10 +243,10 @@ export function PaymentPage() {
 
             await saveOrderData(internalOrderId);
 
-            sessionStorage.setItem("aroham_last_order_items", JSON.stringify(items));
-            sessionStorage.removeItem("aroham_shipping_addr");
-            sessionStorage.setItem("aroham_last_order_id", String(internalOrderId));
-            sessionStorage.setItem("aroham_order_total", String(total));
+            sessionStorage.setItem("Nakshra_last_order_items", JSON.stringify(items));
+            sessionStorage.removeItem("Nakshra_shipping_addr");
+            sessionStorage.setItem("Nakshra_last_order_id", String(internalOrderId));
+            sessionStorage.setItem("Nakshra_order_total", String(total));
             
             setTimeout(() => {
               clearCart();
@@ -255,7 +255,7 @@ export function PaymentPage() {
             navigate("/checkout/confirm");
           } catch (e: any) {
             console.error("Verification error:", e);
-            sessionStorage.setItem("aroham_last_order_items", JSON.stringify(items));
+            sessionStorage.setItem("Nakshra_last_order_items", JSON.stringify(items));
             setTimeout(() => clearCart(), 500);
             navigate("/checkout/confirm");
           }
@@ -296,7 +296,7 @@ export function PaymentPage() {
     setPlacing(true);
     try {
       const shippingAddr = (() => {
-        try { return JSON.parse(sessionStorage.getItem("aroham_shipping_addr") || "null"); } catch { return null; }
+        try { return JSON.parse(sessionStorage.getItem("Nakshra_shipping_addr") || "null"); } catch { return null; }
       })();
 
       if (!shippingAddr) {
@@ -324,11 +324,11 @@ export function PaymentPage() {
         console.warn("Backend order creation offline, proceeding with COD order fallback:", backendErr);
       }
 
-      sessionStorage.setItem("aroham_last_order_items", JSON.stringify(items));
-      sessionStorage.removeItem("aroham_shipping_addr");
-      sessionStorage.setItem("aroham_last_order_id", String(internalOrderId));
-      sessionStorage.setItem("aroham_order_total", String(total));
-      sessionStorage.setItem("aroham_payment_mode", "COD");
+      sessionStorage.setItem("Nakshra_last_order_items", JSON.stringify(items));
+      sessionStorage.removeItem("Nakshra_shipping_addr");
+      sessionStorage.setItem("Nakshra_last_order_id", String(internalOrderId));
+      sessionStorage.setItem("Nakshra_order_total", String(total));
+      sessionStorage.setItem("Nakshra_payment_mode", "COD");
 
       setTimeout(() => {
         clearCart();
@@ -337,7 +337,7 @@ export function PaymentPage() {
       navigate("/checkout/confirm");
     } catch (e: any) {
       console.error("COD Order Placement error:", e);
-      sessionStorage.setItem("aroham_last_order_items", JSON.stringify(items));
+      sessionStorage.setItem("Nakshra_last_order_items", JSON.stringify(items));
       setTimeout(() => clearCart(), 500);
       navigate("/checkout/confirm");
     } finally {
@@ -403,7 +403,7 @@ export function PaymentPage() {
                       type="text"
                       value={couponInput}
                       onChange={e => { setCouponInput(e.target.value); setCouponMsg(null); }}
-                      placeholder="Coupon code (e.g. AROHAM10)"
+                      placeholder="Coupon code (e.g. Nakshra10)"
                       className="flex-1 min-w-0 px-3 py-2 rounded-xl text-xs outline-none uppercase font-semibold truncate"
                       style={{ border: "1px solid rgba(91,31,36,0.15)", background: "#FAF7F2", color: MAROON }}
                       onKeyDown={e => { if (e.key === "Enter") handleApplyCoupon(); }}

@@ -1,6 +1,6 @@
-import { CartProvider } from "@aroham/shared-state";
-import { AuthProvider } from "@aroham/shared-auth";
-import { WishlistProvider } from "@aroham/shared-state";
+import { CartProvider } from "@nakshra/shared-state";
+import { AuthProvider } from "@nakshra/shared-auth";
+import { WishlistProvider } from "@nakshra/shared-state";
 import { AppRouter } from "@visual/router/AppRouter";
 
 export default function App() {

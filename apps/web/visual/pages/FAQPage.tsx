@@ -1,4 +1,4 @@
-import { MAROON, GOLD, SERIF } from "@aroham/shared-config/theme";
+import { MAROON, GOLD, SERIF } from "@nakshra/shared-config/theme";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -39,7 +39,7 @@ export function FAQPage() {
           </h1>
           <div className="h-1 w-24 mx-auto" style={{ background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }} />
           <p className="mt-6 text-[#7A6A58]">
-            {t("faq.subtitle", "Everything you need to know about Aroham products & energization.")}
+            {t("faq.subtitle", "Everything you need to know about Nakshra products & energization.")}
           </p>
         </div>
         

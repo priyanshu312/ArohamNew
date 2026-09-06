@@ -1,7 +1,7 @@
-# Netlify configuration file for Aroham project
+# Netlify configuration file for Nakshra project
 [build]
   # The directory containing the frontend code
-  base = "Aroham"
+  base = "Nakshra"
   
   # The directory containing the build output
   publish = "dist"

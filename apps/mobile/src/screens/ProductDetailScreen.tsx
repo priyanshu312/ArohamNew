@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
-import { ArohamProduct } from '../types';
+import { NakshraProduct } from '../types';
 import { MAROON, GOLD } from '../constants/theme';
 import { Stars } from '../components/Stars';
-import { MOCK_REVIEWS } from '@aroham/shared-config';
+import { MOCK_REVIEWS } from '@nakshra/shared-config';
 import { useWishlist } from '../context/WishlistContext';
 
 interface ProductDetailScreenProps {
-  product: ArohamProduct;
+  product: NakshraProduct;
   onBack: () => void;
-  onAddToCart: (p: ArohamProduct, qty: number) => void;
-  onBuyNow: (p: ArohamProduct, qty: number) => void;
+  onAddToCart: (p: NakshraProduct, qty: number) => void;
+  onBuyNow: (p: NakshraProduct, qty: number) => void;
 }
 
 export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({

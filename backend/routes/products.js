@@ -19,7 +19,7 @@ router.get("/", async (req, res) => {
     .order("id");
   if (error) return res.status(500).json({ error: error.message });
 
-  // Map to the frontend ArohamProduct format
+  // Map to the frontend NakshraProduct format
   const mapped = data.map(p => ({
     id: p.id,
     slug: p.slug,

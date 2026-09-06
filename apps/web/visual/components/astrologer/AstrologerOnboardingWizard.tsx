@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Sparkles, Phone, User, Award, BookOpen, ShieldCheck, Video, FileText, ChevronRight, ChevronLeft, Check, Upload, AlertCircle } from "lucide-react";
-import { supabase } from "@aroham/shared-services";
+import { supabase } from "@nakshra/shared-services";
 
 interface AstrologerOnboardingWizardProps {
   initialPhone?: string;
@@ -169,7 +169,7 @@ export const AstrologerOnboardingWizard: React.FC<AstrologerOnboardingWizardProp
 
   const handleSubmitApplication = async () => {
     if (!formData.termsAgreed) {
-      setErrorMsg("Please agree to the Aroham Partner terms & declaration.");
+      setErrorMsg("Please agree to the Nakshra Partner terms & declaration.");
       return;
     }
 
@@ -208,7 +208,7 @@ export const AstrologerOnboardingWizard: React.FC<AstrologerOnboardingWizardProp
       profile_picture_url: formData.profilePictureUrl,
       intro_video_url: formData.introVideoUrl,
       sample_consultation_url: formData.sampleConsultationUrl,
-      bio: formData.bio || "Certified Jyotish Acharya guiding seekers on Aroham.",
+      bio: formData.bio || "Certified Jyotish Acharya guiding seekers on Nakshra.",
       website_url: formData.websiteUrl,
       youtube_url: formData.youtubeUrl,
       instagram_url: formData.instagramUrl,
@@ -219,8 +219,8 @@ export const AstrologerOnboardingWizard: React.FC<AstrologerOnboardingWizardProp
 
     // Save locally
     try {
-      localStorage.setItem(`aroham_astro_onboarding_app_${payload.id}`, JSON.stringify(payload));
-      localStorage.setItem(`aroham_astro_onboarding_app_current`, JSON.stringify(payload));
+      localStorage.setItem(`Nakshra_astro_onboarding_app_${payload.id}`, JSON.stringify(payload));
+      localStorage.setItem(`Nakshra_astro_onboarding_app_current`, JSON.stringify(payload));
     } catch (e) {}
 
     // Submit to Admin backend
@@ -254,7 +254,7 @@ export const AstrologerOnboardingWizard: React.FC<AstrologerOnboardingWizardProp
           </div>
 
           <h1 className="text-3xl sm:text-4xl font-bold font-serif text-[#4A151B] tracking-tight">
-            Join Aroham Astrology Network
+            Join Nakshra Astrology Network
           </h1>
           
           <p className="text-xs sm:text-sm text-amber-950/70 max-w-xl mx-auto font-medium">
@@ -761,7 +761,7 @@ export const AstrologerOnboardingWizard: React.FC<AstrologerOnboardingWizardProp
                   className="mt-0.5 w-4 h-4 rounded text-[#5B1F24] focus:ring-[#5B1F24]"
                 />
                 <label htmlFor="termsCheck" className="text-xs text-amber-950/80 font-medium leading-relaxed">
-                  I hereby declare that all astrological qualifications, certificates, and details provided are authentic and true to my knowledge. I agree to abide by Aroham Code of Ethics.
+                  I hereby declare that all astrological qualifications, certificates, and details provided are authentic and true to my knowledge. I agree to abide by Nakshra Code of Ethics.
                 </label>
               </div>
             </div>
