@@ -16,10 +16,13 @@ function formatImageUrl(url: any) {
 
 function mapSupaProducts(data: any[]): NakshraProduct[] {
   return data.map((p: any) => {
+    // Supabase stores price/original_price in paise (same as the backend's
+    // /api/products, which always does `/ 100`). Convert unconditionally — the
+    // old `> 10000` magnitude guess mis-priced any item at or under ₹100.
     const rawPrice = Number(p.price) || 0;
-    const priceVal = rawPrice > 10000 ? rawPrice / 100 : rawPrice;
+    const priceVal = rawPrice / 100;
     const rawOrig = p.original_price ? Number(p.original_price) : 0;
-    const origVal = rawOrig > 0 ? (rawOrig > 10000 ? rawOrig / 100 : rawOrig) : Math.round(priceVal * 1.25);
+    const origVal = rawOrig > 0 ? rawOrig / 100 : Math.round(priceVal * 1.25);
 
     return {
       id: p.id,

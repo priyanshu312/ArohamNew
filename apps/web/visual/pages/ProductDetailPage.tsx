@@ -23,7 +23,7 @@ export function ProductDetailPage() {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
-  const { isLoggedIn, openAuth } = useAuth();
+  const { isLoggedIn, openAuth, user } = useAuth();
   const { products, loading: productsLoading } = useProducts();
   const [product, setProduct] = useState<NakshraProduct | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -440,13 +440,9 @@ export function ProductDetailPage() {
               
               <button
                 onClick={() => {
-                  addToCart({
-                    id: String(product.id),
-                    title: product.name,
-                    price: Number(product.price) || 0,
-                    image: product.image || product.img || "",
-                    quantity: qty,
-                  } as any);
+                  // Use the same product shape as ADD TO CART so the cart line
+                  // renders consistently (name/img, numeric id, dedupe by id).
+                  addToCart(product, qty);
 
                   // Dispatch add_to_cart Telemetry
                   const activeUserId = user?.id || localStorage.getItem("Nakshra_guest_user_id") || "anonymous_user";

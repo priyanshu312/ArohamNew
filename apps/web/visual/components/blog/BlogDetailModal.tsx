@@ -16,11 +16,21 @@ export function BlogDetailModal({ post, onClose }: BlogDetailModalProps) {
 
   if (!post) return null;
 
+  // Blog "recommendedProduct" entries carry no numeric id, so derive a stable one
+  // from the slug. The cart dedupes by product.id, so this must be deterministic
+  // (a random id would create a new line every click). High range avoids clashing
+  // with real catalog product ids.
+  const slugToStableId = (slug: string) => {
+    let hash = 0;
+    for (let i = 0; i < slug.length; i++) hash = (hash * 31 + slug.charCodeAt(i)) | 0;
+    return 900000 + Math.abs(hash % 99999);
+  };
+
   const handleAddToCart = () => {
     if (!post.recommendedProduct) return;
 
     const prod: NakshraProduct = {
-      id: typeof post.recommendedProduct.id === "number" ? post.recommendedProduct.id : Math.floor(Math.random() * 8000) + 1000,
+      id: slugToStableId(post.recommendedProduct.slug),
       slug: post.recommendedProduct.slug,
       name: post.recommendedProduct.title,
       subtitle: post.recommendedProduct.badge || "Temple Energized",

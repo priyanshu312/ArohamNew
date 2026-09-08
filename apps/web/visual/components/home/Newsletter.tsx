@@ -10,6 +10,7 @@ export function Newsletter() {
   const [email, setEmail] = useState("");
   const [joined, setJoined] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
   const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -17,14 +18,20 @@ export function Newsletter() {
     if (!email || !email.includes("@")) return;
 
     setLoading(true);
+    setError(false);
+
+    // Only claim success if at least one persistence path actually stored the email.
+    let savedOk = false;
 
     try {
       // 1. Save subscriber email to Supabase 'subscribers' table
       try {
-        await supabase.from("subscribers").upsert({
+        const { error: supaErr } = await supabase.from("subscribers").upsert({
           email: email.trim(),
           created_at: new Date().toISOString()
         });
+        if (!supaErr) savedOk = true;
+        else console.warn("Supabase subscriber sync warning:", supaErr);
       } catch (err) {
         console.warn("Supabase subscriber sync warning:", err);
       }
@@ -35,6 +42,7 @@ export function Newsletter() {
           email: email.trim(),
           subscribedAt: serverTimestamp()
         });
+        savedOk = true;
       } catch (err) {
         console.warn("Firestore subscriber sync warning:", err);
       }
@@ -53,9 +61,11 @@ export function Newsletter() {
         }).catch(() => {});
       }
 
-      setJoined(true);
+      if (savedOk) setJoined(true);
+      else setError(true);
     } catch (e) {
-      setJoined(true);
+      console.error("Newsletter signup failed:", e);
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -74,16 +84,23 @@ export function Newsletter() {
             <CheckCircle size={18} style={{ color: GOLD }} /><span className="text-sm font-medium" style={{ color: MAROON }}>Welcome to the Nakshra community!</span>
           </div>
         ) : (
-          <form className="flex gap-3 flex-col sm:flex-row" onSubmit={handleSubmit}>
-            <input type="email" placeholder={t("newsletter.placeholder", "Enter your email address")} value={email} onChange={e => setEmail(e.target.value)} required autoComplete="off"
-              className="flex-1 px-5 py-3.5 rounded-full text-sm outline-none"
-              style={{ background: "#FFFFFF", border: `1px solid rgba(91,31,36,0.15)`, color: MAROON, fontFamily: SANS }}
-              onFocus={e => { e.target.style.borderColor = GOLD; }} onBlur={e => { e.target.style.borderColor = "rgba(91,31,36,0.15)"; }} />
-            <button type="submit" disabled={loading} className="px-7 py-3.5 rounded-full text-sm font-semibold hover:opacity-90 whitespace-nowrap flex items-center justify-center gap-2 disabled:opacity-60"
-              style={{ background: MAROON, color: IVORY }}>
-              {loading ? <Loader2 size={16} className="animate-spin" /> : t("newsletter.button", "Join Community")}
-            </button>
-          </form>
+          <>
+            <form className="flex gap-3 flex-col sm:flex-row" onSubmit={handleSubmit}>
+              <input type="email" placeholder={t("newsletter.placeholder", "Enter your email address")} value={email} onChange={e => { setEmail(e.target.value); if (error) setError(false); }} required autoComplete="off"
+                className="flex-1 px-5 py-3.5 rounded-full text-sm outline-none"
+                style={{ background: "#FFFFFF", border: `1px solid rgba(91,31,36,0.15)`, color: MAROON, fontFamily: SANS }}
+                onFocus={e => { e.target.style.borderColor = GOLD; }} onBlur={e => { e.target.style.borderColor = "rgba(91,31,36,0.15)"; }} />
+              <button type="submit" disabled={loading} className="px-7 py-3.5 rounded-full text-sm font-semibold hover:opacity-90 whitespace-nowrap flex items-center justify-center gap-2 disabled:opacity-60"
+                style={{ background: MAROON, color: IVORY }}>
+                {loading ? <Loader2 size={16} className="animate-spin" /> : t("newsletter.button", "Join Community")}
+              </button>
+            </form>
+            {error && (
+              <p className="mt-3 text-xs font-medium" style={{ color: "#B3261E" }}>
+                {t("newsletter.error", "Something went wrong. Please try again in a moment.")}
+              </p>
+            )}
+          </>
         )}
       </div>
     </section>
