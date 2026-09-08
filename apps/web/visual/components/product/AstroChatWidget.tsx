@@ -52,14 +52,23 @@ export function AstroChatWidget() {
   const navigate = useNavigate();
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Feature 1: Proactive Greeting Bubble (5s delay)
+  const dismissProactive = () => {
+    setShowProactive(false);
+    try { sessionStorage.setItem("Nakshra_astro_proactive_dismissed", "1"); } catch (e) {}
+  };
+
+  // Feature 1: Proactive Greeting Bubble — show once per session, 5s after load,
+  // then auto-hide after 9s so it never lingers on top of page CTAs.
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!isOpen && messages.length === 1) {
-        setShowProactive(true);
-      }
+    let dismissed = false;
+    try { dismissed = sessionStorage.getItem("Nakshra_astro_proactive_dismissed") === "1"; } catch (e) {}
+    if (dismissed) return;
+
+    const showTimer = setTimeout(() => {
+      if (!isOpen && messages.length === 1) setShowProactive(true);
     }, 5000);
-    return () => clearTimeout(timer);
+    const hideTimer = setTimeout(() => dismissProactive(), 14000);
+    return () => { clearTimeout(showTimer); clearTimeout(hideTimer); };
   }, [isOpen, messages.length]);
 
   // Persistent Guest ID for seamless ML telemetry tracking
@@ -180,11 +189,11 @@ export function AstroChatWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[999]" style={{ fontFamily: SANS }}>
+    <div className="fixed bottom-24 right-4 sm:bottom-6 sm:right-6 z-[999]" style={{ fontFamily: SANS }}>
       {/* Feature 1: Proactive Greeting Bubble */}
       {!isOpen && showProactive && (
         <div className="absolute bottom-16 right-0 mb-2 w-52 bg-white rounded-2xl p-3 shadow-xl border border-amber-900/10 animate-in fade-in slide-in-from-bottom-2">
-          <button onClick={() => setShowProactive(false)} className="absolute top-1.5 right-1.5 text-amber-900/40 hover:text-amber-900"><X className="w-3 h-3" /></button>
+          <button onClick={dismissProactive} className="absolute top-1.5 right-1.5 text-amber-900/40 hover:text-amber-900"><X className="w-3 h-3" /></button>
           <div className="flex items-start gap-2">
             <span className="text-lg">✨</span>
             <p className="text-[11px] font-semibold text-[#3C3024] leading-tight pr-2">

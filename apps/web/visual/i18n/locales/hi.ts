@@ -155,7 +155,7 @@ export const hi: Record<string, string> = {
 
   "track.title": "अपना ऑर्डर ट्रैक करें",
   "track.subtitle": "वास्तविक समय स्थिति देखने के लिए अपना ऑर्डर आईडी या पंजीकृत फोन नंबर दर्ज करें।",
-  "track.placeholder": "ऑर्डर आईडी दर्ज करें (उदा. ARO-1082)",
+  "track.placeholder": "ऑर्डर आईडी दर्ज करें (उदा. NAK-1082)",
   "track.button": "ऑर्डर ट्रैक करें",
 
   "contact.title": "संपर्क एवं आध्यात्मिक सहायता",

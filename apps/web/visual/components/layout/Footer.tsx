@@ -70,7 +70,7 @@ export function Footer() {
 
         </div>
         <div id="site-footer" className="pt-6 lg:pt-8 flex flex-col md:flex-row items-center justify-between gap-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          <p className="text-xs" style={{ color: "rgba(250,247,242,0.3)" }}>© 2025 Nakshra. {t("footer.rights", "All rights reserved.")} Made with reverence in India.</p>
+          <p className="text-xs" style={{ color: "rgba(250,247,242,0.3)" }}>© {new Date().getFullYear()} Nakshra. {t("footer.rights", "All rights reserved.")} Made with reverence in India.</p>
           <div className="flex gap-6 text-xs" style={{ color: "rgba(250,247,242,0.3)" }}>
             <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
             <Link to="/terms" className="hover:text-white transition-colors">{t("footer.terms", "Terms & Conditions")}</Link>

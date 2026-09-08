@@ -155,7 +155,7 @@ export const kn: Record<string, string> = {
 
   "track.title": "ನಿಮ್ಮ ಆರ್ಡರ್ ಟ್ರ್ಯಾಕ್ ಮಾಡಿ",
   "track.subtitle": "ಸ್ಥಿತಿಯನ್ನು ವೀಕ್ಷಿಸಲು ನಿಮ್ಮ ಆರ್ಡರ್ ಐಡಿ ಅಥವಾ ಫೋನ್ ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ.",
-  "track.placeholder": "ಆರ್ಡರ್ ಐಡಿ ನಮೂದಿಸಿ (ಉದಾ. ARO-1082)",
+  "track.placeholder": "ಆರ್ಡರ್ ಐಡಿ ನಮೂದಿಸಿ (ಉದಾ. NAK-1082)",
   "track.button": "ಆರ್ಡರ್ ಟ್ರ್ಯಾಕ್ ಮಾಡಿ",
 
   "contact.title": "ಸಂಪರ್ಕ ಮತ್ತು ಬೆಂಬಲ",

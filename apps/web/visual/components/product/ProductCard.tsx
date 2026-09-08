@@ -55,7 +55,7 @@ export function ProductCard({ product: p, onProductClick, onAddToCart, wishKey =
       <div>
         <div className="relative overflow-hidden aspect-square bg-amber-50 flex-shrink-0">
           <img src={p.img} alt={`${p.name} - ${p.subtitle}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-          {p.badges && p.badges.length > 0 && p.price > 1000 && (
+          {p.badges && p.badges.length > 0 && (
             <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wide" style={{ background: "rgba(91,31,36,0.88)", color: GOLD }}>{p.badges[0]}</div>
           )}
           <button aria-label="Add to wishlist" onClick={handleWishClick}

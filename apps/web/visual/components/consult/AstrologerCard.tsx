@@ -91,9 +91,9 @@ export function AstrologerCard({ astro, onStartConsultation }: AstrologerCardPro
         </div>
 
         <div className="flex flex-wrap gap-1.5 my-3">
-          {astro.specialties.slice(0, 3).map((spec) => (
+          {astro.specialties.slice(0, 3).map((spec, i) => (
             <span
-              key={spec}
+              key={`${i}-${spec}`}
               className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-900/70 border border-amber-900/10"
             >
               {translateSpecialty(spec, t)}

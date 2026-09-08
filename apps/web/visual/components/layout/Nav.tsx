@@ -49,9 +49,15 @@ export function Nav() {
   return (
     <>
       {isSearchOpen && (
-        <div 
-          className="fixed inset-0 z-40 bg-black/5 backdrop-blur-[1px] transition-opacity cursor-pointer" 
-          onClick={() => { setIsSearchOpen(false); setQuery(""); }} 
+        <div
+          className="fixed inset-0 z-40 bg-black/5 backdrop-blur-[1px] transition-opacity cursor-pointer"
+          onClick={() => { setIsSearchOpen(false); setQuery(""); }}
+        />
+      )}
+      {open && (
+        <div
+          className="lg:hidden fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px] transition-opacity cursor-pointer"
+          onClick={() => setOpen(false)}
         />
       )}
       <nav role="navigation" aria-label="Main navigation"

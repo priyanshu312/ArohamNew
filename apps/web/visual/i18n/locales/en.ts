@@ -155,7 +155,7 @@ export const en: Record<string, string> = {
 
   "track.title": "Track Your Sacred Order",
   "track.subtitle": "Enter your Order ID or registered Phone Number to view real-time status.",
-  "track.placeholder": "Enter Order ID (e.g., ARO-1082)",
+  "track.placeholder": "Enter Order ID (e.g., NAK-1082)",
   "track.button": "Track Order",
 
   "contact.title": "Contact & Spiritual Support",
