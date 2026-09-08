@@ -72,6 +72,36 @@ app.use("/api/kundli", require("./routes/kundli"));
 
 app.get("/api/health", (req, res) => res.json({ status: "ok", service: "Nakshra-backend" }));
 
+// ---- Global error handling ----
+// 404 for unknown /api routes (JSON instead of Express' HTML page)
+app.use("/api", (req, res) => {
+  res.status(404).json({ error: `Not found: ${req.method} ${req.originalUrl}` });
+});
+
+// Catch-all error middleware — any error thrown/next(err)'d in a handler lands here
+// instead of taking down the process.
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  // Malformed JSON / oversized body from body-parser → 400, not 500.
+  if (err && (err.type === "entity.parse.failed" || err.status === 400)) {
+    return res.status(400).json({ error: "Invalid request body", details: err.message });
+  }
+  console.error("[Unhandled route error]:", err && err.stack ? err.stack : err);
+  res.status(err && err.status ? err.status : 500).json({
+    error: "Internal server error",
+    details: err && err.message ? err.message : String(err),
+  });
+});
+
+// Last line of defence: a stray throw in an async callback must not kill the server.
+process.on("uncaughtException", (err) => {
+  console.error("[uncaughtException]:", err && err.stack ? err.stack : err);
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("[unhandledRejection]:", reason && reason.stack ? reason.stack : reason);
+});
+
 const PORT = process.env.PORT || 5000;
 // Start a normal HTTP listener everywhere except Vercel's serverless runtime.
 // Vercel sets VERCEL=1 and imports the exported app instead of running a server;

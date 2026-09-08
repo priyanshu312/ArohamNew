@@ -5,17 +5,27 @@ const supabase = require("../config/supabase");
 const { ShiprocketService } = require("./shiprocket");
 
 function verifyPaymentSignature({ razorpay_order_id, razorpay_payment_id, razorpay_signature }) {
+  const secret = process.env.RAZORPAY_KEY_SECRET;
+  if (!secret || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    console.error("[Payments] Cannot verify payment signature — missing RAZORPAY_KEY_SECRET or params.");
+    return false;
+  }
   const body = razorpay_order_id + "|" + razorpay_payment_id;
   const expected = crypto
-    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+    .createHmac("sha256", String(secret))
     .update(body).digest("hex");
   return expected === razorpay_signature;
 }
 
 function verifyWebhookSignature(rawBody, signature) {
+  const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+  if (!secret || rawBody == null || !signature) {
+    console.error("[Payments] Cannot verify webhook signature — missing RAZORPAY_WEBHOOK_SECRET, body, or signature header.");
+    return false;
+  }
   const expected = crypto
-    .createHmac("sha256", process.env.RAZORPAY_WEBHOOK_SECRET)
-    .update(rawBody).digest("hex");
+    .createHmac("sha256", String(secret))
+    .update(typeof rawBody === "string" ? rawBody : String(rawBody)).digest("hex");
   return expected === signature;
 }
 

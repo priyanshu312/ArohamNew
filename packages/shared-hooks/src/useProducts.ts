@@ -47,72 +47,83 @@ function mapSupaProducts(data: any[]): NakshraProduct[] {
   });
 }
 
-export function useProducts() {
-  const [products, setProducts] = useState<NakshraProduct[]>(() => {
-    const cached = safeSessionStorage.getItem("Nakshra_products_cache");
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed)) return parsed;
-      } catch (e) {}
+function readCache(): NakshraProduct[] | null {
+  const cached = safeSessionStorage.getItem("Nakshra_products_cache");
+  if (!cached) return null;
+  try {
+    const parsed = JSON.parse(cached);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+// Shared across every useProducts() consumer on the page so N components mounting
+// at once trigger ONE network attempt, not N (and never a retry storm on failure).
+let inFlight: Promise<NakshraProduct[]> | null = null;
+let resolvedOnce: NakshraProduct[] | null = null;
+
+async function fetchProductsOnce(): Promise<NakshraProduct[]> {
+  if (resolvedOnce) return resolvedOnce;
+  if (inFlight) return inFlight;
+
+  inFlight = (async () => {
+    // 1. Backend API
+    try {
+      const data = await api("/products");
+      if (Array.isArray(data) && data.length > 0) {
+        safeSessionStorage.setItem("Nakshra_products_cache", JSON.stringify(data));
+        resolvedOnce = data;
+        return data;
+      }
+    } catch (err) {
+      console.warn("API products endpoint unavailable, querying Supabase directly...", err);
     }
-    return [];
-  });
+
+    // 2. Direct Supabase query (works on the deployed site if the API is down)
+    try {
+      const { data: supaData, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("id", { ascending: false });
+      if (!error && Array.isArray(supaData) && supaData.length > 0) {
+        const mapped = mapSupaProducts(supaData);
+        safeSessionStorage.setItem("Nakshra_products_cache", JSON.stringify(mapped));
+        resolvedOnce = mapped;
+        return mapped;
+      }
+    } catch (e) {
+      console.error("Direct Supabase product query error:", e);
+    }
+
+    // 3. Cached, then bundled defaults
+    const cached = readCache();
+    const result = cached || DEFAULT_PRODUCTS;
+    resolvedOnce = result;
+    return result;
+  })();
+
+  try {
+    return await inFlight;
+  } finally {
+    inFlight = null;
+  }
+}
+
+export function useProducts() {
+  const [products, setProducts] = useState<NakshraProduct[]>(() => readCache() || []);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadProducts() {
-      // 1. Try fetching from backend API
-      try {
-        const data = await api("/products");
-        if (Array.isArray(data) && data.length > 0) {
-          setProducts(data);
-          safeSessionStorage.setItem("Nakshra_products_cache", JSON.stringify(data));
-          setLoading(false);
-          return;
-        }
-      } catch (err) {
-        console.warn("API products endpoint unavailable, querying Supabase directly...", err);
-      }
-
-      // 2. Direct Supabase query as robust fallback (works live on Vercel deployment)
-      try {
-        const { data: supaData, error } = await supabase
-          .from("products")
-          .select("*")
-          .order("id", { ascending: false });
-
-        if (!error && Array.isArray(supaData) && supaData.length > 0) {
-          const mapped = mapSupaProducts(supaData);
-          setProducts(mapped);
-          safeSessionStorage.setItem("Nakshra_products_cache", JSON.stringify(mapped));
-          setLoading(false);
-          return;
-        }
-      } catch (e) {
-        console.error("Direct Supabase product query error:", e);
-      }
-
-      // 3. Fallback to cached or default items if database is unreachable
-      const cached = safeSessionStorage.getItem("Nakshra_products_cache");
-      if (cached) {
-        try {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setProducts(parsed);
-          } else {
-            setProducts(DEFAULT_PRODUCTS);
-          }
-        } catch (e) {
-          setProducts(DEFAULT_PRODUCTS);
-        }
-      } else {
-        setProducts(DEFAULT_PRODUCTS);
-      }
+    let alive = true;
+    fetchProductsOnce().then((list) => {
+      if (!alive) return;
+      setProducts(list);
       setLoading(false);
-    }
-
-    loadProducts();
+    });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   return { products, loading };

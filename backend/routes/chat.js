@@ -73,7 +73,25 @@ Key Instructions:
     systemPrompt += `\n\n6. ASTROLOGICAL PROFILE: This devotee's active Mahadasha is ${userProfile.mahadasha} (Moon Sign: ${userProfile.moonSign}, Nakshatra: ${userProfile.nakshatra}). ${userProfile.guidanceNote}`;
   }
 
+  // Friendly fallback used whenever the LLM is unavailable so the chat widget
+  // never shows a hard error to a devotee.
+  const fallbackReply =
+    "🙏 Namaste. Our Sacred AI AstroGuide is resting at the moment. " +
+    "Please try again shortly, or explore our temple-energized remedies in the Nakshra Store " +
+    "— and consider booking a consultation with one of our Vedic astrologers for personal guidance.";
+
   // 4. Call Groq using native fetch
+  if (!process.env.GROQ_API_KEY) {
+    console.warn("[Chat API] GROQ_API_KEY not configured — returning fallback reply.");
+    return res.json({
+      reply: fallbackReply,
+      recommendations_injected: recommendedProducts.length > 0,
+      products: recommendedProducts,
+      consultation_handoff: false,
+      fallback: true,
+    });
+  }
+
   try {
     const model = process.env.LLM_MODEL || "llama-3.3-70b-versatile";
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -116,7 +134,15 @@ Key Instructions:
     });
   } catch (err) {
     console.error("[Chat API Groq Error]:", err.message);
-    res.status(500).json({ error: "Failed to generate chatbot response", details: err.message });
+    // Degrade gracefully instead of 500ing the widget.
+    res.json({
+      reply: fallbackReply,
+      recommendations_injected: recommendedProducts.length > 0,
+      products: recommendedProducts,
+      consultation_handoff: false,
+      fallback: true,
+      error: err.message,
+    });
   }
 });
 

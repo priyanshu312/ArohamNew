@@ -6,8 +6,13 @@ const { validateItems } = require("../services/validationService");
 const { createPendingOrder, getUserOrders } = require("../services/orderService");
 const supabase = require("../config/supabase");
 
+// Debug endpoints — disabled unless ENABLE_DEBUG_ROUTES=true (they leak DB errors
+// and server logs, so they must never be reachable in a normal deployment).
+const debugRoutesEnabled = process.env.ENABLE_DEBUG_ROUTES === "true";
+
 // GET /api/orders/debug-last - Debug latest order details
 router.get("/debug-last", async (req, res) => {
+  if (!debugRoutesEnabled) return res.status(404).json({ error: "Not found" });
   try {
     const { data: orders, error } = await supabase
       .from("orders")
@@ -16,7 +21,7 @@ router.get("/debug-last", async (req, res) => {
       .limit(1);
 
     if (error) {
-      return res.json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     }
 
     res.json({
@@ -24,12 +29,13 @@ router.get("/debug-last", async (req, res) => {
       order: orders[0] || null
     });
   } catch (e) {
-    res.json({ error: e.message });
+    res.status(500).json({ error: e.message });
   }
 });
 
 // GET /api/orders/debug-logs - Fetch the in-memory debug logs
 router.get("/debug-logs", (req, res) => {
+  if (!debugRoutesEnabled) return res.status(404).json({ error: "Not found" });
   res.json({
     success: true,
     logs: global.debugLogs || []

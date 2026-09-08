@@ -17,18 +17,25 @@ router.get("/:userId", async (req, res) => {
 
   try {
     let itemIds = [];
-    const gorseRes = await fetch(`${GORSE_URL}/api/recommend/${userId}?n=4`);
-    if (gorseRes.ok) {
-      itemIds = await gorseRes.json();
-    }
-
-    // Fallback to popular if user has no recommendations yet
-    if (!itemIds || itemIds.length === 0) {
-      const popRes = await fetch(`${GORSE_URL}/api/popular?n=4`);
-      if (popRes.ok) {
-        const popData = await popRes.json();
-        itemIds = popData.map((item) => item.Id || item.ItemId || item);
+    // Gorse is optional — if it's unreachable, fall through to the Supabase
+    // top-selling fallback below rather than 500ing the whole request.
+    try {
+      const gorseRes = await fetch(`${GORSE_URL}/api/recommend/${userId}?n=4`);
+      if (gorseRes.ok) {
+        itemIds = await gorseRes.json();
       }
+
+      // Fallback to popular if user has no recommendations yet
+      if (!itemIds || itemIds.length === 0) {
+        const popRes = await fetch(`${GORSE_URL}/api/popular?n=4`);
+        if (popRes.ok) {
+          const popData = await popRes.json();
+          itemIds = popData.map((item) => item.Id || item.ItemId || item);
+        }
+      }
+    } catch (gorseErr) {
+      console.warn("[Recommendations API] Gorse unavailable, using Supabase top-selling fallback:", gorseErr.message);
+      itemIds = [];
     }
 
     let products = [];
@@ -80,12 +87,12 @@ router.get("/:userId", async (req, res) => {
 
     res.json({ success: true, recommendations: products, astro_boosted: !!userProfile });
   } catch (err) {
+    // Recommendations are a non-critical enhancement — degrade to an empty list
+    // instead of surfacing a 500 to the storefront.
     console.error("[Recommendations API Error]:", err.message);
-    res.status(500).json({ error: "Failed to fetch recommendations", details: err.message });
+    res.json({ success: true, recommendations: [], astro_boosted: false, degraded: true });
   }
 });
-
-module.exports = router;
 
 // Item-to-item similarity
 router.get("/item/:itemId", async (req, res) => {
@@ -124,3 +131,5 @@ router.get("/item/:itemId", async (req, res) => {
     res.json({ recommendations: [] });
   }
 });
+
+module.exports = router;

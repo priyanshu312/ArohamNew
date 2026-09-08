@@ -156,7 +156,7 @@ async function compileAstrologyPdf(chartData, birthTime, birthDate, userName, wr
             nakshatra: planetData?.PlanetConstellation || '-',
             nakshatraLord: planetData?.PlanetLordOfConstellation?.Name || '-',
             retrograde: planetData?.IsPlanetRetrograde || 'False',
-            house: planetData?.HousePlanetOccupiesBasedOnSign?.replace('House', '') || '-',
+            house: String(planetData?.HousePlanetOccupiesBasedOnSign ?? '').replace('House', '') || '-',
             degrees: planetData?.PlanetRasiD1Sign?.DegreesIn?.DegreeMinuteSecond || '-',
             longitude: (ZODIAC_SIGNS.indexOf(planetData?.PlanetRasiD1Sign?.Name) * 30 + parseFloat(planetData?.PlanetRasiD1Sign?.DegreesIn?.TotalDegrees)) || 0,
             status: planetData?.PlanetStrength ? `Strength: ${parseFloat(planetData.PlanetStrength).toFixed(2)}` : '-',

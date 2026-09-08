@@ -44,6 +44,10 @@ export default defineConfig({
   assetsInclude: ['**/*.svg', '**/*.csv'],
 
   build: {
+    // The app entry and the firebase vendor chunk legitimately sit a little above
+    // 500 kB (gzip ~150 kB / ~127 kB). Raise the warn threshold so real
+    // regressions stand out instead of being lost in a permanent warning.
+    chunkSizeWarningLimit: 700,
     rollupOptions: {
       output: {
         // Split heavy third-party libs into their own chunks so the main app
@@ -54,9 +58,12 @@ export default defineConfig({
           if (id.includes('@radix-ui')) return 'vendor-radix'
           if (id.includes('motion') || id.includes('framer-motion')) return 'vendor-motion'
           if (id.includes('i18next') || id.includes('react-i18next')) return 'vendor-i18n'
+          if (id.includes('firebase/firestore') || id.includes('@firebase/firestore')) return 'vendor-firebase-firestore'
           if (id.includes('firebase') || id.includes('@firebase')) return 'vendor-firebase'
           if (id.includes('@supabase')) return 'vendor-supabase'
           if (id.includes('lucide-react')) return 'vendor-icons'
+          if (id.includes('react-hook-form') || id.includes('@hookform')) return 'vendor-forms'
+          if (id.includes('date-fns') || id.includes('react-day-picker')) return 'vendor-date'
           if (id.includes('react-router') || id.includes('react-dom') || id.includes('/react/')) return 'vendor-react'
         },
       },

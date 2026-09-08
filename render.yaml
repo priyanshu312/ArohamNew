@@ -30,6 +30,9 @@ services:
         sync: false
       - key: RAZORPAY_WEBHOOK_SECRET
         sync: false
+      # --- Debug routes (must stay false in every deployment) ---
+      - key: ENABLE_DEBUG_ROUTES
+        value: "false"
       # --- Shiprocket ---
       - key: SHIPROCKET_ENABLED
         value: "false"
