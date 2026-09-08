@@ -25,8 +25,10 @@ import { PrivacyPolicyPage } from "@visual/pages/PrivacyPolicyPage";
 import { TermsOfServicePage } from "@visual/pages/TermsOfServicePage";
 import { BlogPage } from "@visual/pages/BlogPage";
 import { WishlistPage } from "@visual/pages/WishlistPage";
+import { NotFoundPage } from "@visual/pages/NotFoundPage";
 import { useCart } from "@nakshra/shared-state";
 import { useAuth } from "@nakshra/shared-auth";
+import { MAROON, GOLD, IVORY, SERIF } from "@nakshra/shared-config/theme";
 
 function ScrollManager() {
   const location = useLocation();
@@ -112,9 +114,39 @@ function MainLayout() {
 function ProtectedRoute() {
   const { isLoggedIn, openAuth } = useAuth();
 
+  // Open the auth modal once when an unauthenticated user lands here.
+  useEffect(() => {
+    if (!isLoggedIn) openAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoggedIn]);
+
   if (!isLoggedIn) {
-    setTimeout(() => openAuth(), 0);
-    return null;
+    // Render a real page (not a blank screen) so closing the modal isn't a dead end.
+    return (
+      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center px-6 py-32">
+        <div className="max-w-sm w-full text-center">
+          <div
+            className="w-16 h-16 rounded-full mx-auto mb-5 flex items-center justify-center text-3xl"
+            style={{ background: `linear-gradient(135deg, ${MAROON}, ${GOLD})`, color: IVORY, fontFamily: SERIF }}
+          >
+            ॐ
+          </div>
+          <h2 className="text-xl font-semibold mb-2" style={{ fontFamily: SERIF, color: MAROON }}>
+            Sign in to continue
+          </h2>
+          <p className="text-sm text-amber-900/70 font-medium mb-6">
+            Please sign in to view this page.
+          </p>
+          <button
+            onClick={openAuth}
+            className="px-6 py-3 rounded-2xl text-xs font-bold tracking-wider uppercase transition-all shadow-md hover:shadow-lg active:scale-95"
+            style={{ background: MAROON, color: IVORY }}
+          >
+            Sign In
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return <Outlet />;
@@ -147,6 +179,9 @@ export function AppRouter() {
           <Route element={<ProtectedRoute />}>
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
+
+          {/* Catch-all: unknown URLs render a proper 404 (with Nav + Footer) */}
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
         
         {/* Standalone full-screen pages */}

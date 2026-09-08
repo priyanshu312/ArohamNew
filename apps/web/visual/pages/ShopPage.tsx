@@ -70,7 +70,7 @@ export function ShopPage() {
   else if (cats.length > 1 || prps.length > 1 || cols.length > 1) displayTitle = "Filtered Products";
   const isCustom = displayTitle !== "Sacred Products";
 
-  const { products } = useProducts();
+  const { products, loading: productsLoading } = useProducts();
 
   const filtered = products.filter(p => {
     if (cats.length) {
@@ -526,6 +526,20 @@ export function ShopPage() {
 
             {/* Empty State */}
             {filtered.length === 0 ? (
+              productsLoading && products.length === 0 ? (
+                /* Still loading the catalogue — don't imply "no results" yet */
+                <div className="bg-white rounded-3xl p-12 text-center border border-amber-900/10 shadow-xs my-6">
+                  <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-4 text-3xl animate-pulse">
+                    🕉️
+                  </div>
+                  <h3 className="text-xl font-bold mb-2" style={{ fontFamily: SERIF, color: MAROON }}>
+                    Loading sacred products…
+                  </h3>
+                  <p className="text-sm max-w-md mx-auto text-amber-900/70 font-medium">
+                    Fetching our temple-energized collection for you.
+                  </p>
+                </div>
+              ) : (
               <div className="bg-white rounded-3xl p-12 text-center border border-amber-900/10 shadow-xs my-6">
                 <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-4 text-3xl">
                   🔍
@@ -544,6 +558,7 @@ export function ShopPage() {
                   Clear All Filters
                 </button>
               </div>
+              )
             ) : (
               /* Products Grid or List View */
               viewMode === "grid" ? (

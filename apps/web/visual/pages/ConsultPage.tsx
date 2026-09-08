@@ -51,6 +51,9 @@ export function ConsultPage() {
   const [selectedTopic, setSelectedTopic] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [astrologers, setAstrologers] = useState<Astrologer[]>(getDatabaseAstrologers);
+  // True until the first realtime fetch resolves, so we can show a loading state
+  // instead of "No Scholars Found" while the list is still coming in.
+  const [astrologersLoading, setAstrologersLoading] = useState<boolean>(() => getDatabaseAstrologers().length === 0);
   const [selectedAstrologer, setSelectedAstrologer] = useState<Astrologer | null>(null);
   const [session, setSession] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
@@ -124,7 +127,10 @@ export function ConsultPage() {
             localStorage.setItem("Nakshra_registered_astrologers", JSON.stringify(dbFormatted));
           } catch (e) {}
         }
-      } catch (err) {}
+      } catch (err) {
+      } finally {
+        setAstrologersLoading(false);
+      }
     };
 
     fetchRealtimeAstrologers();
@@ -339,6 +345,13 @@ export function ConsultPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6.5">
           {filteredAstrologers.length === 0 ? (
+            astrologersLoading && astrologers.length === 0 ? (
+              <div className="col-span-full p-12 rounded-3xl bg-white border border-amber-900/10 text-center space-y-3 max-w-md mx-auto">
+                <User size={32} className="mx-auto text-amber-900/30 animate-pulse" />
+                <h3 className="text-base font-bold text-[#5B1F24]" style={{ fontFamily: SERIF }}>Loading Scholars…</h3>
+                <p className="text-xs text-amber-900/60">Connecting you with our certified Vedic astrologers.</p>
+              </div>
+            ) : (
             <div className="col-span-full p-12 rounded-3xl bg-white border border-amber-900/10 text-center space-y-3 max-w-md mx-auto">
               <User size={32} className="mx-auto text-amber-900/30" />
               <h3 className="text-base font-bold text-[#5B1F24]" style={{ fontFamily: SERIF }}>No Scholars Found</h3>
@@ -349,6 +362,7 @@ export function ConsultPage() {
                 Clear Filters
               </button>
             </div>
+            )
           ) : (
             filteredAstrologers.map(astro => (
               <AstrologerCard key={astro.id} astro={astro} onStartConsultation={startConsultation} />
