@@ -127,6 +127,15 @@ async function confirmOrder(orderId, paymentDetails) {
 
 // FAILURE path: payment FAILED → order PAYMENT_FAILED → release reserved stock
 async function failOrder(orderId, reason) {
+  // Never downgrade an order that has already been paid/confirmed — a stray or
+  // replayed verify/webhook call with missing fields must not flip it back.
+  const { data: existing } = await supabase.from("orders")
+    .select("status").eq("id", orderId).maybeSingle();
+  if (existing && (existing.status === "CONFIRMED" || existing.status === "SHIPPED" || existing.status === "DELIVERED")) {
+    console.warn(`[Payments] failOrder skipped for #${orderId} — already ${existing.status}.`);
+    return;
+  }
+
   await supabase.from("payments")
     .update({ status: "FAILED", failure_reason: reason || "Payment failed" })
     .eq("order_id", orderId);
