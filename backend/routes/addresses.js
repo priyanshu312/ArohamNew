@@ -66,9 +66,12 @@ router.put("/:id", requireAuth, async (req, res) => {
       .eq("id", req.params.id)
       .eq("user_id", req.user.id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
+    // No row updated → the id doesn't exist or isn't this user's. Previously
+    // .single() turned that into a confusing 500 ("Cannot coerce the result...").
+    if (!data) return res.status(404).json({ error: "Address not found" });
     res.json({ success: true, data });
   } catch (e) {
     res.status(500).json({ error: e.message });
