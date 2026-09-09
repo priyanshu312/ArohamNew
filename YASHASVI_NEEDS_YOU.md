@@ -7,19 +7,20 @@ docs from the hardening pass — this file is the "what needs a human" shortlist
 the bug-hunt log.)
 Last updated: 2026-09-10 (OTP switched to email)_
 
-> **Cost rule (your instruction):** pick free-tier or self-hostable open-source
-> over paid SaaS unless paid is genuinely unavoidable. After switching OTP to
-> email, the only unavoidable paid thing left is **payment processing** (Razorpay
-> per-transaction fees). Everything else has a $0 path.
+> **Cost rule (your instruction):** free / open-source over paid unless
+> unavoidable. Unavoidable paid now: **Razorpay** (per-txn fee) and **Twilio
+> Verify** (~$0.05 per login — you chose Twilio-Verify email over free Brevo to
+> keep one vendor). Order-confirmation email stays on a free provider.
 
 ---
 
 ## 🔴 Blocks a real, money-handling launch
 
-| # | Item | What you need to do | Free option | Status |
-|---|------|---------------------|-------------|--------|
-| 1+3 | **Brevo key** (covers BOTH login OTP **and** order-confirmation email) | **1.** Sign up at brevo.com (free). **2.** Settings → **Senders, Domains & Dedicated IPs** → add sender `no-reply@nakshra.in` (or your address) and verify it — for best delivery, authenticate the whole `nakshra.in` domain (DNS records they give you). **3.** Settings → **SMTP & API → API Keys** → create a key. **4.** On Render (`nakshra-backend-yashasvi`, and prod at promotion) set `BREVO_API_KEY=xkeysib-…` and `ORDER_EMAIL_FROM=Nakshra <no-reply@nakshra.in>`. **5.** Set `OTP_FORCE_MOCK=false`. | **$0** — 300 emails/day free, no card. Code is done + wired (`7052611`); `OTP_CHANNEL=email` default (`0700a4a`); Twilio/SMS off the default path. | ⏳ get the key |
-| 2 | **Razorpay live keys** | `rzp_live_…` needs business **KYC** (PAN, bank, business proof). | Razorpay itself is free to integrate; only per-txn fees (~2%). No OSS substitute for taking real Indian payments. | ⏳ KYC |
+| # | Item | What you need to do | Cost | Status |
+|---|------|---------------------|------|--------|
+| 1 | **Twilio Verify — email integration** | Login OTP now goes through **Twilio Verify, email channel** (`OTP_CHANNEL=email`, code `5beeb28`). In the Twilio console: **Verify → Services → `VA14a27236…` → Email** → connect a **SendGrid account** (SendGrid API key) and create/select a dynamic template containing the `{{twilio_code}}` variable. Then on Render (`nakshra-backend-yashasvi`, prod at promotion): keep `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_VERIFY_SERVICE_SID` set; optionally set `TWILIO_VERIFY_EMAIL_TEMPLATE_ID` / `TWILIO_VERIFY_EMAIL_FROM` / `TWILIO_VERIFY_EMAIL_FROM_NAME` if you don't wire the template as the service default. Set `OTP_FORCE_MOCK=false`. **Twilio trial credit covers testing; upgrade the Twilio account (add a card) before real traffic.** | ~$0.05 / login | ⏳ Twilio console + SendGrid |
+| 3 | **Order-confirmation email key** (separate from OTP) | Order receipts still send via `notify.js` (Brevo or Resend). Sign up for **Brevo** (300/day free) or **Resend** (3 000/mo free), verify a sender, set `BREVO_API_KEY` (or `RESEND_API_KEY`) + `ORDER_EMAIL_FROM` on Render. No-op until then — orders still complete. *(You can reuse the same SendGrid key from #1 here later if you'd rather — I'd add a SendGrid branch to `notify.js`.)* | **$0** | ⏳ pick one, free |
+| 2 | **Razorpay live keys** | `rzp_live_…` needs business **KYC** (your colleague says done). Then: live Key ID + Key Secret + create a Live webhook → `https://nakshra.onrender.com/api/payments/webhook`, events `payment.captured` + `payment.failed`, with a secret. Set `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` / `RAZORPAY_WEBHOOK_SECRET` (backend) + `VITE_RAZORPAY_KEY_ID` (Vercel prod). | per-txn fee | ⏳ hand me Key ID + Secret |
 | 4 | **Shiprocket** *(or confirm manual fulfilment)* | Creds + `SHIPROCKET_ENABLED=true`, **or** just say "we'll ship manually" and this stops being a gap. | Shiprocket has a free plan. Manual fulfilment = $0. | ⏳ decide |
 | 5 | **Keep the backend warm** | Free Render sleeps after 15 min → 30–50 s cold start. | **$0 — done:** `.github/workflows/keep-warm.yml` pings backend + Gorse every ~10 min (`0700a4a`/`93a8912`). Activates once it's on `main` (GitHub only runs cron from the default branch); `workflow_dispatch` works now. For a hard guarantee, add cron-job.org (free) at 5 min. Gorse free Postgres still expires ~2026-12-08. | ✅ free pinger committed |
 | 6 | **Say "promote to main"** | The `Yashasvi → main` merge + prod env vars is your gate. Nothing touches `main` / prod / DNS until you say so. | — | ⏳ |
