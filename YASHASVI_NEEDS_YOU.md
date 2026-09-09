@@ -2,31 +2,45 @@
 
 _The **single** running list of things Claude Code cannot do autonomously.
 Everything else is being tested + fixed automatically on the `Yashasvi` branch.
-(`yashasvi_finalization.md` is the fuller status/promotion doc — this file is
-just the "what needs a human" shortlist + the bug-hunt log.)
-Last updated: 2026-09-09 ~23:40 IST_
+(`yashasvi_finalization.md` / `MANUAL_TASKS_AND_BOTTLENECKS.md` are fuller status
+docs from the hardening pass — this file is the "what needs a human" shortlist +
+the bug-hunt log.)
+Last updated: 2026-09-10_
+
+> **Cost rule (your instruction):** pick free-tier or self-hostable open-source
+> over paid SaaS unless paid is genuinely unavoidable. The only truly
+> unavoidable paid things below are **SMS delivery** and **payment processing**.
+> Everything else has a $0 path — see the "free option" column.
 
 ---
 
 ## 🔴 Blocks a real, money-handling launch
 
-| # | Item | What exactly you need to do | Status |
-|---|------|------------------------------|--------|
-| 1 | **Twilio Verify — real SMS** | `SUPABASE_JWT_SECRET` and the 3 `TWILIO_*` values are already set on the Render service (real signed JWTs are being issued, verified live). What's left: Twilio **can't deliver SMS to Indian numbers on a trial account** without an approved Primary Compliance Profile. Either (a) complete Twilio compliance + upgrade the Twilio account, then set `OTP_FORCE_MOCK=false`, or (b) switch to an Indian SMS provider (MSG91 / 2Factor). Until then staging stays on `OTP_FORCE_MOCK=true` (code `111111`). | ⏳ Twilio compliance / provider choice |
-| 2 | **Razorpay live keys** | Current keys are `rzp_test_…`. Live keys (`rzp_live_…`) need Razorpay **business KYC** approved. Same code — only the prod env values change. | ⏳ KYC |
-| 3 | **Email provider key** | Sign up for Resend (or Brevo/Postmark), verify a sending domain, give me `RESEND_API_KEY` + an `ORDER_EMAIL_FROM` address. Order-confirmation email code is done and no-ops until then. | ⏳ |
-| 4 | **Shiprocket** | `SHIPROCKET_ENABLED=false`, no creds. Orders confirm but nothing ships. Give me a Shiprocket account's `SHIPROCKET_EMAIL` / `SHIPROCKET_PASSWORD` / `SHIPROCKET_PICKUP_PINCODE`, or confirm you'll fulfil manually. | ⏳ |
-| 5 | **Keep-warm hosting** | Render free services (backend + Gorse) sleep after 15 min idle → first hit takes 30–50 s. Bump each to **Starter (~$7/mo)** before real traffic. The free Gorse Postgres also expires ~90 days after creation. | ⏳ |
-| 6 | **Say "promote to main"** | The `Yashasvi → main` merge + setting prod env vars is your call and your gate. Nothing touches `main`, prod Render/Vercel, or the Namecheap DNS until you say so. | ⏳ |
+| # | Item | What you need to do | Free option | Status |
+|---|------|---------------------|-------------|--------|
+| 1 | **Real SMS OTP** | `SUPABASE_JWT_SECRET` + 3 `TWILIO_*` values are already set (real signed JWTs verified live). Twilio **trial can't SMS Indian numbers** without an approved compliance profile. | **No $0 SMS exists** (carriers charge ~₹0.12–0.20/msg). Cheapest: **2Factor.in** or **MSG91** (pay-as-you-go, no monthly). $0 alternatives: **email OTP** instead of SMS, or **WhatsApp Cloud API** (Meta, 1 000 free conversations/mo). Tell me which and I wire it. | ⏳ your choice |
+| 2 | **Razorpay live keys** | `rzp_live_…` needs business **KYC** (PAN, bank, business proof). | Razorpay itself is free to integrate; only per-txn fees (~2%). No OSS substitute for taking real Indian payments. | ⏳ KYC |
+| 3 | **Transactional email** (order confirmations) | Give me an API key + verified sender domain. | **$0:** Brevo free tier (300 emails/day) or Resend free tier (3 000/mo) or Zoho Mail. No paid plan needed at your volume. Code is done, no-ops until a key is set. | ⏳ pick one, free |
+| 4 | **Shiprocket** *(or confirm manual fulfilment)* | Creds + `SHIPROCKET_ENABLED=true`, **or** just say "we'll ship manually" and this stops being a gap. | Shiprocket has a free plan. Manual fulfilment = $0. | ⏳ decide |
+| 5 | **Keep the backend warm** | Free Render sleeps after 15 min → 30–50 s cold start. | **$0:** a free cron pinger (cron-job.org or a GitHub Actions schedule) hitting `/api/health` every 10 min keeps it awake — I can set this up now. Render Starter ($7/mo) only if you'd rather not. The free Gorse Postgres still expires ~2026-12-08 regardless. | ⏳ (I can do the free pinger) |
+| 6 | **Say "promote to main"** | The `Yashasvi → main` merge + prod env vars is your gate. Nothing touches `main` / prod / DNS until you say so. | — | ⏳ |
 
 ## 🟡 Should-do, needs your hands (DB / dashboards)
 
-| # | Item | What exactly you need to do | Status |
-|---|------|------------------------------|--------|
-| 7 | **Delete test users** | Run `infra/db/2026-09-09_cleanup_test_data.sql` in the Supabase SQL editor (Aroham project). Removes ~12 throwaway test users + the `98123456xx` numbers this bug-hunt created. Claude is blocked from running DELETEs. | ⏳ |
-| 8 | **Apply the RLS-lockdown migration** | The hardening pass wrote `infra/db/2026-09-10_rls_lockdown.sql`. Review it, then run it in the Supabase SQL editor (Aroham). Claude is blocked from `apply_migration`. | ⏳ new |
-| 9 | **Decide `ArohamNew`** | Empty Supabase project `iveltpgympaucqypfyxi`. Delete it, or tell me to migrate the real schema into it. Data currently lives in **Aroham** (`lzzdfsphevmzbkkoskxb`). | ⏳ |
-| 10 | **Set `OTP_FORCE_MOCK` / `ALLOW_MOCK_AUTH` yourself if they need changing** | The Render env-var API is blocked for Claude by the auto-mode classifier — you (or an allow rule) have to touch these in the Render dashboard. Right now staging has mock auth ON, which is what we want for testing. | ℹ️ info |
+| # | Item | What you need to do | Free option | Status |
+|---|------|---------------------|-------------|--------|
+| 7 | **Delete test users** | Run `infra/db/2026-09-09_cleanup_test_data.sql` in the Supabase SQL editor (Aroham). Removes ~12 throwaway users + the `98123456xx` numbers testing created. | — (Claude is blocked from `DELETE`) | ⏳ |
+| 8 | **RLS lockdown** | The **prerequisite is now done** (commit `fc81927` — the web client hands its login JWT to supabase-js so `auth.uid()` resolves; verified live). `infra/db/2026-09-10_rls_lockdown.sql` is ready. **Run it during promotion, right after the prod frontend redeploys** — not before (Aroham is shared with prod; running it against the un-rebuilt prod bundle logs everyone out). Rollback SQL is in the file header. | — | ⏳ at promotion |
+| 9 | **Decide `ArohamNew`** | Empty project `iveltpgympaucqypfyxi` — delete it, or make it the real staging DB. Data is in **Aroham** (`lzzdfsphevmzbkkoskxb`). Supabase free tier covers a 2nd project. | — | ⏳ |
+| 10 | **Render env vars** (`OTP_FORCE_MOCK`, and prod vars at promotion) | The Render env-var API is blocked for Claude by the auto-mode classifier — set these in the Render dashboard yourself (or add a permission allow-rule). Staging currently has mock auth ON, which is correct for testing. | — | ℹ️ info |
+
+### $0 replacements for the "nice to have" services (I'll wire any of these on your word)
+| Need | Instead of paid | Use (free / OSS) |
+|---|---|---|
+| Error monitoring | paid Sentry | **GlitchTip** (OSS, Sentry-API-compatible, self-host on Render free) or Sentry's own free tier (5 k errors/mo) |
+| Web analytics | paid Plausible | **Umami** (OSS, self-host) or GA4 ($0) |
+| Uptime / cron | paid monitors | **cron-job.org** free, or a GitHub Actions cron |
+| Recommender | — | **Gorse** (already OSS + self-hosted) ✅ |
 
 ---
 

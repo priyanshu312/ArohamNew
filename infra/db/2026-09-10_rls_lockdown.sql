@@ -1,6 +1,5 @@
 -- ============================================================================
 --  RLS lockdown for user-owned tables  —  Aroham (lzzdfsphevmzbkkoskxb)
---  Status: NOT YET SAFE TO RUN.  Read the prerequisite section first.
 -- ============================================================================
 --
 --  WHY THIS EXISTS
@@ -11,36 +10,57 @@
 --  order. `payments`, `order_items`, `cart_items` are already correct (RLS on,
 --  zero anon policies — only the backend's service_role reaches them).
 --
---  PREREQUISITE (must land before running this)
---  The web app writes these tables directly with the anon key in ~35 places
---  (AuthPage, ProfilePage, ShippingPage, PaymentPage, CartContext,
---  WishlistContext, AuthContext, Newsletter, …). The phone-OTP login does NOT
---  create a Supabase auth session, so `auth.uid()` is NULL for those calls and
---  every policy below would deny them — breaking signup, checkout, cart, etc.
+--  PREREQUISITE — now satisfied on `Yashasvi` (commit fc81927):
+--  The web client hands the phone-OTP JWT to supabase-js
+--  (packages/shared-services/src/supabase.ts → applySupabaseAuth /
+--  initSupabaseAuthFromStorage). That JWT is signed with the project JWT secret
+--  and carries sub=<user id>, role=authenticated, aud=authenticated, so after
+--  login `auth.uid()` resolves to the user id for every direct
+--  supabase.from(...) call. Verified live 2026-09-10: with the token set,
+--  auth.uid() = the user id, auth.role() = 'authenticated', getUser() succeeds.
 --
---  So first move those writes server-side behind `requireAuth` (the backend
---  already holds the service_role key and knows `req.user.id`):
---    users        -> POST /api/auth/profile           (exists; make the client use it)
---    addresses    -> /api/addresses                    (exists; already auth'd)
---    orders       -> /api/orders + /api/payments/*      (exists; already auth'd)
---    user_carts   -> extend /api/cart                   (new)
---    user_wishlists -> new /api/wishlist                (new)
---    subscribers  -> new POST /api/newsletter           (new; keep public-insert-only if preferred)
---  Then delete the client-side `supabase.from(...).insert/update/delete` calls
---  for those tables (reads can stay if a read policy allows them).
+--  The few client-side WRITES that don't fit "your own row" were moved server-
+--  side or are already .catch()-guarded:
+--    - guest-order → user_id link-up: now in backend getUserOrders() (service role)
+--    - orders status writes from the client: already fire-and-forget .catch(()=>{})
+--    - users upsert (AuthContext.handleUserSupabaseSync): covered by
+--      users_self_insert + users_self_update below
 --
---  Only after that refactor is deployed and verified: run this file in the
---  Supabase SQL editor.
+--  ⚠️  DO NOT run this against a database whose FRONTEND bundle predates
+--      fc81927. Aroham is shared by staging AND production, so only run this
+--      once `main` (prod Vercel) has also been rebuilt with that commit —
+--      i.e. as part of the promotion, right after the prod frontend deploy.
+--      Running it earlier logs every prod user out on the 4-second block-poll
+--      and blanks their profile / addresses / order history.
 --
---  ROLLBACK: re-create the permissive policies, e.g.
---    CREATE POLICY "tmp_open" ON public.<t> FOR ALL TO public USING (true) WITH CHECK (true);
+--  ROLLBACK (paste in the SQL editor if the app misbehaves):
+--    begin;
+--    drop policy if exists users_self_read   on public.users;
+--    drop policy if exists users_self_insert on public.users;
+--    drop policy if exists users_self_update on public.users;
+--    drop policy if exists orders_self_read  on public.orders;
+--    drop policy if exists addresses_self_all on public.addresses;
+--    drop policy if exists user_carts_self_all on public.user_carts;
+--    drop policy if exists user_wishlists_self_all on public.user_wishlists;
+--    drop policy if exists subscribers_public_insert on public.subscribers;
+--    create policy "Allow public access users"        on public.users        for all to public using (true) with check (true);
+--    create policy "Allow public access orders"       on public.orders       for all to public using (true) with check (true);
+--    create policy "Allow addresses select" on public.addresses for select to public using (true);
+--    create policy "Allow addresses insert" on public.addresses for insert to public with check (true);
+--    create policy "Allow addresses update" on public.addresses for update to public using (true);
+--    create policy "Allow addresses delete" on public.addresses for delete to public using (true);
+--    create policy "Allow public access user_carts"    on public.user_carts    for all to public using (true) with check (true);
+--    create policy "Allow public access user_wishlists" on public.user_wishlists for all to public using (true) with check (true);
+--    create policy "Allow public access subscribers"   on public.subscribers   for all to public using (true) with check (true);
+--    commit;
 -- ============================================================================
 
 begin;
 
 -- ---------------------------------------------------------------------------
--- users : a person may read + update ONLY their own row. No client insert or
---         delete (backend service_role handles creation via /auth/otp/verify).
+-- users : read + update ONLY your own row. Insert only your own row (covers
+--         the client's upsert-on-sync); backend service_role still creates
+--         rows on first login regardless of RLS.
 -- ---------------------------------------------------------------------------
 drop policy if exists "Allow public access users" on public.users;
 drop policy if exists "Allow user select"        on public.users;
@@ -49,12 +69,15 @@ drop policy if exists "Allow user update"        on public.users;
 
 create policy "users_self_read"   on public.users
   for select to authenticated using (auth.uid() = id);
+create policy "users_self_insert" on public.users
+  for insert to authenticated with check (auth.uid() = id);
 create policy "users_self_update" on public.users
   for update to authenticated using (auth.uid() = id) with check (auth.uid() = id);
--- (service_role bypasses RLS entirely, so the backend can still create rows.)
+-- no DELETE policy -> clients cannot delete user rows.
 
 -- ---------------------------------------------------------------------------
--- orders : read your own; no client writes at all (backend owns the lifecycle).
+-- orders : read your own; NO client writes (backend owns the whole lifecycle
+--          via service_role: create / confirm / fail / cancel).
 -- ---------------------------------------------------------------------------
 drop policy if exists "Allow public access orders" on public.orders;
 drop policy if exists "Allow orders select"        on public.orders;
@@ -65,7 +88,7 @@ create policy "orders_self_read" on public.orders
   for select to authenticated using (auth.uid() = user_id);
 
 -- ---------------------------------------------------------------------------
--- addresses : full CRUD but only on rows you own.
+-- addresses : full CRUD, but only on rows you own.
 -- ---------------------------------------------------------------------------
 drop policy if exists "Allow addresses select" on public.addresses;
 drop policy if exists "Allow addresses insert" on public.addresses;
@@ -87,22 +110,19 @@ create policy "user_wishlists_self_all" on public.user_wishlists
   for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- ---------------------------------------------------------------------------
--- subscribers : keep it insert-only for the public (newsletter signup form),
---               but no read/update/delete from the client.
+-- subscribers : newsletter signup form stays public INSERT-only; no client
+--               read / update / delete. (A repeat signup that used to UPSERT
+--               will now just no-op on the DB — the form already treats any
+--               2xx/!error as success.)
 -- ---------------------------------------------------------------------------
 drop policy if exists "Allow public access subscribers"    on public.subscribers;
 drop policy if exists "Allow public newsletter inserts"    on public.subscribers;
 create policy "subscribers_public_insert" on public.subscribers
   for insert to anon, authenticated with check (true);
 
--- ---------------------------------------------------------------------------
--- NOTE on the OTP model: our session JWT is signed with the Supabase JWT
--- secret and carries sub=<user id>, role=authenticated, aud=authenticated, so
--- when the web client passes it to supabase-js as the access token,
--- `auth.uid()` resolves to the user id and every policy above works. Make sure
--- packages/shared-services/src/… sets that token on the supabase client after
--- login (supabase.auth.setSession / global headers), or keep those tables
--- fully server-side.
--- ---------------------------------------------------------------------------
-
 commit;
+
+-- After running: re-check the advisor
+--   (MCP)  get_advisors(project_id, 'security')
+-- and confirm the app: login → profile loads → add/edit/delete address →
+-- add to cart → wishlist toggle → place + view an order → newsletter signup.
