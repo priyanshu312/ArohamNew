@@ -71,4 +71,16 @@ async function sendOrderConfirmation(order, items) {
   return sendEmail({ to, subject: `Nakshra order #${String(order.id).slice(0, 8)} confirmed`, html });
 }
 
-module.exports = { sendEmail, sendOrderConfirmation };
+// Login verification code. Fire from routes/auth via services/otp.
+async function sendOtpEmail(to, code) {
+  const html = `
+    <div style="font-family:system-ui,Segoe UI,Roboto,sans-serif;max-width:440px;margin:auto;color:#241619">
+      <h2 style="color:#7A2A30;margin:0 0 4px">Your Nakshra verification code</h2>
+      <p style="margin:0 0 16px;color:#6E5A57">Enter this code to sign in. It expires in 10 minutes.</p>
+      <div style="font-size:32px;letter-spacing:10px;font-weight:700;background:#F6EEE7;border:1px solid #E8DBD2;border-radius:12px;padding:18px 0;text-align:center;color:#241619">${code}</div>
+      <p style="margin:16px 0 0;font-size:12px;color:#9A8A86">If you didn't request this, you can ignore this email. \u{1F549}️ Nakshra</p>
+    </div>`;
+  return sendEmail({ to, subject: `${code} is your Nakshra code`, html });
+}
+
+module.exports = { sendEmail, sendOrderConfirmation, sendOtpEmail };

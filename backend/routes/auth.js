@@ -15,8 +15,13 @@ async function findOrCreateUser(phone, fullName, extra = {}) {
     if (String(existing.status).toUpperCase() === "BLOCKED") {
       throw Object.assign(new Error("Sorry, you are blocked. Can't login."), { status: 403 });
     }
-    if (fullName && fullName !== existing.full_name) {
-      const { data: upd } = await supabase.from("users").update({ full_name: fullName }).eq("id", existing.id).select().single();
+    const patch = {};
+    if (fullName && fullName !== existing.full_name) patch.full_name = fullName;
+    // Adopt a real email if we only had the synthetic <phone>@Nakshra.in one.
+    const realEmail = extra.email && !/@Nakshra\.in$/i.test(extra.email) ? extra.email : null;
+    if (realEmail && realEmail !== existing.email) patch.email = realEmail;
+    if (Object.keys(patch).length) {
+      const { data: upd } = await supabase.from("users").update(patch).eq("id", existing.id).select().single();
       return upd || existing;
     }
     return existing;
@@ -58,13 +63,24 @@ async function findOrCreateUser(phone, fullName, extra = {}) {
   return inserted;
 }
 
-// POST /api/auth/otp/send  { phone }
+// POST /api/auth/otp/send  { phone, email? }
+// The code is delivered by EMAIL (free). `phone` stays the account identifier;
+// `email` is where the code is sent. If no email is given and we don't already
+// have a real one on file for this phone, respond { needEmail: true } so the
+// client can ask for it.
 router.post("/otp/send", otpSendLimiter, async (req, res) => {
-  const phone = String(req.body.phone || "").replace(/\D/g, "");
-  if (phone.slice(-10).length !== 10) return res.status(400).json({ error: "Enter a valid 10-digit mobile number." });
+  const phone = String(req.body.phone || "").replace(/\D/g, "").slice(-10);
+  const bodyEmail = String(req.body.email || "").trim().toLowerCase();
+  if (phone.length !== 10) return res.status(400).json({ error: "Enter a valid 10-digit mobile number." });
   try {
-    const r = await sendOtp(phone);
-    res.json({ sent: true, dev: !!r.dev });
+    let dest = bodyEmail || null;
+    if (!dest) {
+      const { data: u } = await supabase.from("users").select("email").eq("phone", phone).maybeSingle();
+      if (u && u.email && !/@Nakshra\.in$/i.test(u.email)) dest = u.email;
+    }
+    const r = await sendOtp(phone, dest);
+    if (r && r.needEmail) return res.json({ sent: false, needEmail: true });
+    res.json({ sent: true, dev: !!r.dev, via: r.channel || (r.dev ? "mock" : "email") });
   } catch (e) {
     console.error("[auth/otp/send]", e.status, e.message);
     res.status(e.status || 500).json({ error: e.message || "Could not send OTP" });

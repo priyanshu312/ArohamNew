@@ -64,6 +64,7 @@ export function AuthPage() {
   const [gender, setGender] = useState("Other");
   const [agreed, setAgreed] = useState(false);
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
+  const [needEmail, setNeedEmail] = useState(false);
   const [canResend, setCanResend] = useState(false);
   const [panelVisible, setPanelVisible] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -103,7 +104,10 @@ export function AuthPage() {
 
   const [noAccountNotice, setNoAccountNotice] = useState(false);
 
-  // Trigger Phone Auth SMS OTP
+  const emailValid = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+
+  // Send the login OTP. The code is delivered by EMAIL; `phone` stays the
+  // account identifier and `email` is where the code goes.
   const handleSendPhoneOtp = async () => {
     const phoneDigits = phone.replace(/\D/g, "");
     if (phoneDigits.length !== 10) {
@@ -118,6 +122,13 @@ export function AuthPage() {
       }
     }
 
+    // Email is required whenever we're showing the field (signup, or a signin
+    // where the backend told us it has no email on file for this number).
+    if ((activeTab === "signup" || needEmail) && !emailValid(email)) {
+      setErrorMsg("Please enter a valid email address — that's where your code goes.");
+      return;
+    }
+
     setLoading(true);
     setErrorMsg("");
     setNoAccountNotice(false);
@@ -129,7 +140,7 @@ export function AuthPage() {
       try {
         const { data } = await supabase
           .from('astrologers')
-          .select('status')
+          .select('status, email')
           .or(`phone.eq.${last10},phone.eq.+91${last10},phone.eq.91${last10},phone.ilike.%${last10}`)
           .limit(1);
         const astroObj = data && data.length > 0 ? data[0] : null;
@@ -152,8 +163,16 @@ export function AuthPage() {
       }
 
       try {
-        await api("/auth/otp/send", { method: "POST", body: JSON.stringify({ phone: phoneDigits }) });
+        const r: any = await api("/auth/otp/send", {
+          method: "POST",
+          body: JSON.stringify({ phone: phoneDigits, email: (email.trim() || existingAstro?.email || "") || undefined }),
+        });
         setLoading(false);
+        if (r?.needEmail) {
+          setNeedEmail(true);
+          setErrorMsg("Enter your email address — we'll send the code there.");
+          return;
+        }
         goTo("otp");
       } catch (e: any) {
         setLoading(false);
@@ -225,8 +244,16 @@ export function AuthPage() {
     }
 
     try {
-      await api("/auth/otp/send", { method: "POST", body: JSON.stringify({ phone: phoneDigits }) });
+      const r: any = await api("/auth/otp/send", {
+        method: "POST",
+        body: JSON.stringify({ phone: phoneDigits, email: (email.trim() || existingUser?.email || "") || undefined }),
+      });
       setLoading(false);
+      if (r?.needEmail) {
+        setNeedEmail(true);
+        setErrorMsg("Enter your email address — we'll send the code there.");
+        return;
+      }
       goTo("otp");
     } catch (e: any) {
       setLoading(false);
@@ -259,6 +286,7 @@ export function AuthPage() {
             phone: phoneDigits,
             code: joinedOtp,
             fullName: name.trim() || undefined,
+            email: email.trim() || undefined,
             verifyOnly: isAstrologerMode,
           }),
         });
@@ -843,6 +871,27 @@ export function AuthPage() {
           />
         </div>
       </div>
+
+      {(activeTab === "signup" || needEmail) && (
+        <div>
+          <label className="block text-xs font-semibold mb-1" style={{ color: MAROON, fontFamily: SANS }}>
+            {t("auth.email_label", "Email address")}
+          </label>
+          <input
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            placeholder={t("auth.email_placeholder", "you@example.com")}
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            className="w-full px-3.5 py-3 text-sm rounded-2xl bg-white outline-none font-medium"
+            style={{ color: MAROON, fontFamily: SANS, border: "1.5px solid rgba(91,31,36,0.14)" }}
+          />
+          <p className="text-[11px] mt-1" style={{ color: "#7A6A58" }}>
+            {t("auth.email_hint", "We'll send your login code here.")}
+          </p>
+        </div>
+      )}
 
       <p className="text-xs text-center leading-relaxed px-4" style={{ color: "#7A6A58" }}>
         {t("auth.terms_agree", "By continuing, you agree to Nakshra's")}{" "}
