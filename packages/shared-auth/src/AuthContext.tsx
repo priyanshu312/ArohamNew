@@ -271,8 +271,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try { await firebaseAuth.signOut(); } catch (e) {}
     try { await supabase.auth.signOut(); } catch (e) {}
     safeLocalStorage.removeItem("Nakshra_mock_session");
+    safeLocalStorage.removeItem("Nakshra_auth_token"); // phone-OTP session JWT
     deleteCookie("Nakshra_session");
-    
+
     // Clear all cart & order caches from localStorage
     safeLocalStorage.removeItem("Nakshra_cart");
     safeLocalStorage.removeItem("Nakshra_buy_now_intent");

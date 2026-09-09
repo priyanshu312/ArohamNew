@@ -124,6 +124,22 @@ router.put("/:productId", requireAuth, async (req, res) => {
   }
 });
 
+// DELETE /api/cart - Clear the whole cart (all non-temp items, or temp items
+// with ?temp=true). The frontend calls this after checkout and on "clear cart".
+router.delete("/", requireAuth, async (req, res) => {
+  const isTemp = req.query.temp === "true";
+  try {
+    const { error } = await supabase.from("cart_items")
+      .delete()
+      .eq("user_id", req.user.id)
+      .eq("is_temporary", isTemp);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // DELETE /api/cart/:productId - Remove item
 router.delete("/:productId", requireAuth, async (req, res) => {
   const isTemp = req.query.temp === "true";
