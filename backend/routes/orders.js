@@ -53,12 +53,32 @@ router.post("/", requireAuth, async (req, res) => {
 
     const { order, amount } = await createPendingOrder(req.user.id, check.products, address, promoCode);
 
+    // Razorpay's minimum chargeable amount is 100 paise (₹1).
+    if (!Number.isFinite(amount) || amount < 100) {
+      return res.status(400).json({ error: "Order amount must be at least ₹1 (100 paise)." });
+    }
 
     // Initiate Payment: create Razorpay order (amount in paise)
-    const rzpOrder = await razorpay.orders.create({
-      amount, currency: "INR", receipt: String(order.id),
-      notes: { order_id: String(order.id) },
-    });
+    let rzpOrder;
+    try {
+      rzpOrder = await razorpay.orders.create({
+        amount, currency: "INR", receipt: String(order.id),
+        notes: { order_id: String(order.id) },
+      });
+    } catch (rzpErr) {
+      // Razorpay SDK errors carry .statusCode + .error.{description,reason}, not .message.
+      const status = rzpErr && rzpErr.statusCode;
+      const detail =
+        (rzpErr && rzpErr.error && (rzpErr.error.description || rzpErr.error.reason)) ||
+        (rzpErr && rzpErr.message) ||
+        "Razorpay order creation failed";
+      console.error("[Order Route] Razorpay orders.create failed:", status, detail);
+      if (status === 401) {
+        return res.status(401).json({ error: "Payment gateway authentication failed. Check RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET." });
+      }
+      return res.status(502).json({ error: "Payment gateway error", details: detail });
+    }
+
     await supabase.from("payments")
       .update({ razorpay_order_id: rzpOrder.id }).eq("order_id", order.id);
 
@@ -69,8 +89,9 @@ router.post("/", requireAuth, async (req, res) => {
       keyId: process.env.RAZORPAY_KEY_ID,
     });
   } catch (e) {
-    console.error("[Order Route Error] Order creation failed:", e);
-    res.status(500).json({ error: e.message });
+    const detail = (e && e.error && (e.error.description || e.error.reason)) || (e && e.message) || String(e);
+    console.error("[Order Route Error] Order creation failed:", detail);
+    res.status(500).json({ error: detail });
   }
 });
 

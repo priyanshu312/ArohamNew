@@ -14,8 +14,10 @@ declare global {
   }
 }
 
-// Razorpay public key — safe to expose in frontend
-const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_TIXODQAA4JFwih";
+// Razorpay publishable key id — safe in frontend. The backend also returns the
+// authoritative keyId in the create-order response (used below); this is only
+// the pre-response default.
+const RAZORPAY_KEY_ID = (import.meta.env.VITE_RAZORPAY_KEY_ID as string) || "rzp_test_TZzqUOKBG1qjVY";
 
 function CheckoutHeader() {
   const navigate = useNavigate();
