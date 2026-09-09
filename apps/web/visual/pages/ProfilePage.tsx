@@ -10,7 +10,7 @@ import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import { supabase } from "@nakshra/shared-services";
 import { db } from "@nakshra/shared-services";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "@nakshra/shared-services";
 import { INDIA_STATES } from "@nakshra/shared-config/data";
 
 const ORDER_STEPS = [

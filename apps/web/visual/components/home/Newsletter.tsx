@@ -3,7 +3,7 @@ import { CheckCircle, Loader2 } from "lucide-react";
 import { MAROON, GOLD, IVORY, SANS, SERIF } from "@nakshra/shared-config/theme";
 import { supabase } from "@nakshra/shared-services";
 import { db } from "@nakshra/shared-services";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "@nakshra/shared-services";
 import { useTranslation } from "react-i18next";
 
 export function Newsletter() {

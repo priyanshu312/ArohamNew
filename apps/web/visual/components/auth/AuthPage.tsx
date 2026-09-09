@@ -10,7 +10,8 @@ import { firebaseAuth, db } from "@nakshra/shared-services";
 import { supabase } from "@nakshra/shared-services";
 import { api } from "@nakshra/shared-api";
 import { generateUUID } from "@nakshra/shared-utils/uuid";
-import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from "firebase/firestore";
+// Firestore helpers come from the shared-services stub — Firebase is not wired up.
+import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from "@nakshra/shared-services";
 import * as Select from "@radix-ui/react-select";
 import * as Popover from "@radix-ui/react-popover";
 import { DayPicker } from "react-day-picker";
