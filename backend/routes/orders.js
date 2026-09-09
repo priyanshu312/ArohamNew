@@ -4,6 +4,7 @@ const requireAuth = require("../middleware/auth");
 const razorpay = require("../config/razorpay");
 const { validateItems } = require("../services/validationService");
 const { createPendingOrder, getUserOrders } = require("../services/orderService");
+const { failOrder } = require("../services/paymentService");
 const supabase = require("../config/supabase");
 
 // Debug endpoints — disabled unless ENABLE_DEBUG_ROUTES=true (they leak DB errors
@@ -73,6 +74,12 @@ router.post("/", requireAuth, async (req, res) => {
         (rzpErr && rzpErr.message) ||
         "Razorpay order creation failed";
       console.error("[Order Route] Razorpay orders.create failed:", status, detail);
+      // Roll back the just-created PENDING order so it doesn't linger + hold stock.
+      try {
+        await failOrder(order.id, "Razorpay order creation failed: " + detail);
+      } catch (rbErr) {
+        console.error("[Order Route] rollback (failOrder) also failed:", rbErr.message);
+      }
       if (status === 401) {
         return res.status(401).json({ error: "Payment gateway authentication failed. Check RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET." });
       }

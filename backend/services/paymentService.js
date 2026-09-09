@@ -3,6 +3,7 @@
 const crypto = require("crypto");
 const supabase = require("../config/supabase");
 const { ShiprocketService } = require("./shiprocket");
+const { sendOrderConfirmation } = require("./notify");
 
 function verifyPaymentSignature({ razorpay_order_id, razorpay_payment_id, razorpay_signature }) {
   const secret = process.env.RAZORPAY_KEY_SECRET;
@@ -46,6 +47,13 @@ async function confirmOrder(orderId, paymentDetails) {
   // 3. Commit stock
   for (const it of items || []) {
     await supabase.rpc("commit_stock", { p_product_id: it.product_id, p_qty: it.qty });
+  }
+
+  // 3b. Order confirmation email (no-op unless RESEND_API_KEY + ORDER_EMAIL_FROM set).
+  if (order) {
+    sendOrderConfirmation(order, items).catch((e) =>
+      console.warn("[notify] order confirmation email failed:", e.message)
+    );
   }
 
   // 4. Shiprocket Fulfillment (gated by SHIPROCKET_ENABLED flag)

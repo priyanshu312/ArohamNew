@@ -188,26 +188,31 @@ export function PaymentPage() {
                 shipping_address: shippingAddr || null
               };
 
-              // 1. Insert to Supabase orders DB — always store user_id and user_phone
-              try {
-                const userPhone = shippingAddr?.phone || user?.user_metadata?.phone || "";
-
-                const sbPayload: any = {
-                  id: orderId,
-                  user_id: user?.id || null,
-                  user_phone: String(userPhone).replace(/\D/g, "").slice(-10),
-                  amount: Math.round(total * 100),
-                  total_amount: Math.round(total * 100),
-                  status: "CONFIRMED",
-                  payment_method: "Razorpay",
-                  payment_status: "PAID",
-                  address: `${shippingAddr?.line1 || shippingAddr?.address || ""}, ${shippingAddr?.city || ""}, ${shippingAddr?.state || ""} - ${shippingAddr?.pin || shippingAddr?.pincode || ""}`,
-                  shipping_address: shippingAddr || {}
-                };
-                const { error: sbError } = await supabase.from("orders").insert(sbPayload);
-                if (sbError) console.error("Supabase order insert error:", sbError);
-              } catch (e) {
-                console.error("Supabase order insert exception:", e);
+              // 1. Supabase orders row.
+              // When the backend created the order (internalOrderId came from
+              // /api/orders), it already owns that row and /api/payments/verify +
+              // the webhook mark it CONFIRMED — a client insert here just PK-conflicts.
+              // Only write directly on the offline fallback path (client-generated id).
+              if (String(orderId) === String(orderUuid)) {
+                try {
+                  const userPhone = shippingAddr?.phone || user?.user_metadata?.phone || "";
+                  const sbPayload: any = {
+                    id: orderId,
+                    user_id: user?.id || null,
+                    user_phone: String(userPhone).replace(/\D/g, "").slice(-10),
+                    amount: Math.round(total * 100),
+                    total_amount: Math.round(total * 100),
+                    status: "CONFIRMED",
+                    payment_method: "Razorpay",
+                    payment_status: "PAID",
+                    address: `${shippingAddr?.line1 || shippingAddr?.address || ""}, ${shippingAddr?.city || ""}, ${shippingAddr?.state || ""} - ${shippingAddr?.pin || shippingAddr?.pincode || ""}`,
+                    shipping_address: shippingAddr || {}
+                  };
+                  const { error: sbError } = await supabase.from("orders").upsert(sbPayload);
+                  if (sbError) console.error("Supabase order upsert error:", sbError);
+                } catch (e) {
+                  console.error("Supabase order upsert exception:", e);
+                }
               }
 
               // 2. Save to user localStorage
