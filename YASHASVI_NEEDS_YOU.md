@@ -5,12 +5,12 @@ Everything else is being tested + fixed automatically on the `Yashasvi` branch.
 (`yashasvi_finalization.md` / `MANUAL_TASKS_AND_BOTTLENECKS.md` are fuller status
 docs from the hardening pass — this file is the "what needs a human" shortlist +
 the bug-hunt log.)
-Last updated: 2026-09-10_
+Last updated: 2026-09-10 (OTP switched to email)_
 
 > **Cost rule (your instruction):** pick free-tier or self-hostable open-source
-> over paid SaaS unless paid is genuinely unavoidable. The only truly
-> unavoidable paid things below are **SMS delivery** and **payment processing**.
-> Everything else has a $0 path — see the "free option" column.
+> over paid SaaS unless paid is genuinely unavoidable. After switching OTP to
+> email, the only unavoidable paid thing left is **payment processing** (Razorpay
+> per-transaction fees). Everything else has a $0 path.
 
 ---
 
@@ -18,11 +18,10 @@ Last updated: 2026-09-10_
 
 | # | Item | What you need to do | Free option | Status |
 |---|------|---------------------|-------------|--------|
-| 1 | **Real SMS OTP** | `SUPABASE_JWT_SECRET` + 3 `TWILIO_*` values are already set (real signed JWTs verified live). Twilio **trial can't SMS Indian numbers** without an approved compliance profile. | **No $0 SMS exists** (carriers charge ~₹0.12–0.20/msg). Cheapest: **2Factor.in** or **MSG91** (pay-as-you-go, no monthly). $0 alternatives: **email OTP** instead of SMS, or **WhatsApp Cloud API** (Meta, 1 000 free conversations/mo). Tell me which and I wire it. | ⏳ your choice |
+| 1+3 | **One transactional-email key** (covers BOTH login OTP **and** order-confirmation email) | Sign up for **Brevo** (300/day free) or **Resend** (3 000/mo free), verify a sender (e.g. `no-reply@nakshra.in`), and set `RESEND_API_KEY` + `ORDER_EMAIL_FROM` on Render. Then unset `OTP_FORCE_MOCK`. | **$0** — free tier is plenty. Login codes now go by email (`OTP_CHANNEL=email`, code `0700a4a`); SMS/Twilio is gone from the default path. No SMS spend. | ⏳ one free key |
 | 2 | **Razorpay live keys** | `rzp_live_…` needs business **KYC** (PAN, bank, business proof). | Razorpay itself is free to integrate; only per-txn fees (~2%). No OSS substitute for taking real Indian payments. | ⏳ KYC |
-| 3 | **Transactional email** (order confirmations) | Give me an API key + verified sender domain. | **$0:** Brevo free tier (300 emails/day) or Resend free tier (3 000/mo) or Zoho Mail. No paid plan needed at your volume. Code is done, no-ops until a key is set. | ⏳ pick one, free |
 | 4 | **Shiprocket** *(or confirm manual fulfilment)* | Creds + `SHIPROCKET_ENABLED=true`, **or** just say "we'll ship manually" and this stops being a gap. | Shiprocket has a free plan. Manual fulfilment = $0. | ⏳ decide |
-| 5 | **Keep the backend warm** | Free Render sleeps after 15 min → 30–50 s cold start. | **$0:** a free cron pinger (cron-job.org or a GitHub Actions schedule) hitting `/api/health` every 10 min keeps it awake — I can set this up now. Render Starter ($7/mo) only if you'd rather not. The free Gorse Postgres still expires ~2026-12-08 regardless. | ⏳ (I can do the free pinger) |
+| 5 | **Keep the backend warm** | Free Render sleeps after 15 min → 30–50 s cold start. | **$0 — done:** `.github/workflows/keep-warm.yml` pings backend + Gorse every ~10 min (`0700a4a`/`93a8912`). Activates once it's on `main` (GitHub only runs cron from the default branch); `workflow_dispatch` works now. For a hard guarantee, add cron-job.org (free) at 5 min. Gorse free Postgres still expires ~2026-12-08. | ✅ free pinger committed |
 | 6 | **Say "promote to main"** | The `Yashasvi → main` merge + prod env vars is your gate. Nothing touches `main` / prod / DNS until you say so. | — | ⏳ |
 
 ## 🟡 Should-do, needs your hands (DB / dashboards)
@@ -76,6 +75,16 @@ the live service.
 | `PUT /api/addresses/:id` for an unknown id → 500 | `.select().single()` on 0 rows → PostgREST "Cannot coerce the result to a single JSON object" → confusing 500 instead of 404 | `.maybeSingle()` + explicit 404. Ownership check unchanged | `6ed481c` | ✅ 404; full CRUD passes |
 
 ### Regression sweep after every deploy: **25/25 endpoints green**, `/api/health` stays up through webhook abuse, CORS allowlist correct (`*.vercel.app` + `nakshra.in` ok, `evil.example.com` → 403).
+
+## 🔧 Bigger changes this session (also on Yashasvi, verified)
+
+| Change | Why | Commit | Verified |
+|---|---|---|---|
+| **OTP JWT → supabase-js** | Prereq for RLS lockdown — makes `auth.uid()` resolve for the client's direct Supabase calls | `fc81927` | ✅ live: `auth.uid()`, `auth.role()='authenticated'`, `getUser()`, + all 6 frontend call patterns |
+| **RLS lockdown SQL finalised** | `users`/`orders`/`addresses`/carts/wishlists were `USING(true)` to `public` — anon key = full read/write to all PII | `dafeaeb` (`infra/db/2026-09-10_rls_lockdown.sql`) | ready; **run at promotion** (shared prod DB) |
+| **Login OTP: SMS → email** | Kill per-SMS cost. Backend generates + hashes + stores the code (`otp_codes` table), emails it. Phone stays the account id. | `0700a4a` | ✅ staging (mock `111111`) + email-adopt onto user row verified; real email needs the free key (item 1+3) |
+| **Free keep-warm pinger** | $0 alternative to Render Starter | `93a8912` | committed; runs from `main` |
+| **`getUserOrders` phone-aware** | guest→user order link-up moved server-side (client write breaks under locked RLS) | `fc81927` | ✅ |
 
 ### Observed, not a bug (no fix)
 - `/api/admin/onboarding/applications` (astrologer onboarding) has **no backend route**, but every caller guards with `if (res.ok)` and falls back to a direct Supabase write. It's an optional sync to a separate admin service (port 5001) not in this deployment.
