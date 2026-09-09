@@ -6,10 +6,11 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "typecheck": "node scripts/syntax-check.js"
+    "typecheck": "node scripts/syntax-check.js",
+    "postinstall": "node scripts/install-chrome.js"
   },
   "pnpm": {
-    "//": "pnpm 9 blocks dependency build scripts by default; puppeteer needs its postinstall to download Chrome (kundli PDF). Without this the deploy 500s with 'Could not find Chrome'.",
+    "//": "pnpm 9 blocks dependency build scripts; the postinstall above installs Chrome for Puppeteer (kundli PDF) since the deploy build otherwise skips it.",
     "onlyBuiltDependencies": ["puppeteer", "@firebase/util", "protobufjs"]
   },
   "dependencies": {
