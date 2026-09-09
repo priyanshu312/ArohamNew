@@ -8,6 +8,10 @@
     "dev": "node --watch server.js",
     "typecheck": "node scripts/syntax-check.js"
   },
+  "pnpm": {
+    "//": "pnpm 9 blocks dependency build scripts by default; puppeteer needs its postinstall to download Chrome (kundli PDF). Without this the deploy 500s with 'Could not find Chrome'.",
+    "onlyBuiltDependencies": ["puppeteer", "@firebase/util", "protobufjs"]
+  },
   "dependencies": {
     "@goldenius/hades-js": "^2.1.2",
     "@supabase/supabase-js": "^2.45.0",

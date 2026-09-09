@@ -93,7 +93,9 @@ Key Instructions:
   }
 
   try {
-    const model = process.env.LLM_MODEL || "llama-3.3-70b-versatile";
+    // Groq retired the Llama chat models; qwen3.8-27b is a current, fast,
+    // instruction-following default. Override with LLM_MODEL.
+    const model = process.env.LLM_MODEL || "qwen/qwen3.8-27b";
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
