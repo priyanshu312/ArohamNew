@@ -1,0 +1,38 @@
+# Render Blueprint for the Nakshra Gorse recommender.
+#
+# Deploy:  Render dashboard -> New -> Blueprint -> pick the ArohamNew repo.
+#          Render finds this file, creates the two resources below, and builds.
+# After it goes live, set GORSE_URL on the backend service to the Gorse URL
+# Render prints (https://nakshra-gorse.onrender.com), then run the one-time seed:
+#   GORSE_URL=https://nakshra-gorse.onrender.com node infra/gorse/seed-nakshra.js
+#
+# Cache + data both use the Postgres below (Gorse supports a Postgres cache
+# store), so there is no Redis / RediSearch requirement. Personalised
+# /api/recommend works; the "popular" and item-to-item lists may be thinner
+# than a RediSearch-backed deploy — the backend already falls back to a
+# Supabase top-selling query for those, so nothing breaks.
+
+databases:
+  - name: nakshra-gorse-db
+    plan: free
+    databaseName: gorse
+    user: gorse
+
+services:
+  - type: web
+    name: nakshra-gorse
+    runtime: docker
+    plan: free
+    rootDir: infra/gorse
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/dashboard/stats
+    autoDeploy: true
+    envVars:
+      - key: GORSE_DATA_STORE
+        fromDatabase:
+          name: nakshra-gorse-db
+          property: connectionString
+      - key: GORSE_CACHE_STORE
+        fromDatabase:
+          name: nakshra-gorse-db
+          property: connectionString

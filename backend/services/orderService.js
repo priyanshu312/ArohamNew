@@ -1,6 +1,7 @@
 // services/orderService.js
 // "3. ORDER PROCESSING": order (PENDING) → order items → reserve stock → payment record
 const supabase = require("../config/supabase");
+const { sendFeedback } = require("./gorseFeedback");
 
 const PROMO_CODES = [
   {
@@ -75,6 +76,10 @@ async function createPendingOrder(userId, products, address, promoCode) {
   }));
   const { error: iErr } = await supabase.from("order_items").insert(rows);
   if (iErr) throw new Error("Order items failed: " + iErr.message);
+
+  // Checkout is the strongest purchase-intent signal we get (many test payments
+  // never complete), so feed it to the recommender as a "buy".
+  sendFeedback("buy", userId, products.map((p) => p.id));
 
   // 3. Reserve stock → INVENTORY (products.stock / reserved)
   for (const p of products) {

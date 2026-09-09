@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const requireAuth = require("../middleware/auth");
 const supabase = require("../config/supabase");
+const { sendFeedback } = require("../services/gorseFeedback");
 
 // GET /api/cart - Fetch cart items (temp=true for Buy Now)
 router.get("/", requireAuth, async (req, res) => {
@@ -72,6 +73,8 @@ router.post("/", requireAuth, async (req, res) => {
         .insert({ user_id: req.user.id, product_id: productId, qty, is_temporary: false });
     }
     if (result.error) throw result.error;
+    // "add to cart" is a strong positive signal for the recommender.
+    sendFeedback("like", req.user.id, productId);
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
