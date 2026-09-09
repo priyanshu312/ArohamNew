@@ -16,9 +16,21 @@ function figmaAssetResolver() {
   }
 }
 
+// Fill %VITE_ROBOTS% in index.html. Default = crawlable (production); set
+// VITE_ROBOTS="noindex, nofollow" in preview/staging Vercel scopes.
+function htmlEnvDefaults() {
+  return {
+    name: 'html-env-defaults',
+    transformIndexHtml(html: string) {
+      return html.replace(/%VITE_ROBOTS%/g, process.env.VITE_ROBOTS || 'index, follow')
+    },
+  }
+}
+
 export default defineConfig({
   plugins: [
     figmaAssetResolver(),
+    htmlEnvDefaults(),
     // The React and Tailwind plugins are both required for Make, even if
     // Tailwind is not being actively used – do not remove them
     react(),
