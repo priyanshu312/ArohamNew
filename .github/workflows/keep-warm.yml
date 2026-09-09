@@ -1,0 +1,39 @@
+name: keep-warm
+
+# $0 alternative to a paid "always-on" plan. Free Render web services sleep
+# after ~15 min idle (30–50 s cold start on the next hit). This pings their
+# health endpoints on a schedule so a real visitor rarely lands on a cold box.
+#
+# Caveats: GitHub cron is best-effort (can drift 5–15 min, and scheduled
+# workflows auto-disable after 60 days with no repo commits). For a hard
+# guarantee use an external pinger (cron-job.org, UptimeRobot) at 5 min, or
+# move the service to a paid always-on plan.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # every 10 minutes (best-effort)
+  workflow_dispatch: {}
+
+concurrency:
+  group: keep-warm
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping services
+        run: |
+          set -u
+          urls=(
+            "https://nakshra-backend-yashasvi.onrender.com/api/health"
+            "https://nakshra-gorse.onrender.com/api/health/live"
+          )
+          for u in "${urls[@]}"; do
+            for attempt in 1 2 3; do
+              code=$(curl -s -o /dev/null -m 60 -w '%{http_code}' "$u" || echo 000)
+              echo "$u -> $code (attempt $attempt)"
+              [ "$code" = "200" ] && break
+              sleep 20
+            done
+          done
