@@ -11,3 +11,4 @@ __MACOSX/
 .env.*
 !.env.example
 !**/.env.example
+backend/.cache/
