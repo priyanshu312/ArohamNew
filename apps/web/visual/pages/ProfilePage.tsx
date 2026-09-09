@@ -358,24 +358,17 @@ export function ProfilePage() {
   const handleCancelOrder = async (orderId: string | number) => {
     if (!confirm(`Are you sure you want to cancel Order #${orderId}?`)) return;
 
-    // 1. Save CANCELLED status persistently in localStorage
-    localStorage.setItem(`Nakshra_order_status_${orderId}`, "CANCELLED");
-
     try {
-      if (user?.id) {
-        await Promise.resolve(
-          supabase.from("orders").update({ status: "CANCELLED" }).eq("id", orderId)
-        ).catch(() => {});
-      }
+      // Backend owns cancellation: it checks ownership + status and releases
+      // the reserved/sold stock. Let a real failure surface instead of faking success.
+      await api(`/orders/${orderId}/cancel`, { method: "POST" });
 
-      await api(`/orders/${orderId}/cancel`, { method: "POST" }).catch(() => {});
-
+      localStorage.setItem(`Nakshra_order_status_${orderId}`, "CANCELLED");
       setOrders(prev => prev.map(o => String(o.id) === String(orderId) ? { ...o, status: "CANCELLED" } : o));
       alert(`Order #${orderId} has been cancelled successfully.`);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Order cancellation error:", err);
-      setOrders(prev => prev.map(o => String(o.id) === String(orderId) ? { ...o, status: "CANCELLED" } : o));
-      alert(`Order #${orderId} has been cancelled.`);
+      alert(err?.message || `Could not cancel Order #${orderId}. Please contact support.`);
     }
   };
 

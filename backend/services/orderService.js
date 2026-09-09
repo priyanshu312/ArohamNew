@@ -100,6 +100,46 @@ async function createPendingOrder(userId, products, address, promoCode) {
   return { order, payment, amount };
 }
 
+// User-initiated cancellation. Verifies ownership, refuses once the order has
+// shipped, marks it CANCELLED, puts reserved/sold stock back, and flags a paid
+// payment as REFUND_PENDING (refunds are handled manually / out of band).
+const CANCELLABLE = new Set(["PENDING", "CONFIRMED", "PAYMENT_FAILED"]);
+
+async function cancelOrder(orderId, userId) {
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select("id, user_id, status")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!order) throw Object.assign(new Error("Order not found"), { status: 404 });
+  if (String(order.user_id) !== String(userId))
+    throw Object.assign(new Error("Not your order"), { status: 403 });
+  if (order.status === "CANCELLED") return { order, alreadyCancelled: true };
+  if (!CANCELLABLE.has(order.status))
+    throw Object.assign(new Error(`Order can't be cancelled once it is ${order.status}.`), { status: 409 });
+
+  await supabase.from("orders").update({ status: "CANCELLED" }).eq("id", orderId);
+
+  // PENDING → stock is reserved; CONFIRMED → stock was committed (sold).
+  // release_stock adds the units back in both cases. PAYMENT_FAILED already
+  // released on failure, so leave its stock alone.
+  if (order.status === "PENDING" || order.status === "CONFIRMED") {
+    const { data: items } = await supabase
+      .from("order_items").select("product_id, qty").eq("order_id", orderId);
+    for (const it of items || [])
+      await supabase.rpc("release_stock", { p_product_id: it.product_id, p_qty: it.qty });
+  }
+
+  const { data: pay } = await supabase
+    .from("payments").select("status").eq("order_id", orderId).maybeSingle();
+  await supabase.from("payments")
+    .update({ status: pay && pay.status === "SUCCESS" ? "REFUND_PENDING" : "CANCELLED" })
+    .eq("order_id", orderId);
+
+  return { order: { ...order, status: "CANCELLED" }, alreadyCancelled: false };
+}
+
 async function getUserOrders(userId) {
   const { data, error } = await supabase
     .from("orders")
@@ -110,4 +150,4 @@ async function getUserOrders(userId) {
   return data;
 }
 
-module.exports = { createPendingOrder, getUserOrders };
+module.exports = { createPendingOrder, cancelOrder, getUserOrders };

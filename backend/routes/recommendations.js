@@ -1,15 +1,6 @@
 const router = require("express").Router();
 const supabase = require("../config/supabase");
-
-// Helper to format google drive image URLs if present
-function formatImageUrl(url) {
-  if (!url || typeof url !== "string") return url;
-  const driveMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  if (driveMatch && driveMatch[1]) {
-    return `https://lh3.googleusercontent.com/d/${driveMatch[1]}`;
-  }
-  return url;
-}
+const { formatProduct } = require("../services/productFormat");
 
 router.get("/:userId", async (req, res) => {
   const { userId } = req.params;
@@ -51,12 +42,7 @@ router.get("/:userId", async (req, res) => {
         .in("id", numericIds.length > 0 ? numericIds : itemIds);
 
       if (dbProducts) {
-        products = dbProducts.map(p => ({
-          ...p,
-          img: formatImageUrl(p.img),
-          image: formatImageUrl(p.img),
-          reasonBadge: p.reasonBadge || "✨ Curated For You"
-        }));
+        products = dbProducts.map(p => formatProduct(p, { reasonBadge: "✨ Curated For You" }));
       }
     }
 
@@ -70,12 +56,7 @@ router.get("/:userId", async (req, res) => {
         .limit(4);
       
       if (topSellingProducts) {
-        products = topSellingProducts.map(p => ({
-          ...p,
-          img: formatImageUrl(p.img),
-          image: formatImageUrl(p.img),
-          reasonBadge: "🔥 Top Selling Bestseller"
-        }));
+        products = topSellingProducts.map(p => formatProduct(p, { reasonBadge: "🔥 Top Selling Bestseller" }));
       }
     }
 
@@ -119,12 +100,7 @@ router.get("/item/:itemId", async (req, res) => {
         .in("id", numericIds.length > 0 ? numericIds : itemIds);
 
       if (dbProducts) {
-        products = dbProducts.map(p => ({
-          ...p,
-          img: formatImageUrl(p.img),
-          image: formatImageUrl(p.img),
-          reasonBadge: "💎 Frequently Bought Together"
-        }));
+        products = dbProducts.map(p => formatProduct(p, { reasonBadge: "💎 Frequently Bought Together" }));
       }
     }
 

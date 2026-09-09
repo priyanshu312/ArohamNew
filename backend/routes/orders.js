@@ -3,7 +3,7 @@ const router = require("express").Router();
 const requireAuth = require("../middleware/auth");
 const razorpay = require("../config/razorpay");
 const { validateItems } = require("../services/validationService");
-const { createPendingOrder, getUserOrders } = require("../services/orderService");
+const { createPendingOrder, cancelOrder, getUserOrders } = require("../services/orderService");
 const { failOrder } = require("../services/paymentService");
 const supabase = require("../config/supabase");
 
@@ -108,6 +108,17 @@ router.get("/", requireAuth, async (req, res) => {
     res.json(await getUserOrders(req.user.id));
   } catch (e) {
     res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/orders/:id/cancel — user cancels their own order (pre-shipping)
+router.post("/:id/cancel", requireAuth, async (req, res) => {
+  try {
+    const result = await cancelOrder(req.params.id, req.user.id);
+    res.json({ success: true, status: "CANCELLED", alreadyCancelled: result.alreadyCancelled });
+  } catch (e) {
+    console.error("[orders/cancel]", e.status, e.message);
+    res.status(e.status || 500).json({ error: e.message || "Could not cancel order" });
   }
 });
 
