@@ -151,10 +151,14 @@ export function AuthPage() {
         return;
       }
 
-      setTimeout(() => {
+      try {
+        await api("/auth/otp/send", { method: "POST", body: JSON.stringify({ phone: phoneDigits }) });
         setLoading(false);
         goTo("otp");
-      }, 400);
+      } catch (e: any) {
+        setLoading(false);
+        setErrorMsg(e?.message || "Could not send the OTP. Please try again.");
+      }
       return;
     }
 
@@ -220,10 +224,14 @@ export function AuthPage() {
       return;
     }
 
-    setTimeout(() => {
+    try {
+      await api("/auth/otp/send", { method: "POST", body: JSON.stringify({ phone: phoneDigits }) });
       setLoading(false);
       goTo("otp");
-    }, 400);
+    } catch (e: any) {
+      setLoading(false);
+      setErrorMsg(e?.message || "Could not send the OTP. Please try again.");
+    }
   };
 
   // Verify OTP handler
@@ -237,17 +245,42 @@ export function AuthPage() {
     setErrorMsg("");
 
     setTimeout(async () => {
-      if (joinedOtp !== "111111" && joinedOtp !== "123456") {
-        setLoading(false);
-        setErrorMsg("Invalid OTP code. Use code 111111.");
-        return;
-      }
-
       const phoneDigits = phone.replace(/\D/g, "");
       const last10 = phoneDigits.slice(-10);
 
+      // Verify the code with the backend (Twilio Verify). On success it returns a
+      // signed session token + the user row (skipped for astrologer mode, which
+      // manages its own record downstream).
+      let otpUser: any = null;
       try {
-        let existingUser: { id: string; fullName: string; email?: string; phone: string; status?: string } | null = null;
+        const vr: any = await api("/auth/otp/verify", {
+          method: "POST",
+          body: JSON.stringify({
+            phone: phoneDigits,
+            code: joinedOtp,
+            fullName: name.trim() || undefined,
+            verifyOnly: isAstrologerMode,
+          }),
+        });
+        if (vr?.token) localStorage.setItem("Nakshra_auth_token", vr.token);
+        otpUser = vr?.user || null;
+      } catch (e: any) {
+        setLoading(false);
+        setErrorMsg(e?.message || "Invalid or expired code. Please try again.");
+        return;
+      }
+
+      try {
+        let existingUser: { id: string; fullName: string; email?: string; phone: string; status?: string } | null =
+          otpUser && !isAstrologerMode
+            ? {
+                id: otpUser.id,
+                fullName: otpUser.full_name || name.trim() || "Devotee",
+                email: otpUser.email,
+                phone: otpUser.phone || phoneDigits,
+                status: otpUser.status || "ACTIVE",
+              }
+            : null;
 
         if (isAstrologerMode) {
           // Astrologer mode: ONLY check astrologers table, never users table

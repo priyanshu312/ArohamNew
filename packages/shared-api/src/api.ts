@@ -24,12 +24,21 @@ export async function api(endpoint: string, options: RequestInit = {}) {
     }
   }
 
+  // App session token from the phone-OTP flow (POST /api/auth/otp/verify).
+  if (!token && typeof window !== "undefined") {
+    try {
+      const t = localStorage.getItem("Nakshra_auth_token");
+      if (t) token = t;
+    } catch (e) {}
+  }
+
   if (!token) {
     const { data: { session } } = await supabase.auth.getSession();
     token = session?.access_token || null;
   }
 
-  // Local development fallback: if no real auth token exists, use mock session ID
+  // Legacy dev fallback: mock session id (backend only honours this when
+  // ALLOW_MOCK_AUTH=true).
   if (!token && typeof window !== "undefined") {
     try {
       const mockSession = localStorage.getItem("Nakshra_mock_session");

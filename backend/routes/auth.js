@@ -1,5 +1,96 @@
 const router = require("express").Router();
 const supabase = require("../config/supabase");
+const { sendOtp, checkOtp } = require("../services/otp");
+const { issueToken } = require("../services/session");
+
+// Find the users-table row for a phone, creating a Supabase Auth user + profile
+// row if none exists. Returns the profile row, or throws {status, message}.
+async function findOrCreateUser(phone, fullName, extra = {}) {
+  const p = String(phone).replace(/\D/g, "").slice(-10);
+  const finalEmail = extra.email || `${p}@Nakshra.in`;
+
+  const { data: existing } = await supabase.from("users").select("*").eq("phone", p).maybeSingle();
+  if (existing) {
+    if (String(existing.status).toUpperCase() === "BLOCKED") {
+      throw Object.assign(new Error("Sorry, you are blocked. Can't login."), { status: 403 });
+    }
+    if (fullName && fullName !== existing.full_name) {
+      const { data: upd } = await supabase.from("users").update({ full_name: fullName }).eq("id", existing.id).select().single();
+      return upd || existing;
+    }
+    return existing;
+  }
+
+  let userId;
+  const { data, error: authErr } = await supabase.auth.admin.createUser({
+    email: finalEmail,
+    password: `NakshraPass${p}!`,
+    email_confirm: true,
+    user_metadata: { full_name: fullName, phone: p },
+  });
+  if (authErr) {
+    if (/already (registered|exists)/i.test(authErr.message)) {
+      const { data: list } = await supabase.auth.admin.listUsers();
+      const u = (list?.users || []).find((x) => x.email === finalEmail || x.phone === p);
+      if (!u) throw authErr;
+      userId = u.id;
+    } else {
+      throw authErr;
+    }
+  } else {
+    userId = data.user.id;
+  }
+
+  const { data: inserted, error: profErr } = await supabase
+    .from("users")
+    .upsert({
+      id: userId,
+      full_name: fullName || "Devotee",
+      phone: p,
+      email: finalEmail,
+      gender: extra.gender || "Other",
+      dob: extra.dob || new Date().toISOString().split("T")[0],
+    })
+    .select()
+    .single();
+  if (profErr) throw profErr;
+  return inserted;
+}
+
+// POST /api/auth/otp/send  { phone }
+router.post("/otp/send", async (req, res) => {
+  const phone = String(req.body.phone || "").replace(/\D/g, "");
+  if (phone.slice(-10).length !== 10) return res.status(400).json({ error: "Enter a valid 10-digit mobile number." });
+  try {
+    const r = await sendOtp(phone);
+    res.json({ sent: true, dev: !!r.dev });
+  } catch (e) {
+    console.error("[auth/otp/send]", e.status, e.message);
+    res.status(e.status || 500).json({ error: e.message || "Could not send OTP" });
+  }
+});
+
+// POST /api/auth/otp/verify  { phone, code, fullName?, email?, gender?, dob?, verifyOnly? }
+// verifyOnly: just checks the code (used by the astrologer flow, which creates
+// its own record); otherwise find-or-creates the users row + returns a token.
+router.post("/otp/verify", async (req, res) => {
+  const { phone, code, fullName, email, gender, dob, verifyOnly } = req.body;
+  const p = String(phone || "").replace(/\D/g, "");
+  if (p.slice(-10).length !== 10 || !code) return res.status(400).json({ error: "Phone and code are required." });
+  try {
+    const { approved } = await checkOtp(p, code);
+    if (!approved) return res.status(401).json({ error: "Invalid or expired code." });
+
+    if (verifyOnly) return res.json({ success: true, approved: true });
+
+    const user = await findOrCreateUser(p, fullName, { email, gender, dob });
+    const token = issueToken(user.id, p.slice(-10));
+    res.json({ success: true, token, user });
+  } catch (e) {
+    console.error("[auth/otp/verify]", e.status, e.message);
+    res.status(e.status || 500).json({ error: e.message || "Verification failed" });
+  }
+});
 
 // GET /api/auth/email-by-phone - Lookup email associated with a phone number
 router.get("/email-by-phone", async (req, res) => {
