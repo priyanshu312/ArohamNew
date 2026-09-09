@@ -3,8 +3,9 @@ const geoTz = require("geo-tz");
 const moment = require("moment-timezone");
 const { compileAstrologyPdf } = require("../services/kundli/pdfService");
 const avakhadaLookup = require("../services/kundli/avakhada_lookup.json");
+const { kundliLimiter } = require("../middleware/rateLimit");
 
-router.post("/generate", async (req, res) => {
+router.post("/generate", kundliLimiter, async (req, res) => {
   const { name = "Devotee", gender = "Male", location, date, time } = req.body;
 
   if (!location || !date || !time) {

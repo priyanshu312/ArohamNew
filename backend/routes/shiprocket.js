@@ -2,10 +2,22 @@
 const router = require("express").Router();
 const ShiprocketService = require("../services/shiprocket/ShiprocketService");
 const supabase = require("../config/supabase");
+const requireAuth = require("../middleware/auth");
 
 /** Helper: create a fresh ShiprocketService instance using env credentials */
 function getService() {
   return new ShiprocketService(process.env.SHIPROCKET_EMAIL, process.env.SHIPROCKET_PASSWORD);
+}
+
+// These routes hit the live Shiprocket API and can create/cancel real shipments,
+// so they must never be anonymous. Require a valid session AND an explicit
+// opt-in flag (same pattern as the orders debug routes) — flip
+// ENABLE_DEBUG_ROUTES=true only when you actually need them.
+function diagnosticGuard(req, res, next) {
+  if (process.env.ENABLE_DEBUG_ROUTES !== "true") {
+    return res.status(404).json({ error: "Not found" });
+  }
+  return requireAuth(req, res, next);
 }
 
 // ─── GET /api/shiprocket/status ─── Diagnostic: shows config state ───
@@ -24,7 +36,7 @@ router.get("/status", (req, res) => {
 });
 
 // ─── POST /api/shiprocket/test-auth ─── Test credential authentication ───
-router.post("/test-auth", async (req, res) => {
+router.post("/test-auth", diagnosticGuard, async (req, res) => {
   try {
     const service = getService();
     const token = await service.initialize();
@@ -61,7 +73,7 @@ router.get("/serviceability", async (req, res) => {
 });
 
 // ─── POST /api/shiprocket/test-order ─── Test fulfillment with real or dummy data ───
-router.post("/test-order", async (req, res) => {
+router.post("/test-order", diagnosticGuard, async (req, res) => {
   try {
     const { orderId, orderData: customData } = req.body;
     let orderData;
@@ -147,7 +159,7 @@ router.get("/track/:id", async (req, res) => {
 });
 
 // ─── POST /api/shiprocket/cancel ─── Cancel Shiprocket order(s) ───
-router.post("/cancel", async (req, res) => {
+router.post("/cancel", diagnosticGuard, async (req, res) => {
   try {
     const { orderIds } = req.body;
     if (!orderIds || !Array.isArray(orderIds) || !orderIds.length) {

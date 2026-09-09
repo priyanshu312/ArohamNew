@@ -2,6 +2,7 @@ const router = require("express").Router();
 const supabase = require("../config/supabase");
 const { sendOtp, checkOtp } = require("../services/otp");
 const { issueToken } = require("../services/session");
+const { otpSendLimiter, otpVerifyLimiter } = require("../middleware/rateLimit");
 
 // Find the users-table row for a phone, creating a Supabase Auth user + profile
 // row if none exists. Returns the profile row, or throws {status, message}.
@@ -58,7 +59,7 @@ async function findOrCreateUser(phone, fullName, extra = {}) {
 }
 
 // POST /api/auth/otp/send  { phone }
-router.post("/otp/send", async (req, res) => {
+router.post("/otp/send", otpSendLimiter, async (req, res) => {
   const phone = String(req.body.phone || "").replace(/\D/g, "");
   if (phone.slice(-10).length !== 10) return res.status(400).json({ error: "Enter a valid 10-digit mobile number." });
   try {
@@ -73,7 +74,7 @@ router.post("/otp/send", async (req, res) => {
 // POST /api/auth/otp/verify  { phone, code, fullName?, email?, gender?, dob?, verifyOnly? }
 // verifyOnly: just checks the code (used by the astrologer flow, which creates
 // its own record); otherwise find-or-creates the users row + returns a token.
-router.post("/otp/verify", async (req, res) => {
+router.post("/otp/verify", otpVerifyLimiter, async (req, res) => {
   const { phone, code, fullName, email, gender, dob, verifyOnly } = req.body;
   const p = String(phone || "").replace(/\D/g, "");
   if (p.slice(-10).length !== 10 || !code) return res.status(400).json({ error: "Phone and code are required." });

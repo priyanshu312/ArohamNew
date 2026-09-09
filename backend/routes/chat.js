@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const supabase = require("../config/supabase");
+const { chatLimiter } = require("../middleware/rateLimit");
 
 // Helper to format google drive images (same as products.js)
 function formatImageUrl(url) {
@@ -11,7 +12,7 @@ function formatImageUrl(url) {
   return url;
 }
 
-router.post("/", async (req, res) => {
+router.post("/", chatLimiter, async (req, res) => {
   const { message, userId, pageContext, history = [] } = req.body;
   if (!message) {
     return res.status(400).json({ error: "message is required" });

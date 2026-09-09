@@ -10,11 +10,12 @@
 const { execSync } = require("child_process");
 
 const GORSE_URL = process.env.GORSE_URL || "http://localhost:8088";
-const SUPABASE_URL = process.env.SUPABASE_URL || "https://lzzdfsphevmzbkkoskxb.supabase.co";
-// Publishable/anon key — safe to ship (same one the web bundle uses). Override via env.
-const SUPABASE_ANON =
-  process.env.SUPABASE_ANON_KEY ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6emRmc3BoZXZtemJra29za3hiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxNDcwMjIsImV4cCI6MjA5ODcyMzAyMn0.Z1zWIvp2kNg-Z9OwUmJrAVDPF_DQkiCqM5YmG5GD9TY";
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON = process.env.SUPABASE_ANON_KEY;
+if (!SUPABASE_URL || !SUPABASE_ANON) {
+  console.error("Set SUPABASE_URL and SUPABASE_ANON_KEY in the environment before running this seed script.");
+  process.exit(1);
+}
 
 const NUM_USERS = 200;
 const rnd = (n) => Math.floor(Math.random() * n);
