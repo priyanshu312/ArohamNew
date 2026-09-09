@@ -1,0 +1,44 @@
+# Gorse config — Nakshra recommender.
+# cache_store / data_store come from GORSE_CACHE_STORE / GORSE_DATA_STORE env vars
+# set in docker-compose.yml, so no [database] section here.
+
+[recommend]
+cache_size = 20
+cache_expire = "72h"
+
+[recommend.data_source]
+# The catalog sync + feedback sync use these exact feedback-type strings.
+positive_feedback_types = ["like", "buy"]
+read_feedback_types = ["read", "view_product"]
+
+# Non-personalized "popular" list — most-bought items. Exposed at
+# GET /api/non-personalized/popular and used as a fallback below.
+[[recommend.non-personalized]]
+name = "popular"
+score = "count(feedback, .FeedbackType == 'buy')"
+
+# Item-to-item "neighbors" from co-interaction (users who bought X also bought Y).
+# type = "users" needs no item labels/embeddings — just the feedback graph.
+# Exposed at GET /api/item/{id}/neighbors.
+[[recommend.item-to-item]]
+name = "neighbors"
+type = "users"
+
+# Collaborative filtering (matrix factorisation) — the personalised model.
+# Was "none" (disabled) on the default config, which is why nothing trained.
+[recommend.collaborative]
+type = "mf"
+fit_period = "5m"
+fit_epoch = 50
+
+[recommend.ranker]
+# No learned reranker yet: with type = "none", exactly one recommender is allowed.
+# Personalised collaborative results for users with history; everyone else is
+# covered by [recommend.fallback] below. Switch type to "fm" later to blend
+# multiple recommenders with a learned reranker.
+type = "none"
+recommenders = ["collaborative"]
+
+[recommend.fallback]
+# Cold-start / no-history users fall back to popular, then latest.
+recommenders = ["non-personalized/popular", "latest"]

@@ -25,9 +25,12 @@ router.get("/:userId", async (req, res) => {
         itemIds = await gorseRes.json();
       }
 
-      // Fallback to popular if user has no recommendations yet
+      // Fallback to popular if user has no recommendations yet.
+      // Gorse ≥0.5 exposes this at /api/non-personalized/{name}; older builds
+      // used /api/popular — try the new path, fall back to the legacy one.
       if (!itemIds || itemIds.length === 0) {
-        const popRes = await fetch(`${GORSE_URL}/api/popular?n=4`);
+        let popRes = await fetch(`${GORSE_URL}/api/non-personalized/popular?n=4`);
+        if (!popRes.ok) popRes = await fetch(`${GORSE_URL}/api/popular?n=4`);
         if (popRes.ok) {
           const popData = await popRes.json();
           itemIds = popData.map((item) => item.Id || item.ItemId || item);

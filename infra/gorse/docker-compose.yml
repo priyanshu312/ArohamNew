@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  gorse:
+    image: zhenghaoz/gorse-in-one   # running v0.5.11 — pin to a digest before hosting on Render
+    ports:
+      - "8088:8088"
+    environment:
+      - GORSE_CACHE_STORE=redis://redis:6379
+      - GORSE_DATA_STORE=postgres://gorse:gorse_password@postgres:5432/gorse?sslmode=disable
+    volumes:
+      - ./config.toml:/etc/gorse/config.toml:ro
+    depends_on:
+      - redis
+      - postgres
+    restart: on-failure
+
+  redis:
+    image: redis/redis-stack-server:latest
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=gorse
+      - POSTGRES_PASSWORD=gorse_password
+      - POSTGRES_DB=gorse
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
