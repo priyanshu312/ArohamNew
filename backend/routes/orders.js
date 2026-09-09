@@ -105,7 +105,7 @@ router.post("/", requireAuth, async (req, res) => {
 // GET /api/orders — order history (orders + items + payment status)
 router.get("/", requireAuth, async (req, res) => {
   try {
-    res.json(await getUserOrders(req.user.id));
+    res.json(await getUserOrders(req.user.id, req.user.user_metadata && req.user.user_metadata.phone));
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

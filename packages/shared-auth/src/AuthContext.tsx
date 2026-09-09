@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useRef } from "react";
-import { supabase, firebaseAuth } from "@nakshra/shared-services";
+import { supabase, firebaseAuth, initSupabaseAuthFromStorage } from "@nakshra/shared-services";
 import { api } from "@nakshra/shared-api";
 import { setCookie, getCookie, deleteCookie } from "@nakshra/shared-utils/cookies";
 import { safeLocalStorage, safeSessionStorage } from "@nakshra/shared-utils/storage";
@@ -140,6 +140,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const checkBlockedAndInit = async () => {
+      // Restore the supabase session from the stored OTP JWT first, so the
+      // block-check below (and every other direct supabase.from(...) call in the
+      // app) runs with auth.uid() = this user and satisfies row-level security.
+      await initSupabaseAuthFromStorage();
+
       const rawSession = safeLocalStorage.getItem("Nakshra_mock_session") || getCookie("Nakshra_session");
       if (rawSession) {
         try {
@@ -185,41 +190,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     checkBlockedAndInit();
 
-    const syncSupabaseSession = async () => {
-      try {
-        const { data: { session: sbSession } } = await supabase.auth.getSession();
-        if (sbSession?.user) {
-          const u = {
-            id: sbSession.user.id,
-            email: sbSession.user.email,
-            user_metadata: sbSession.user.user_metadata,
-            role: sbSession.user.user_metadata?.role || "astrologer"
-          };
-          setUser(u as any);
-          setIsLoggedIn(true);
-          setSession(sbSession);
-          safeLocalStorage.setItem("Nakshra_mock_session", JSON.stringify(u));
-          setCookie("Nakshra_session", JSON.stringify(u), 365);
-        }
-      } catch (e) {}
+    // These two handlers exist for a Supabase-native *astrologer* session. The
+    // phone-OTP flow now also creates a real supabase session for every user
+    // (see applySupabaseAuth), so only act here when the session is explicitly
+    // an astrologer one — otherwise a normal shopper would get relabelled
+    // role:"astrologer" and their Nakshra_mock_session overwritten.
+    const adoptAstrologerSession = (sbSession: any) => {
+      const md = sbSession?.user?.user_metadata;
+      if (!sbSession?.user || md?.role !== "astrologer") return;
+      const u = {
+        id: sbSession.user.id,
+        email: sbSession.user.email,
+        user_metadata: md,
+        role: "astrologer",
+      };
+      setUser(u as any);
+      setIsLoggedIn(true);
+      setSession(sbSession);
+      safeLocalStorage.setItem("Nakshra_mock_session", JSON.stringify(u));
+      setCookie("Nakshra_session", JSON.stringify(u), 365);
     };
 
-    syncSupabaseSession();
+    (async () => {
+      try {
+        const { data: { session: sbSession } } = await supabase.auth.getSession();
+        adoptAstrologerSession(sbSession);
+      } catch (e) {}
+    })();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_evt, sbSession) => {
-      if (sbSession?.user) {
-        const u = {
-          id: sbSession.user.id,
-          email: sbSession.user.email,
-          user_metadata: sbSession.user.user_metadata,
-          role: sbSession.user.user_metadata?.role || "astrologer"
-        };
-        setUser(u as any);
-        setIsLoggedIn(true);
-        setSession(sbSession);
-        safeLocalStorage.setItem("Nakshra_mock_session", JSON.stringify(u));
-        setCookie("Nakshra_session", JSON.stringify(u), 365);
-      }
+      adoptAstrologerSession(sbSession);
     });
 
     return () => {

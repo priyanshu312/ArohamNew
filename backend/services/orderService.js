@@ -140,12 +140,30 @@ async function cancelOrder(orderId, userId) {
   return { order: { ...order, status: "CANCELLED" }, alreadyCancelled: false };
 }
 
-async function getUserOrders(userId) {
-  const { data, error } = await supabase
+async function getUserOrders(userId, phone) {
+  const last10 = phone ? String(phone).replace(/\D/g, "").slice(-10) : "";
+
+  // Adopt any guest orders placed with this phone before the account existed,
+  // so they show up in history. The client used to do this with a direct
+  // supabase update, which stops working once orders RLS is locked to
+  // auth.uid() = user_id — so it moves here (service role, one shot).
+  if (last10) {
+    await supabase
+      .from("orders")
+      .update({ user_id: userId })
+      .is("user_id", null)
+      .eq("user_phone", last10);
+  }
+
+  let query = supabase
     .from("orders")
     .select("*, order_items(*), payments(*)")
-    .eq("user_id", userId)
     .order("created_at", { ascending: false });
+  query = last10
+    ? query.or(`user_id.eq.${userId},user_phone.eq.${last10}`)
+    : query.eq("user_id", userId);
+
+  const { data, error } = await query;
   if (error) throw new Error(error.message);
   return data;
 }

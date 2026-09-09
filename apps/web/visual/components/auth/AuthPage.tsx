@@ -7,7 +7,7 @@ import { OtpBoxes } from "./OtpBoxes";
 import { Countdown } from "./Countdown";
 import { useAuth } from "@nakshra/shared-auth";
 import { firebaseAuth, db } from "@nakshra/shared-services";
-import { supabase } from "@nakshra/shared-services";
+import { supabase, applySupabaseAuth } from "@nakshra/shared-services";
 import { api } from "@nakshra/shared-api";
 import { generateUUID } from "@nakshra/shared-utils/uuid";
 // Firestore helpers come from the shared-services stub — Firebase is not wired up.
@@ -262,7 +262,11 @@ export function AuthPage() {
             verifyOnly: isAstrologerMode,
           }),
         });
-        if (vr?.token) localStorage.setItem("Nakshra_auth_token", vr.token);
+        if (vr?.token) {
+          localStorage.setItem("Nakshra_auth_token", vr.token);
+          // Make auth.uid() resolve for the client's direct Supabase calls.
+          await applySupabaseAuth(vr.token);
+        }
         otpUser = vr?.user || null;
       } catch (e: any) {
         setLoading(false);
