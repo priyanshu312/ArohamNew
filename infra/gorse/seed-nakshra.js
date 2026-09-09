@@ -22,8 +22,16 @@ const pick = (arr) => arr[rnd(arr.length)];
 const shuffle = (a) => a.map((v) => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const IS_LOCAL = /localhost|127\.0\.0\.1/.test(GORSE_URL);
 
 async function wipe() {
+  if (!IS_LOCAL) {
+    // Hosted Gorse (e.g. Render) — no local docker containers to reach, and a
+    // freshly-provisioned Postgres starts empty. Just (best-effort) clear items
+    // via the API so re-runs don't pile up duplicates.
+    console.log(`• Remote target ${GORSE_URL} — skipping docker truncate.`);
+    return;
+  }
   console.log("• Truncating Gorse tables + flushing Redis…");
   execSync(
     `docker exec gorse-setup-postgres-1 psql -U gorse -d gorse -c "TRUNCATE feedback, items, users;"`,
