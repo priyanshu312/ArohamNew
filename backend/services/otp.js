@@ -4,12 +4,20 @@
 // Dev fallback: if Twilio is NOT configured and ALLOW_MOCK_AUTH === "true",
 //   sendOtp() is a no-op and checkOtp() accepts "111111". If not configured and
 //   not allowed, both throw so the misconfiguration is loud.
+// OTP_FORCE_MOCK=true skips Twilio entirely even when it IS configured — used on
+//   staging where the Twilio trial account can't deliver SMS to Indian numbers
+//   without an approved compliance profile. A real signed session token is still
+//   issued (see services/session.js), so end-to-end auth still gets exercised.
 const SID = () => process.env.TWILIO_ACCOUNT_SID;
 const TOKEN = () => process.env.TWILIO_AUTH_TOKEN;
 const SERVICE = () => process.env.TWILIO_VERIFY_SERVICE_SID;
 
 const isConfigured = () => !!(SID() && TOKEN() && SERVICE());
 const mockAllowed = () => process.env.ALLOW_MOCK_AUTH === "true";
+const forceMock = () => process.env.OTP_FORCE_MOCK === "true";
+// Use the "111111" mock path when explicitly forced, or when Twilio is simply
+// not configured and mock auth is allowed.
+const useMock = () => forceMock() || (!isConfigured() && mockAllowed());
 
 function toE164(phone) {
   const digits = String(phone || "").replace(/\D/g, "");
@@ -39,11 +47,11 @@ async function twilio(path, params) {
 
 async function sendOtp(phone) {
   const to = toE164(phone);
+  if (useMock()) {
+    console.warn(`[otp] mock mode — code "111111" for ${to}`);
+    return { sent: true, dev: true };
+  }
   if (!isConfigured()) {
-    if (mockAllowed()) {
-      console.warn(`[otp] Twilio not configured — DEV mode, code "111111" for ${to}`);
-      return { sent: true, dev: true };
-    }
     throw Object.assign(new Error("OTP service is not configured"), { status: 503 });
   }
   const v = await twilio("Verifications", { To: to, Channel: "sms" });
@@ -53,8 +61,8 @@ async function sendOtp(phone) {
 async function checkOtp(phone, code) {
   const to = toE164(phone);
   if (!/^\d{4,8}$/.test(String(code || ""))) return { approved: false };
+  if (useMock()) return { approved: String(code) === "111111" };
   if (!isConfigured()) {
-    if (mockAllowed()) return { approved: String(code) === "111111" };
     throw Object.assign(new Error("OTP service is not configured"), { status: 503 });
   }
   const v = await twilio("VerificationCheck", { To: to, Code: String(code) });
