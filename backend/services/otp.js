@@ -1,101 +1,59 @@
-// Login OTP — email by default (free), SMS optional.
+// Login OTP — Twilio Verify, EMAIL channel.
 //
-// Channel:
-//   - default: email. The 6-digit code is generated here, hashed, stored in
-//     public.otp_codes (service-role only), and emailed via services/notify.
-//   - OTP_CHANNEL="sms" + Twilio Verify configured: use Twilio (it owns the code).
+// One vendor (Twilio Verify), one flow (email). Twilio generates, stores,
+// expires, rate-limits and fraud-scores the code; we just call Verifications /
+// VerificationCheck. `OTP_CHANNEL=sms` switches the same Verify service to SMS.
 //
-// Dev / staging fallback: when no delivery channel is usable and mock auth is
-// allowed (OTP_FORCE_MOCK=true, or ALLOW_MOCK_AUTH=true with nothing configured),
-// sendOtp is a no-op and checkOtp accepts "111111". A real signed session token
-// is still issued, so the whole auth path stays testable.
-const crypto = require("crypto");
-const supabase = require("../config/supabase");
-const { sendOtpEmail, sendEmail } = require("./notify");
+// Twilio console setup required for the email channel:
+//   Verify → Services → <your service> → Email → connect a SendGrid account
+//   (API key) and select/create a dynamic template with the {{twilio_code}}
+//   variable. Then either:
+//     - leave it as the service's default email integration (no env needed), OR
+//     - pass it per-request via the 3 TWILIO_VERIFY_EMAIL_* vars below.
+//
+// Env:
+//   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SERVICE_SID
+//   OTP_CHANNEL=email (default) | sms
+//   TWILIO_VERIFY_EMAIL_TEMPLATE_ID   (d-…, optional — SendGrid dynamic template)
+//   TWILIO_VERIFY_EMAIL_FROM          (verified SendGrid sender, optional)
+//   TWILIO_VERIFY_EMAIL_FROM_NAME     (optional, default "Nakshra")
+//
+// Dev/staging: OTP_FORCE_MOCK=true (or Verify unconfigured + ALLOW_MOCK_AUTH=true)
+//   → sendOtp is a no-op and checkOtp accepts "111111". A real signed session
+//   token is still issued, so the whole flow stays testable.
 
 const SID = () => process.env.TWILIO_ACCOUNT_SID;
 const TOKEN = () => process.env.TWILIO_AUTH_TOKEN;
 const SERVICE = () => process.env.TWILIO_VERIFY_SERVICE_SID;
 const CHANNEL = () => (process.env.OTP_CHANNEL || "email").toLowerCase();
 
-const smsConfigured = () => !!(SID() && TOKEN() && SERVICE());
-const emailConfigured = () =>
-  !!((process.env.BREVO_API_KEY || process.env.RESEND_API_KEY) && process.env.ORDER_EMAIL_FROM);
+const verifyConfigured = () => !!(SID() && TOKEN() && SERVICE());
 const mockAllowed = () => process.env.ALLOW_MOCK_AUTH === "true";
 const forceMock = () => process.env.OTP_FORCE_MOCK === "true";
-
-// Use the "111111" path when explicitly forced, or when no real channel is
-// usable and mock auth is allowed.
-function useMock() {
-  if (forceMock()) return true;
-  const channelUsable = CHANNEL() === "sms" ? smsConfigured() : emailConfigured();
-  return !channelUsable && mockAllowed();
-}
+const useMock = () => forceMock() || (!verifyConfigured() && mockAllowed());
 
 const norm = (v) => String(v || "").trim();
 const isEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(norm(v));
-
 function digits10(phone) {
   const d = norm(phone).replace(/\D/g, "").slice(-10);
   return d.length === 10 ? d : null;
 }
 
-// ---- email channel: our own code store -------------------------------------
-const CODE_TTL_MS = 10 * 60 * 1000;
-const MAX_ATTEMPTS = 5;
-const SECRET = () => process.env.SUPABASE_JWT_SECRET || "nakshra-otp-fallback";
-
-const hashCode = (identifier, code) =>
-  crypto.createHmac("sha256", SECRET()).update(`${identifier}|${code}`).digest("hex");
-
-async function emailSendOtp(identifier, destEmail) {
-  if (!destEmail || !isEmail(destEmail)) {
-    return { needEmail: true };
-  }
-  const code = String(crypto.randomInt(0, 1000000)).padStart(6, "0");
-  const { error } = await supabase.from("otp_codes").upsert({
-    identifier,
-    code_hash: hashCode(identifier, code),
-    dest_email: destEmail,
-    expires_at: new Date(Date.now() + CODE_TTL_MS).toISOString(),
-    attempts: 0,
-    created_at: new Date().toISOString(),
+// Per-request SendGrid template config for the email channel. Returns null when
+// unset — Twilio then uses the service's default email integration.
+function emailChannelConfig() {
+  const template_id = process.env.TWILIO_VERIFY_EMAIL_TEMPLATE_ID;
+  const from = process.env.TWILIO_VERIFY_EMAIL_FROM;
+  if (!template_id || !from) return null;
+  return JSON.stringify({
+    template_id,
+    from,
+    from_name: process.env.TWILIO_VERIFY_EMAIL_FROM_NAME || "Nakshra",
+    substitutions: {},
   });
-  if (error) throw Object.assign(new Error("Could not start verification"), { status: 500 });
-
-  const r = await sendOtpEmail(destEmail, code);
-  if (r && r.skipped) {
-    // provider unset — should not happen (emailConfigured gates useMock), but be loud
-    throw Object.assign(new Error("Email service is not configured"), { status: 503 });
-  }
-  if (r && r.ok === false) {
-    throw Object.assign(new Error("Could not send the verification email"), { status: 502 });
-  }
-  return { sent: true, channel: "email", to: destEmail };
 }
 
-async function emailCheckOtp(identifier, code) {
-  if (!/^\d{6}$/.test(norm(code))) return { approved: false };
-  const { data: row } = await supabase
-    .from("otp_codes").select("*").eq("identifier", identifier).maybeSingle();
-  if (!row) return { approved: false };
-  if (new Date(row.expires_at).getTime() < Date.now() || row.attempts >= MAX_ATTEMPTS) {
-    await supabase.from("otp_codes").delete().eq("identifier", identifier);
-    return { approved: false };
-  }
-  const expected = Buffer.from(row.code_hash);
-  const got = Buffer.from(hashCode(identifier, norm(code)));
-  const ok = expected.length === got.length && crypto.timingSafeEqual(expected, got);
-  if (!ok) {
-    await supabase.from("otp_codes").update({ attempts: row.attempts + 1 }).eq("identifier", identifier);
-    return { approved: false };
-  }
-  await supabase.from("otp_codes").delete().eq("identifier", identifier);
-  return { approved: true };
-}
-
-// ---- SMS channel (Twilio Verify) -----------------------------------------
-async function twilio(path, params) {
+async function twilio(path, params, { tolerate404 = false } = {}) {
   const url = `https://verify.twilio.com/v2/Services/${SERVICE()}/${path}`;
   const auth = Buffer.from(`${SID()}:${TOKEN()}`).toString("base64");
   const res = await fetch(url, {
@@ -105,49 +63,60 @@ async function twilio(path, params) {
   });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
+    // VerificationCheck 404 = no pending / already used / expired / too many tries.
+    if (tolerate404 && res.status === 404) return { status: "not_found" };
     const err = new Error(json.message || `Twilio ${path} failed (${res.status})`);
-    err.status = res.status === 429 ? 429 : 502;
+    err.status = res.status === 429 ? 429 : res.status === 400 ? 400 : 502;
     throw err;
   }
   return json;
 }
 
-// ---- public API ---------------------------------------------------------
-// identifier: phone (any format) or an email. destEmail: where to send an
-// email code (falls back to identifier itself when that's an email).
+// identifier: the email (email channel) or phone (sms channel). destEmail: an
+// email fallback so callers can pass the phone as identifier and still deliver
+// by email.
 async function sendOtp(identifier, destEmail) {
-  const id = isEmail(identifier) ? norm(identifier).toLowerCase() : digits10(identifier);
-  if (!id) throw Object.assign(new Error("Enter a valid mobile number or email"), { status: 400 });
-
   if (useMock()) {
-    console.warn(`[otp] mock mode — code "111111" for ${id}`);
+    console.warn(`[otp] mock mode — code "111111"`);
     return { sent: true, dev: true };
+  }
+  if (!verifyConfigured()) {
+    throw Object.assign(new Error("OTP service is not configured"), { status: 503 });
   }
 
   if (CHANNEL() === "sms") {
-    if (!smsConfigured()) throw Object.assign(new Error("SMS OTP is not configured"), { status: 503 });
-    const to = "+91" + digits10(identifier);
-    const v = await twilio("Verifications", { To: to, Channel: "sms" });
+    const phone = digits10(identifier) || digits10(destEmail);
+    if (!phone) throw Object.assign(new Error("Enter a valid 10-digit mobile number."), { status: 400 });
+    const v = await twilio("Verifications", { To: "+91" + phone, Channel: "sms" });
     return { sent: true, channel: "sms", status: v.status };
   }
 
-  const to = isEmail(identifier) ? id : (destEmail || null);
-  return emailSendOtp(id, to);
+  const to = isEmail(identifier) ? norm(identifier).toLowerCase()
+    : isEmail(destEmail) ? norm(destEmail).toLowerCase()
+    : null;
+  if (!to) return { needEmail: true };
+
+  const params = { To: to, Channel: "email" };
+  const cc = emailChannelConfig();
+  if (cc) params.ChannelConfiguration = cc;
+  const v = await twilio("Verifications", params);
+  return { sent: true, channel: "email", to, status: v.status };
 }
 
 async function checkOtp(identifier, code) {
-  const id = isEmail(identifier) ? norm(identifier).toLowerCase() : digits10(identifier);
-  if (!id) return { approved: false };
-
   if (useMock()) return { approved: norm(code) === "111111" };
-
-  if (CHANNEL() === "sms") {
-    if (!smsConfigured()) throw Object.assign(new Error("SMS OTP is not configured"), { status: 503 });
-    const v = await twilio("VerificationCheck", { To: "+91" + digits10(identifier), Code: norm(code) });
-    return { approved: v.status === "approved" };
+  if (!verifyConfigured()) {
+    throw Object.assign(new Error("OTP service is not configured"), { status: 503 });
   }
+  if (!/^\d{4,10}$/.test(norm(code))) return { approved: false };
 
-  return emailCheckOtp(id, code);
+  const to = CHANNEL() === "sms"
+    ? (digits10(identifier) ? "+91" + digits10(identifier) : null)
+    : (isEmail(identifier) ? norm(identifier).toLowerCase() : null);
+  if (!to) return { approved: false };
+
+  const v = await twilio("VerificationCheck", { To: to, Code: norm(code) }, { tolerate404: true });
+  return { approved: v.status === "approved" };
 }
 
-module.exports = { sendOtp, checkOtp, smsConfigured, emailConfigured, isEmail, digits10 };
+module.exports = { sendOtp, checkOtp, verifyConfigured, isEmail, digits10 };
