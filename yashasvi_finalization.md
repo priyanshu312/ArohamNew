@@ -48,11 +48,39 @@ _Updated 2026-09-09_
 | 5 | **Keep-warm hosting** | Render free services (backend + Gorse) sleep after 15 min idle → first hit takes 30–50 s. Bump each to **Starter (~$7/mo)** before real traffic. Also the free Gorse Postgres expires after 90 days. |
 | 6 | **Say "promote to main"** | The merge itself + setting prod env vars is your call and your gate. |
 
-## Should-fix soon (not launch-blocking, I can do most of these on your word)
+## Hardening done 2026-09-09 (commits e3e450b, 81f3468)
 
-- Move `users` / `orders` / `addresses` writes fully server-side, then tighten their RLS (the frontend currently writes them directly with the anon key — big-ish refactor).
-- Real error monitoring (Sentry) on backend + frontend.
+- Rate limiting (express-rate-limit): OTP send 3/15m, OTP verify 12/15m, chat 20/5m, kundli 10/10m, 300/5m baseline on /api.
+- helmet + trust proxy; CORS locked to an allowlist (prod domains + *.vercel.app) — was reflecting any origin.
+- Body limit 50mb → 1mb global; kundli keeps a scoped 25mb parser.
+- Sentry scaffold (services/errorReporter.js) — no-op until SENTRY_DSN set.
+- Shiprocket test/cancel routes now behind auth + ENABLE_DEBUG_ROUTES.
+- Removed hardcoded Supabase key fallbacks (config/supabase.js, gorse seed).
+- 13 node:test unit tests (session tokens, OTP, Razorpay sigs) — wired into CI.
+- Web: favicon, OG/Twitter/canonical meta, robots.txt, env-driven robots tag.
+- Real OTP auth live on Yashasvi (OTP_FORCE_MOCK=true) — 15/15 e2e green.
+
+## Still to do
+
+### Needs the server-side-write refactor first, then me
+- `infra/db/2026-09-10_rls_lockdown.sql` is written and ready. It closes the
+  wide-open `USING (true)` policies on users/orders/addresses/user_carts/
+  user_wishlists/subscribers. Prereq: move the ~35 direct `supabase.from(...)`
+  writes in the web app server-side (users → /auth/profile, carts/wishlist →
+  new routes, etc.), because the OTP login doesn't set a Supabase auth session
+  so `auth.uid()` is NULL for those calls today. ~1–2 days.
+
+### Needs you (see YASHASVI_NEEDS_YOU.md for the live list)
+- OTP provider that delivers to Indian numbers (Twilio India compliance/paid, or MSG91) → flip OTP_FORCE_MOCK/ALLOW_MOCK_AUTH off.
+- Razorpay live keys (KYC). Email provider key (Resend). Shiprocket creds or "manual fulfilment".
+- Keep-warm Render Starter plans (backend + Gorse); free Gorse Postgres expires ~90 days.
+- Run `infra/db/2026-09-09_cleanup_test_data.sql` (test users, now includes the OTP e2e users `9xxxxxxxxx@Nakshra.in`).
+- Decide `ArohamNew` (empty Supabase project).
+- Analytics (GA4/Plausible) — none installed. SEO sitemap.xml.
+- Verify the 23-product catalog (images/prices/stock/copy) is launch-ready.
+- Say "promote to main".
+
+### Deferred (not launch-blocking)
 - Bump backend to 2 GB if kundli PDF is a launch feature.
-- Run `infra/db/2026-09-09_cleanup_test_data.sql` in Supabase (removes ~12 throwaway test users — I'm blocked from running DELETEs).
-- Decide `ArohamNew` (empty Supabase project) — delete it or migrate the schema if it was meant to be the real one.
 - Gorse "popular" list needs a RediSearch Redis (nothing uses it directly today).
+- Frontend error monitoring (add @sentry/react once you have a DSN).
