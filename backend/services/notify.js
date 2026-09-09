@@ -1,39 +1,65 @@
-// Transactional email — zero-dependency, provider-key-gated.
-// Set RESEND_API_KEY + ORDER_EMAIL_FROM (e.g. "Nakshra <orders@yourdomain.com>")
-// to turn it on. Without them every call is a silent no-op, so the order flow is
-// never blocked by email config. Uses Resend's HTTP API
-// (https://resend.com/docs/api-reference/emails/send-email); swap the endpoint
-// for Brevo/Postmark/SES if you prefer — the shape is the same.
+// Transactional email — zero-dependency, provider-key-gated. Powers both the
+// login OTP and order-confirmation mail. Without a key every call is a silent
+// no-op, so those flows are never blocked by email config.
+//
+// Provider (first key present wins):
+//   BREVO_API_KEY   -> Brevo  https://api.brevo.com/v3/smtp/email   (default choice)
+//   RESEND_API_KEY  -> Resend https://api.resend.com/emails
+// Plus ORDER_EMAIL_FROM, e.g.  "Nakshra <no-reply@nakshra.in>"  (or just the
+// address). The sender must be a verified sender/domain in that provider.
+const BREVO_ENDPOINT = "https://api.brevo.com/v3/smtp/email";
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 
 function inr(paise) {
   return "₹" + (Number(paise || 0) / 100).toLocaleString("en-IN");
 }
 
+// "Nakshra <no-reply@nakshra.in>" -> { name: "Nakshra", email: "no-reply@nakshra.in" }
+function parseFrom(raw) {
+  const s = String(raw || "").trim();
+  const m = s.match(/^\s*(.*?)\s*<\s*([^>]+?)\s*>\s*$/);
+  if (m) return { name: (m[1] || "").replace(/^"|"$/g, "").trim() || "Nakshra", email: m[2] };
+  return { name: "Nakshra", email: s };
+}
+
 async function sendEmail({ to, subject, html }) {
-  const apiKey = process.env.RESEND_API_KEY;
+  const brevoKey = process.env.BREVO_API_KEY;
+  const resendKey = process.env.RESEND_API_KEY;
   const from = process.env.ORDER_EMAIL_FROM;
-  if (!apiKey || !from) {
-    console.log(`[notify] email skipped (RESEND_API_KEY / ORDER_EMAIL_FROM unset) — would have sent "${subject}" to ${to}`);
+  const provider = brevoKey ? "brevo" : resendKey ? "resend" : null;
+
+  if (!provider || !from) {
+    console.log(`[notify] email skipped (no BREVO_API_KEY/RESEND_API_KEY or ORDER_EMAIL_FROM) — would have sent "${subject}" to ${to}`);
     return { skipped: true };
   }
   if (!to) {
     console.warn("[notify] no recipient email — skipping:", subject);
     return { skipped: true };
   }
+
+  const sender = parseFrom(from);
+  const req =
+    provider === "brevo"
+      ? {
+          url: BREVO_ENDPOINT,
+          headers: { "api-key": brevoKey, "Content-Type": "application/json", accept: "application/json" },
+          body: { sender, to: [{ email: to }], subject, htmlContent: html },
+        }
+      : {
+          url: RESEND_ENDPOINT,
+          headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
+          body: { from: `${sender.name} <${sender.email}>`, to, subject, html },
+        };
+
   try {
-    const res = await fetch(RESEND_ENDPOINT, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from, to, subject, html }),
-    });
+    const res = await fetch(req.url, { method: "POST", headers: req.headers, body: JSON.stringify(req.body) });
     if (!res.ok) {
-      console.error(`[notify] email send failed ${res.status}:`, (await res.text()).slice(0, 300));
+      console.error(`[notify] ${provider} send failed ${res.status}:`, (await res.text()).slice(0, 300));
       return { ok: false };
     }
     return { ok: true };
   } catch (err) {
-    console.error("[notify] email send error:", err.message);
+    console.error(`[notify] ${provider} send error:`, err.message);
     return { ok: false };
   }
 }

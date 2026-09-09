@@ -19,7 +19,8 @@ const SERVICE = () => process.env.TWILIO_VERIFY_SERVICE_SID;
 const CHANNEL = () => (process.env.OTP_CHANNEL || "email").toLowerCase();
 
 const smsConfigured = () => !!(SID() && TOKEN() && SERVICE());
-const emailConfigured = () => !!(process.env.RESEND_API_KEY && process.env.ORDER_EMAIL_FROM);
+const emailConfigured = () =>
+  !!((process.env.BREVO_API_KEY || process.env.RESEND_API_KEY) && process.env.ORDER_EMAIL_FROM);
 const mockAllowed = () => process.env.ALLOW_MOCK_AUTH === "true";
 const forceMock = () => process.env.OTP_FORCE_MOCK === "true";
 
