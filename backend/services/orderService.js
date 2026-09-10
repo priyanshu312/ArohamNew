@@ -41,21 +41,20 @@ const PROMO_CODES = [
 async function createPendingOrder(userId, products, address, promoCode) {
   const subtotal = products.reduce((s, p) => s + p.subtotal, 0);
   let discount = 0;
+  let promoApplied = false;
+  let promoReason = null;
 
   if (promoCode) {
-    const promo = PROMO_CODES.find(p => p.code.toUpperCase() === promoCode.toUpperCase());
-    if (promo) {
-      let valid = true;
-      if (promo.minPurchase && subtotal < promo.minPurchase) {
-        valid = false;
-      }
-      if (valid) {
-        if (promo.type === "percentage") {
-          discount = Math.floor(subtotal * (promo.value / 100));
-        } else if (promo.type === "flat") {
-          discount = Math.min(subtotal, promo.value);
-        }
-      }
+    const promo = PROMO_CODES.find(p => p.code.toUpperCase() === String(promoCode).toUpperCase());
+    if (!promo) {
+      promoReason = "That code isn't valid.";
+    } else if (promo.minPurchase && subtotal < promo.minPurchase) {
+      promoReason = `Add ₹${((promo.minPurchase - subtotal) / 100).toFixed(0)} more to use ${promo.code}.`;
+    } else {
+      discount = promo.type === "percentage"
+        ? Math.floor(subtotal * (promo.value / 100))
+        : Math.min(subtotal, promo.value);
+      promoApplied = discount > 0;
     }
   }
 
@@ -97,7 +96,7 @@ async function createPendingOrder(userId, products, address, promoCode) {
     .single();
   if (pErr) throw new Error("Payment record failed: " + pErr.message);
 
-  return { order, payment, amount };
+  return { order, payment, amount, subtotal, discount, promoApplied, promoReason };
 }
 
 // User-initiated cancellation. Verifies ownership, refuses once the order has

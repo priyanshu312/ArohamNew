@@ -3,6 +3,11 @@ const requireAuth = require("../middleware/auth");
 const supabase = require("../config/supabase");
 const { sendFeedback } = require("../services/gorseFeedback");
 
+// Cart quantities must be positive integers. Without this guard a crafted
+// PUT /api/cart/:id { qty: -3 } persisted a negative qty (GET returned it, it
+// flowed into checkout, and reserve_stock(-3) inflated stock).
+const badQty = (q) => !Number.isInteger(q) || q < 1;
+
 // GET /api/cart - Fetch cart items (temp=true for Buy Now)
 router.get("/", requireAuth, async (req, res) => {
   const isTemp = req.query.temp === "true";
@@ -49,6 +54,7 @@ router.get("/", requireAuth, async (req, res) => {
 // POST /api/cart - Add or update cart item
 router.post("/", requireAuth, async (req, res) => {
   const { productId, qty } = req.body;
+  if (badQty(qty)) return res.status(400).json({ error: "Quantity must be a positive whole number" });
   try {
     const { data: prod, error: pErr } = await supabase
       .from("products").select("stock").eq("id", productId).single();
@@ -84,6 +90,7 @@ router.post("/", requireAuth, async (req, res) => {
 // POST /api/cart/buy-now - Create temporary cart for Buy Now flow
 router.post("/buy-now", requireAuth, async (req, res) => {
   const { productId, qty } = req.body;
+  if (badQty(qty)) return res.status(400).json({ error: "Quantity must be a positive whole number" });
   try {
     const { data: prod, error: pErr } = await supabase
       .from("products").select("stock").eq("id", productId).single();
@@ -106,6 +113,7 @@ router.post("/buy-now", requireAuth, async (req, res) => {
 router.put("/:productId", requireAuth, async (req, res) => {
   const { qty } = req.body;
   const isTemp = req.query.temp === "true";
+  if (badQty(qty)) return res.status(400).json({ error: "Quantity must be a positive whole number" });
   try {
     const { data: prod } = await supabase
       .from("products").select("stock").eq("id", req.params.productId).single();

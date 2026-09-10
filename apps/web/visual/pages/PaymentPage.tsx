@@ -137,7 +137,8 @@ export function PaymentPage() {
           body: JSON.stringify({
             items: items.map(i => ({ id: i.product.id, qty: i.qty })),
             address: shippingAddr,
-            checkoutType: "cart"
+            checkoutType: "cart",
+            promoCode: appliedCoupon?.code || undefined
           })
         });
 
@@ -145,6 +146,17 @@ export function PaymentPage() {
         if (orderData?.razorpayOrderId) rzpOrderId = orderData.razorpayOrderId;
         if (orderData?.orderId) internalOrderId = orderData.orderId;
         if (orderData?.amount) amountPaisa = orderData.amount;
+
+        // The server recomputes pricing. If a coupon was shown but the server
+        // didn't apply it, stop — don't charge the customer the discounted total
+        // they're looking at.
+        if (appliedCoupon && orderData?.pricing && !orderData.pricing.promoApplied) {
+          removeCoupon();
+          setPlacing(false);
+          setCouponMsg({ success: false, message: orderData.pricing.promoReason || `${appliedCoupon.code} couldn't be applied to this order.` });
+          alert(`Coupon ${appliedCoupon.code} isn't valid for this order — the price has been updated. Please review and pay again.`);
+          return;
+        }
       } catch (backendErr) {
         console.warn("Backend order creation offline, proceeding with Razorpay direct checkout:", backendErr);
       }
@@ -322,7 +334,8 @@ export function PaymentPage() {
             items: items.map(i => ({ id: i.product.id, qty: i.qty })),
             address: shippingAddr,
             paymentMode: "COD",
-            checkoutType: "cart"
+            checkoutType: "cart",
+            promoCode: appliedCoupon?.code || undefined
           })
         });
 

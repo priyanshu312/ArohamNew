@@ -52,7 +52,8 @@ router.post("/", requireAuth, async (req, res) => {
     const check = await validateItems(items);
     if (!check.valid) return res.status(400).json({ errors: check.errors });
 
-    const { order, amount } = await createPendingOrder(req.user.id, check.products, address, promoCode);
+    const { order, amount, subtotal, discount, promoApplied, promoReason } =
+      await createPendingOrder(req.user.id, check.products, address, promoCode);
 
     // Razorpay's minimum chargeable amount is 100 paise (₹1).
     if (!Number.isFinite(amount) || amount < 100) {
@@ -94,6 +95,9 @@ router.post("/", requireAuth, async (req, res) => {
       razorpayOrderId: rzpOrder.id,
       amount, currency: "INR",
       keyId: process.env.RAZORPAY_KEY_ID,
+      // Server is the source of truth for pricing — the client must reconcile
+      // its displayed total/discount against these before showing the RZP popup.
+      pricing: { subtotal, discount, amount, promoCode: promoCode || null, promoApplied: !!promoApplied, promoReason: promoReason || null },
     });
   } catch (e) {
     const detail = (e && e.error && (e.error.description || e.error.reason)) || (e && e.message) || String(e);

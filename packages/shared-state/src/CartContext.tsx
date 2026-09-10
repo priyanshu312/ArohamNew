@@ -13,11 +13,18 @@ export interface AppliedCoupon {
   label: string;
 }
 
-export const VALID_COUPONS: Record<string, { type: "percent" | "flat"; value: number; label: string }> = {
-  Nakshra10: { type: "percent", value: 10, label: "10% OFF sacred items" },
-  SACRED15: { type: "percent", value: 15, label: "15% OFF sacred items" },
-  FIRST100: { type: "flat", value: 100, label: "₹100 Instant Discount" },
-  DIVINE20: { type: "percent", value: 20, label: "20% OFF divine discount" },
+// Must mirror backend PROMO_CODES (services/orderService.js). `value` for flat
+// coupons and `minPurchase` are in RUPEES here (subtotal is in rupees on the
+// client); the backend works in paise. The backend re-validates on order
+// creation and PaymentPage reconciles, so a mismatch can't overcharge — but
+// keep these in sync so the UI shows the truth.
+type CouponDef = { type: "percent" | "flat"; value: number; label: string; minPurchase?: number };
+export const VALID_COUPONS: Record<string, CouponDef> = {
+  NAKSHRA10: { type: "percent", value: 10, label: "10% OFF sacred items" },
+  DEVOTION20: { type: "percent", value: 20, label: "20% OFF on orders above ₹3,000", minPurchase: 3000 },
+  FESTIVE500: { type: "flat", value: 500, label: "₹500 OFF on orders above ₹2,500", minPurchase: 2500 },
+  FREEENERGIZATION: { type: "flat", value: 99, label: "Free Temple Consecration (₹99 off)" },
+  FIRST300: { type: "flat", value: 300, label: "₹300 OFF your first order" },
 };
 
 interface CartContextValue {
@@ -118,7 +125,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const cartCount = items.reduce((s, i) => s + i.qty, 0);
   const subtotal = items.reduce((s, i) => s + i.product.price * i.qty, 0);
 
-  const [couponsMap, setCouponsMap] = useState<Record<string, { type: "percent" | "flat"; value: number; label: string }>>(VALID_COUPONS);
+  const [couponsMap, setCouponsMap] = useState<Record<string, CouponDef>>(VALID_COUPONS);
 
   // Fetch dynamic coupons from Supabase DB on mount
   useEffect(() => {
@@ -126,7 +133,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       supabase.from("coupons").select("*")
     ).then(({ data, error }) => {
       if (data && data.length > 0 && !error) {
-        const merged: Record<string, { type: "percent" | "flat"; value: number; label: string }> = { ...VALID_COUPONS };
+        const merged: Record<string, CouponDef> = { ...VALID_COUPONS };
         data.forEach((c: any) => {
           if (c.code) {
             merged[c.code.trim().toUpperCase()] = {
@@ -156,7 +163,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const cleanCode = code.trim().toUpperCase();
     const found = couponsMap[cleanCode] || VALID_COUPONS[cleanCode];
     if (!found) {
-      return { success: false, message: "Invalid coupon code. Try Nakshra10 or FIRST100" };
+      return { success: false, message: "That code isn't valid. Try NAKSHRA10." };
+    }
+    if (found.minPurchase && subtotal < found.minPurchase) {
+      return { success: false, message: `Add ₹${(found.minPurchase - subtotal).toLocaleString("en-IN")} more to use ${cleanCode}.` };
     }
     const coupon: AppliedCoupon = {
       code: cleanCode,
