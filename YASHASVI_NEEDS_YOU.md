@@ -75,6 +75,16 @@ the live service.
 
 ### Regression sweep after every deploy: **25/25 endpoints green**, `/api/health` stays up through webhook abuse, CORS allowlist correct (`*.vercel.app` + `nakshra.in` ok, `evil.example.com` → 403).
 
+## 🐞 Bug-hunt round 2 — 2026-09-10 (deeper pass; all fixed + verified live)
+
+| Bug | Impact | Fix (commit) | Verified live |
+|-----|--------|--------------|---------------|
+| Cart quantity had no lower bound | `PUT /api/cart/:id {qty:-3}` → 200, persisted a **negative qty**; `GET` returned it, it flowed into checkout, `reserve_stock(-3)` **inflated stock**. Exploitable. | 400 on non-positive / non-integer qty for `POST /cart`, `/cart/buy-now`, `PUT /cart/:id`. `6e7a7bd` | ✅ `-3`/`0`/`2.5`/`-1` → 400 |
+| **Coupons were cosmetic — customer overcharged** | PaymentPage showed a discounted total but its `POST /api/orders` body never sent `promoCode`; the backend charged full price and the client adopted the backend amount. User sees "−₹60", pays full. Client & server coupon lists were also disjoint. | PaymentPage sends `promoCode` (card + COD); backend returns a `pricing` block (`promoApplied`, `promoReason`); PaymentPage stops + clears + tells the user if the server didn't apply it. Coupon lists realigned + `minPurchase` enforced client-side. `6e7a7bd` | ✅ `Nakshra10`→applied ₹539.10; `DEVOTION20`→"add ₹2401 more"; bogus→"not valid" |
+| `POST /api/kundli/generate` 502'd on bad date/time | `"45/13/2000"` / `"31/02/2000"` / `"25:99"` passed the presence check, then hung VedAstro/puppeteer → 502 after ~55s (ties up a worker on the free box). | Strict-parse date (real calendar date, ≥1900, not future) + 24h `HH:MM` up front → 400. `64b9e96` | ✅ all invalid → 400; valid still works |
+| Kundli PDF intermittently 500'd | `puppeteer.launch({headless:true})` had **no args** → on Render's 512 MB container Chrome failed to start under memory pressure ("Timed out waiting for the WS endpoint"). A failed render also leaked the Chrome process. | Container-safe flags (`--no-sandbox --disable-dev-shm-usage --single-process …`), 60s launch timeout, `try/finally` to always close. `2b1f4a7` | ✅ 200, 858 KB / 8-page PDF, ~17s, two calls back-to-back |
+| Wishlist removals resurrected | Load merged remote into local **additively** (never removed) and the persist effect raced ahead of the remote fetch → a stale local cache got re-uploaded, so items removed on another device / tab came back. | `hydrated` ref gates the Supabase upsert until the remote copy loads; remote is authoritative for a device that has synced before. `5f17506` | ✅ typecheck + build |
+
 ## 🔧 Bigger changes this session (also on Yashasvi, verified)
 
 | Change | Why | Commit | Verified |
