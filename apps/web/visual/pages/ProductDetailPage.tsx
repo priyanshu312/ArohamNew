@@ -609,11 +609,11 @@ export function ProductDetailPage() {
                     {rec.name}
                   </h4>
                   <p className="text-xs text-[#7A6A58] line-clamp-1 mt-1 font-medium">
-                    {rec.short_desc || rec.subtitle || "Sacred remedy"}
+                    {rec.shortDesc || rec.subtitle || "Sacred remedy"}
                   </p>
                 </div>
                 <div className="mt-3">
-                  <span className="font-bold text-sm text-amber-700">₹{(rec.price / 100).toFixed(2)}</span>
+                  <span className="font-bold text-sm text-amber-700">₹{typeof rec.price === "number" ? rec.price.toLocaleString("en-IN") : rec.price}</span>
                 </div>
               </div>
             ))}

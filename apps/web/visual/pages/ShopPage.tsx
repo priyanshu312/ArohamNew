@@ -365,12 +365,12 @@ export function ShopPage() {
                       {rec.name}
                     </h4>
                     <p className="text-[10px] text-amber-200/70 line-clamp-1 mt-0.5 font-medium">
-                      {rec.short_desc || rec.subtitle || "Sacred remedy"}
+                      {rec.shortDesc || rec.subtitle || "Sacred remedy"}
                     </p>
                   </div>
                   <div className="mt-3 flex items-center justify-between">
                     <span className="font-extrabold text-xs text-amber-300">
-                      ₹{typeof rec.price === "number" ? (rec.price / 100).toFixed(0) : rec.price}
+                      ₹{typeof rec.price === "number" ? rec.price.toLocaleString("en-IN") : rec.price}
                     </span>
                     <span className="text-[9px] font-bold uppercase tracking-wider text-amber-200/80 bg-white/10 px-2 py-0.5 rounded-full border border-white/10">
                       View
