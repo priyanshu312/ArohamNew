@@ -352,15 +352,33 @@ async function compileAstrologyPdf(chartData, birthTime, birthDate, userName, wr
     const templateString = fs_1.default.readFileSync(templatePath, 'utf-8');
     // Render HTML string
     const htmlContent = ejs_1.default.render(templateString, templateData);
-    // Launch Puppeteer and print to PDF
-    const browser = await puppeteer_1.default.launch({ headless: true });
-    const page = await browser.newPage();
-    await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
-    const pdfBuffer = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: { top: '0px', bottom: '0px', left: '0px', right: '0px' }
+    // Launch Puppeteer and print to PDF.
+    // Flags are required on Render's containerised 512 MB instances — without
+    // --disable-dev-shm-usage / --single-process Chrome fails to start under
+    // memory pressure ("Timed out waiting for the WS endpoint URL to appear").
+    const browser = await puppeteer_1.default.launch({
+        headless: true,
+        timeout: 60000,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--no-zygote',
+            '--single-process',
+        ],
     });
-    await browser.close();
-    return pdfBuffer;
+    try {
+        const page = await browser.newPage();
+        await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
+        return await page.pdf({
+            format: 'A4',
+            printBackground: true,
+            margin: { top: '0px', bottom: '0px', left: '0px', right: '0px' }
+        });
+    } finally {
+        // Always close so a failed render doesn't leak a Chrome process and
+        // compound the memory problem for the next request.
+        await browser.close().catch(() => {});
+    }
 }
