@@ -21,6 +21,10 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   // Track previous login state to detect logout
   const prevIsLoggedIn = useRef<boolean | null>(null);
   const isLoggingOut = useRef(false);
+  // Don't write to Supabase until the remote wishlist for this user has loaded,
+  // otherwise the persist effect races ahead and re-uploads a stale local cache
+  // (which resurrects items the user removed on another device).
+  const hydrated = useRef(false);
 
   // Load wishlist from local storage/db based on login status
   useEffect(() => {
@@ -36,6 +40,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
       // 1. Load user-specific local storage cache first for instant load
       const userKey = `Nakshra_user_wishlist_${user.id}`;
       const userCached = safeLocalStorage.getItem(userKey);
+      const hasSyncedBefore = !!userCached;
       let initialList: NakshraProduct[] = [];
       if (userCached) {
         try { initialList = JSON.parse(userCached); } catch (e) {}
@@ -46,27 +51,31 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
           try { initialList = JSON.parse(guestCached); } catch (e) {}
         }
       }
+      hydrated.current = false;
       setWishlist(initialList);
 
-      // 2. Fetch real-time wishlist from Supabase database to sync across devices
+      // 2. Fetch the wishlist from Supabase. If this device has synced before,
+      //    the remote copy is authoritative (so removals on other devices stick).
+      //    On a first login here, carry local/guest items over into the remote set.
       supabase.from("user_wishlists")
         .select("items")
         .eq("user_id", user.id)
         .maybeSingle()
         .then(({ data }) => {
-          if (data && Array.isArray(data.items)) {
-            // Merge local and remote wishlists, unique by ID
-            setWishlist(prev => {
-              const combined = [...prev];
-              data.items.forEach((item: any) => {
-                if (!combined.some(p => p.id === item.id)) {
-                  combined.push(item);
-                }
+          const remote: any[] | null = data && Array.isArray(data.items) ? data.items : null;
+          if (remote) {
+            if (hasSyncedBefore) {
+              setWishlist(remote);
+            } else {
+              setWishlist(prev => {
+                const merged = [...remote];
+                prev.forEach((item) => { if (!merged.some(p => p.id === item.id)) merged.push(item); });
+                return merged;
               });
-              return combined;
-            });
+            }
           }
-        }, () => {});
+          hydrated.current = true;
+        }, () => { hydrated.current = true; });
     } else {
       // Load guest wishlist
       const guestCached = safeLocalStorage.getItem("Nakshra_wishlist");
@@ -83,7 +92,9 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     safeLocalStorage.setItem("Nakshra_wishlist", JSON.stringify(wishlist));
     if (user?.id) {
       safeLocalStorage.setItem(`Nakshra_user_wishlist_${user.id}`, JSON.stringify(wishlist));
-      // Upsert to Supabase
+      // Wait until the remote copy has loaded so we don't overwrite it with a
+      // stale local cache on mount.
+      if (!hydrated.current) return;
       Promise.resolve(
         supabase.from("user_wishlists").upsert({
           user_id: user.id,
