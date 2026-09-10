@@ -12,6 +12,22 @@ router.post("/generate", kundliLimiter, async (req, res) => {
     return res.status(400).json({ error: "location, date (DD/MM/YYYY), and time (HH:MM) are required" });
   }
 
+  // Validate ranges, not just presence — "45/13/2000" or "25:99" used to sail
+  // past the format check and 502 the whole request (VedAstro / puppeteer hang).
+  const d = moment(String(date), "DD/MM/YYYY", true);
+  if (!d.isValid()) {
+    return res.status(400).json({ error: "date must be a real calendar date in DD/MM/YYYY" });
+  }
+  if (d.isAfter(moment())) {
+    return res.status(400).json({ error: "date of birth can't be in the future" });
+  }
+  if (d.year() < 1900) {
+    return res.status(400).json({ error: "date of birth must be on or after 1900" });
+  }
+  if (!/^([01]?\d|2[0-3]):[0-5]\d$/.test(String(time))) {
+    return res.status(400).json({ error: "time must be a 24-hour HH:MM between 00:00 and 23:59" });
+  }
+
   try {
     console.log(`[Kundli API] Generating Kundli PDF for ${name} (${location}, ${date} ${time})...`);
 
