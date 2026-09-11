@@ -26,6 +26,7 @@ jobs:
         run: |
           set -u
           urls=(
+            "https://nakshra.onrender.com/api/health"
             "https://nakshra-backend-yashasvi.onrender.com/api/health"
             "https://nakshra-gorse.onrender.com/api/health/live"
           )
