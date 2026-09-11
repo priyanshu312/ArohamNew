@@ -66,12 +66,12 @@ async function requireAuth(req, res, next) {
       const { data: user } = await supabase.from("users").select("*").eq("id", sess.id).maybeSingle();
       req.user = {
         id: sess.id,
-        email: user?.email || null,
-        user_metadata: { full_name: user?.full_name || "", phone: user?.phone || sess.phone || "" },
+        email: user?.email || sess.email || null,
+        user_metadata: { full_name: user?.full_name || "", phone: user?.phone || "" },
       };
       return next();
     } catch (e) {
-      req.user = { id: sess.id, email: null, user_metadata: { phone: sess.phone || "" } };
+      req.user = { id: sess.id, email: sess.email || null, user_metadata: { phone: "" } };
       return next();
     }
   }

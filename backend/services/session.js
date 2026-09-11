@@ -16,7 +16,7 @@ const b64url = (buf) =>
   Buffer.from(buf).toString("base64").replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
 const b64urlJson = (obj) => b64url(JSON.stringify(obj));
 
-function issueToken(userId, phone) {
+function issueToken(userId, email) {
   const secret = SECRET();
   if (!secret) return `MOCK-USER-ID-${userId}`;
 
@@ -27,7 +27,7 @@ function issueToken(userId, phone) {
     role: "authenticated",
     aud: "authenticated",
     iss: "nakshra-otp",
-    phone: phone || undefined,
+    email: email || undefined,
     iat: now,
     exp: now + TTL_SECONDS,
   };
@@ -36,7 +36,7 @@ function issueToken(userId, phone) {
   return `${data}.${sig}`;
 }
 
-// Returns { id, phone } for a valid token issued by issueToken(), else null.
+// Returns { id, email } for a valid token issued by issueToken(), else null.
 function verifyToken(token) {
   const secret = SECRET();
   if (!secret || typeof token !== "string" || token.split(".").length !== 3) return null;
@@ -54,7 +54,7 @@ function verifyToken(token) {
   }
   if (!payload || !payload.sub) return null;
   if (payload.exp && Math.floor(Date.now() / 1000) > payload.exp) return null;
-  return { id: payload.sub, phone: payload.phone || null };
+  return { id: payload.sub, email: payload.email || null };
 }
 
 module.exports = { issueToken, verifyToken };

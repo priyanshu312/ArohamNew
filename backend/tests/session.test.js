@@ -7,12 +7,12 @@ process.env.SUPABASE_JWT_SECRET = "test-secret-value-for-unit-tests-only-000";
 const { issueToken, verifyToken } = require("../services/session");
 
 test("issueToken → verifyToken round trip", () => {
-  const token = issueToken("user-123", "9876543210");
+  const token = issueToken("user-123", "devotee@example.com");
   assert.equal(token.split(".").length, 3, "is a 3-segment JWT");
   const claims = verifyToken(token);
   assert.ok(claims, "verifies");
   assert.equal(claims.id, "user-123");
-  assert.equal(claims.phone, "9876543210");
+  assert.equal(claims.email, "devotee@example.com");
 });
 
 test("verifyToken rejects a tampered payload", () => {

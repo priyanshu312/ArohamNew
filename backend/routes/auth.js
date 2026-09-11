@@ -4,22 +4,34 @@ const { sendOtp, checkOtp } = require("../services/otp");
 const { issueToken } = require("../services/session");
 const { otpSendLimiter, otpVerifyLimiter } = require("../middleware/rateLimit");
 
-// Find the users-table row for a phone, creating a Supabase Auth user + profile
-// row if none exists. Returns the profile row, or throws {status, message}.
-async function findOrCreateUser(phone, fullName, extra = {}) {
-  const p = String(phone).replace(/\D/g, "").slice(-10);
-  const finalEmail = extra.email || `${p}@Nakshra.in`;
+const normEmail = (v) => String(v || "").trim().toLowerCase();
+const isEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normEmail(v));
+const digits10 = (v) => {
+  const d = String(v || "").replace(/\D/g, "").slice(-10);
+  return d.length === 10 ? d : null;
+};
 
-  const { data: existing } = await supabase.from("users").select("*").eq("phone", p).maybeSingle();
+// Find the users-table row for an EMAIL, creating a Supabase Auth user +
+// profile row if none exists. Email is the account identifier; phone is
+// optional profile/delivery data (captured in the shipping address at
+// checkout). Returns the profile row, or throws {status, message}.
+async function findOrCreateUser(email, fullName, extra = {}) {
+  const e = normEmail(email);
+  if (!isEmail(e)) throw Object.assign(new Error("A valid email address is required."), { status: 400 });
+  const phone = digits10(extra.phone);
+
+  const { data: matches } = await supabase
+    .from("users").select("*").ilike("email", e).limit(1);
+  const existing = (matches || [])[0] || null;
+
   if (existing) {
     if (String(existing.status).toUpperCase() === "BLOCKED") {
       throw Object.assign(new Error("Sorry, you are blocked. Can't login."), { status: 403 });
     }
     const patch = {};
     if (fullName && fullName !== existing.full_name) patch.full_name = fullName;
-    // Adopt a real email if we only had the synthetic <phone>@Nakshra.in one.
-    const realEmail = extra.email && !/@Nakshra\.in$/i.test(extra.email) ? extra.email : null;
-    if (realEmail && realEmail !== existing.email) patch.email = realEmail;
+    // Adopt a phone if the account doesn't have one yet (e.g. first checkout).
+    if (phone && !existing.phone) patch.phone = phone;
     if (Object.keys(patch).length) {
       const { data: upd } = await supabase.from("users").update(patch).eq("id", existing.id).select().single();
       return upd || existing;
@@ -29,15 +41,14 @@ async function findOrCreateUser(phone, fullName, extra = {}) {
 
   let userId;
   const { data, error: authErr } = await supabase.auth.admin.createUser({
-    email: finalEmail,
-    password: `NakshraPass${p}!`,
+    email: e,
     email_confirm: true,
-    user_metadata: { full_name: fullName, phone: p },
+    user_metadata: { full_name: fullName, phone: phone || null },
   });
   if (authErr) {
     if (/already (registered|exists)/i.test(authErr.message)) {
       const { data: list } = await supabase.auth.admin.listUsers();
-      const u = (list?.users || []).find((x) => x.email === finalEmail || x.phone === p);
+      const u = (list?.users || []).find((x) => normEmail(x.email) === e);
       if (!u) throw authErr;
       userId = u.id;
     } else {
@@ -52,8 +63,8 @@ async function findOrCreateUser(phone, fullName, extra = {}) {
     .upsert({
       id: userId,
       full_name: fullName || "Devotee",
-      phone: p,
-      email: finalEmail,
+      email: e,
+      phone: phone || null,
       gender: extra.gender || "Other",
       dob: extra.dob || new Date().toISOString().split("T")[0],
     })
@@ -63,56 +74,57 @@ async function findOrCreateUser(phone, fullName, extra = {}) {
   return inserted;
 }
 
-// Login OTP is delivered by EMAIL via Twilio Verify. `phone` stays the account
-// identifier; the email is only the delivery target (and gets saved onto the
-// account). OTP_CHANNEL=sms flips the same Verify service back to SMS.
-const EMAIL_CHANNEL = () => (process.env.OTP_CHANNEL || "email").toLowerCase() !== "sms";
-
-async function destEmailForPhone(phone10, bodyEmail) {
-  const b = String(bodyEmail || "").trim().toLowerCase();
-  if (b) return b;
-  const { data: u } = await supabase.from("users").select("email").eq("phone", phone10).maybeSingle();
-  if (u && u.email && !/@Nakshra\.in$/i.test(u.email)) return u.email.toLowerCase();
-  return null;
-}
-
-// POST /api/auth/otp/send  { phone, email? }
-// If we have no email (body or on file) for this number, reply { needEmail: true }
-// so the client can ask for one.
+// POST /api/auth/otp/send  { email }
+// Email is both the identifier and the delivery target.
 router.post("/otp/send", otpSendLimiter, async (req, res) => {
-  const phone = String(req.body.phone || "").replace(/\D/g, "").slice(-10);
-  if (phone.length !== 10) return res.status(400).json({ error: "Enter a valid 10-digit mobile number." });
+  const email = normEmail(req.body.email);
+  if (!isEmail(email)) return res.status(400).json({ error: "Enter a valid email address." });
   try {
-    const dest = await destEmailForPhone(phone, req.body.email);
-    const r = await sendOtp(EMAIL_CHANNEL() ? (dest || phone) : phone, dest);
+    const r = await sendOtp(email);
     if (r && r.needEmail) return res.json({ sent: false, needEmail: true });
-    res.json({ sent: true, dev: !!r.dev, via: r.channel || (r.dev ? "mock" : "email"), email: r.to });
+    res.json({ sent: true, dev: !!r.dev, via: r.channel || (r.dev ? "mock" : "email"), email: r.to || email });
   } catch (e) {
     console.error("[auth/otp/send]", e.status, e.message);
     res.status(e.status || 500).json({ error: e.message || "Could not send OTP" });
   }
 });
 
-// POST /api/auth/otp/verify  { phone, code, fullName?, email?, gender?, dob?, verifyOnly? }
+// POST /api/auth/otp/verify  { email, code, fullName?, phone?, gender?, dob?, verifyOnly? }
 // verifyOnly: just checks the code (used by the astrologer flow, which creates
 // its own record); otherwise find-or-creates the users row + returns a token.
 router.post("/otp/verify", otpVerifyLimiter, async (req, res) => {
-  const { phone, code, fullName, email, gender, dob, verifyOnly } = req.body;
-  const p = String(phone || "").replace(/\D/g, "");
-  if (p.slice(-10).length !== 10 || !code) return res.status(400).json({ error: "Phone and code are required." });
+  const { code, fullName, phone, gender, dob, verifyOnly } = req.body;
+  const email = normEmail(req.body.email);
+  if (!isEmail(email) || !code) return res.status(400).json({ error: "Email and code are required." });
   try {
-    const dest = await destEmailForPhone(p.slice(-10), email);
-    const { approved } = await checkOtp(EMAIL_CHANNEL() ? (dest || p) : p, code);
+    const { approved } = await checkOtp(email, code);
     if (!approved) return res.status(401).json({ error: "Invalid or expired code." });
 
     if (verifyOnly) return res.json({ success: true, approved: true });
 
-    const user = await findOrCreateUser(p, fullName, { email: dest || email, gender, dob });
-    const token = issueToken(user.id, p.slice(-10));
+    const user = await findOrCreateUser(email, fullName, { phone, gender, dob });
+    const token = issueToken(user.id, user.email);
     res.json({ success: true, token, user });
   } catch (e) {
     console.error("[auth/otp/verify]", e.status, e.message);
     res.status(e.status || 500).json({ error: e.message || "Verification failed" });
+  }
+});
+
+// GET /api/auth/user-by-email?email=... — does an account already exist?
+// Mirrors the old /email-by-phone lookup, keyed by the new identifier.
+router.get("/user-by-email", async (req, res) => {
+  const email = normEmail(req.query.email);
+  if (!isEmail(email)) return res.status(400).json({ error: "A valid email is required" });
+  try {
+    const { data, error } = await supabase
+      .from("users").select("id, email, full_name, phone, status").ilike("email", email).limit(1);
+    if (error) throw error;
+    const u = (data || [])[0];
+    if (!u) return res.status(404).json({ error: "No account found with this email" });
+    res.json({ id: u.id, email: u.email, fullName: u.full_name, phone: u.phone, status: u.status || "ACTIVE" });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 

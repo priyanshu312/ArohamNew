@@ -118,12 +118,13 @@ export function AuthPage() {
     return `${local[0]}${"•".repeat(Math.max(2, local.length - 3))}${local.slice(-2)}@${domain}`;
   };
 
-  // Send the login OTP. The code is delivered by EMAIL; `phone` stays the
-  // account identifier and `email` is where the code goes.
-  const handleSendPhoneOtp = async () => {
-    const phoneDigits = phone.replace(/\D/g, "");
-    if (phoneDigits.length !== 10) {
-      setErrorMsg("Please enter a valid 10-digit mobile number.");
+  // Send the login OTP. EMAIL is the account identifier and the delivery
+  // target. Phone is optional profile data, captured in the shipping address
+  // at checkout rather than here.
+  const handleSendEmailOtp = async () => {
+    const em = email.trim().toLowerCase();
+    if (!emailValid(em)) {
+      setErrorMsg("Please enter a valid email address.");
       return;
     }
 
@@ -134,18 +135,9 @@ export function AuthPage() {
       }
     }
 
-    // Email is required whenever we're showing the field (signup, or a signin
-    // where the backend told us it has no email on file for this number).
-    if ((activeTab === "signup" || needEmail) && !emailValid(email)) {
-      setErrorMsg("Please enter a valid email address — that's where your code goes.");
-      return;
-    }
-
     setLoading(true);
     setErrorMsg("");
     setNoAccountNotice(false);
-
-    const last10 = phoneDigits.slice(-10);
 
     if (isAstrologerMode) {
       let existingAstro: any = null;
@@ -153,7 +145,7 @@ export function AuthPage() {
         const { data } = await supabase
           .from('astrologers')
           .select('status, email')
-          .or(`phone.eq.${last10},phone.eq.+91${last10},phone.eq.91${last10},phone.ilike.%${last10}`)
+          .ilike('email', em)
           .limit(1);
         const astroObj = data && data.length > 0 ? data[0] : null;
         if (astroObj) {
@@ -170,22 +162,17 @@ export function AuthPage() {
         setLoading(false);
         setActiveTab("signup");
         setAuthState("signup");
-        setErrorMsg("Mobile number not registered. Please enter your details to create an astrologer account.");
+        setErrorMsg("That email isn't registered. Please enter your details to create an astrologer account.");
         return;
       }
 
       try {
         const r: any = await api("/auth/otp/send", {
           method: "POST",
-          body: JSON.stringify({ phone: phoneDigits, email: (email.trim() || existingAstro?.email || "") || undefined }),
+          body: JSON.stringify({ email: em }),
         });
         setLoading(false);
-        if (r?.needEmail) {
-          setNeedEmail(true);
-          setErrorMsg("Enter your email address — we'll send the code there.");
-          return;
-        }
-        setOtpSentTo(r?.email || "");
+        setOtpSentTo(r?.email || em);
         goTo("otp");
       } catch (e: any) {
         setLoading(false);
@@ -197,35 +184,35 @@ export function AuthPage() {
     // Normal User Mode
     let existingUser: any = null;
 
-    // 1. Query backend API (Service Role Key bypasses RLS and formats phone cleanly)
+    // 1. Query backend API (service role bypasses RLS)
     try {
-      const apiRes: any = await api(`/auth/email-by-phone?phone=${phoneDigits}`).catch(() => null);
+      const apiRes: any = await api(`/auth/user-by-email?email=${encodeURIComponent(em)}`).catch(() => null);
       if (apiRes && (apiRes.id || apiRes.fullName || apiRes.email)) {
         existingUser = {
           id: apiRes.id,
           fullName: apiRes.fullName || "Devotee",
-          email: apiRes.email,
-          phone: apiRes.phone || phoneDigits,
+          email: apiRes.email || em,
+          phone: apiRes.phone || "",
           status: apiRes.status || "ACTIVE"
         };
       }
     } catch (e) {}
 
-    // 2. Direct Supabase query as fallback (with flexible phone matching)
+    // 2. Direct Supabase query as fallback
     if (!existingUser) {
       try {
         const { data } = await supabase
           .from('users')
           .select('*')
-          .or(`phone.eq.${last10},phone.eq.+91${last10},phone.eq.91${last10},phone.ilike.%${last10}`)
+          .ilike('email', em)
           .limit(1);
         const userObj = data && data.length > 0 ? data[0] : null;
-        if (userObj && (userObj.phone || userObj.id)) {
+        if (userObj && userObj.id) {
           existingUser = {
             id: userObj.id,
             fullName: userObj.full_name || userObj.fullName || "Devotee",
-            email: userObj.email,
-            phone: userObj.phone || phoneDigits,
+            email: userObj.email || em,
+            phone: userObj.phone || "",
             status: userObj.status || "ACTIVE"
           };
         }
@@ -234,12 +221,10 @@ export function AuthPage() {
 
     // 3. If live DB returned user, update Local Storage cache
     if (existingUser) {
-      localStorage.setItem(`Nakshra_registered_user_phone_${last10}`, JSON.stringify(existingUser));
-      localStorage.setItem(`Nakshra_registered_user_phone_${phoneDigits}`, JSON.stringify(existingUser));
+      localStorage.setItem(`Nakshra_registered_user_email_${em}`, JSON.stringify(existingUser));
     } else {
-      // User does not exist in DB (deleted or not registered) — wipe stale local storage cache
-      localStorage.removeItem(`Nakshra_registered_user_phone_${last10}`);
-      localStorage.removeItem(`Nakshra_registered_user_phone_${phoneDigits}`);
+      // User does not exist in DB (deleted or not registered) — wipe stale cache
+      localStorage.removeItem(`Nakshra_registered_user_email_${em}`);
     }
 
     if (existingUser && String(existingUser.status).toUpperCase() === "BLOCKED") {
@@ -252,22 +237,17 @@ export function AuthPage() {
       setLoading(false);
       setActiveTab("signup");
       setAuthState("signup");
-      setErrorMsg("Mobile number not registered. Please enter your name to create an account.");
+      setErrorMsg("That email isn't registered. Please enter your name to create an account.");
       return;
     }
 
     try {
       const r: any = await api("/auth/otp/send", {
         method: "POST",
-        body: JSON.stringify({ phone: phoneDigits, email: (email.trim() || existingUser?.email || "") || undefined }),
+        body: JSON.stringify({ email: em }),
       });
       setLoading(false);
-      if (r?.needEmail) {
-        setNeedEmail(true);
-        setErrorMsg("Enter your email address — we'll send the code there.");
-        return;
-      }
-      setOtpSentTo(r?.email || "");
+      setOtpSentTo(r?.email || em);
       goTo("otp");
     } catch (e: any) {
       setLoading(false);
@@ -286,8 +266,8 @@ export function AuthPage() {
     setErrorMsg("");
 
     setTimeout(async () => {
+      const em = email.trim().toLowerCase();
       const phoneDigits = phone.replace(/\D/g, "");
-      const last10 = phoneDigits.slice(-10);
 
       // Verify the code with the backend (Twilio Verify). On success it returns a
       // signed session token + the user row (skipped for astrologer mode, which
@@ -297,10 +277,10 @@ export function AuthPage() {
         const vr: any = await api("/auth/otp/verify", {
           method: "POST",
           body: JSON.stringify({
-            phone: phoneDigits,
+            email: em,
             code: joinedOtp,
             fullName: name.trim() || undefined,
-            email: email.trim() || undefined,
+            phone: phoneDigits || undefined,
             verifyOnly: isAstrologerMode,
           }),
         });
@@ -322,7 +302,7 @@ export function AuthPage() {
             ? {
                 id: otpUser.id,
                 fullName: otpUser.full_name || name.trim() || "Devotee",
-                email: otpUser.email,
+                email: otpUser.email || em,
                 phone: otpUser.phone || phoneDigits,
                 status: otpUser.status || "ACTIVE",
               }
@@ -334,7 +314,7 @@ export function AuthPage() {
             const { data } = await supabase
               .from('astrologers')
               .select('*')
-              .or(`phone.eq.${last10},phone.eq.+91${last10},phone.eq.91${last10},phone.ilike.%${last10}`)
+              .ilike('email', em)
               .limit(1);
             const astroData = data && data.length > 0 ? data[0] : null;
             if (astroData && String(astroData.status).toUpperCase() === "BLOCKED") {
@@ -375,7 +355,7 @@ export function AuthPage() {
               login({
                 id: astroData.id,
                 email: astroData.email || null,
-                user_metadata: { full_name: astroProfile.name, phone: phoneDigits, role: "astrologer" },
+                user_metadata: { full_name: astroProfile.name, phone: phoneDigits || null, role: "astrologer" },
                 role: "astrologer",
                 astrologerProfile: astroProfile
               });
@@ -416,14 +396,14 @@ export function AuthPage() {
               const { data } = await supabase
                 .from('users')
                 .select('*')
-                .or(`phone.eq.${last10},phone.eq.+91${last10},phone.eq.91${last10},phone.ilike.%${last10}`)
+                .ilike('email', em)
                 .limit(1);
               const userObj = data && data.length > 0 ? data[0] : null;
               if (userObj && (userObj.full_name || userObj.fullName || userObj.id)) {
                 existingUser = {
                   id: userObj.id,
                   fullName: userObj.full_name || userObj.fullName || name.trim() || "Devotee",
-                  email: userObj.email,
+                  email: userObj.email || em,
                   phone: userObj.phone || phoneDigits,
                   status: userObj.status || "ACTIVE"
                 };
@@ -432,12 +412,10 @@ export function AuthPage() {
           }
 
           if (existingUser) {
-            localStorage.setItem(`Nakshra_registered_user_phone_${last10}`, JSON.stringify(existingUser));
-            localStorage.setItem(`Nakshra_registered_user_phone_${phoneDigits}`, JSON.stringify(existingUser));
+            localStorage.setItem(`Nakshra_registered_user_email_${em}`, JSON.stringify(existingUser));
           } else {
-            // User does not exist in DB (deleted or not registered) — wipe stale local storage cache
-            localStorage.removeItem(`Nakshra_registered_user_phone_${last10}`);
-            localStorage.removeItem(`Nakshra_registered_user_phone_${phoneDigits}`);
+            // User does not exist in DB (deleted or not registered) — wipe stale cache
+            localStorage.removeItem(`Nakshra_registered_user_email_${em}`);
           }
 
           if (existingUser && String(existingUser.status).toUpperCase() === "BLOCKED") {
@@ -477,7 +455,7 @@ export function AuthPage() {
               id: newAstrologer.id,
               full_name: astroFullName,
               email: email.trim() || null,
-              phone: phoneDigits,
+              phone: phoneDigits || null,
               title: newAstrologer.title,
               experience_years: parseInt(astroExperience) || 5,
               specialties: newAstrologer.specialties,
@@ -502,7 +480,7 @@ export function AuthPage() {
           setDoc(doc(db, "astrologers", newAstrologer.id), {
             fullName: astroFullName,
             email: email.trim() || null,
-            phone: phoneDigits,
+            phone: phoneDigits || null,
             title: newAstrologer.title,
             role: "astrologer",
             createdAt: serverTimestamp()
@@ -512,7 +490,7 @@ export function AuthPage() {
           login({
             id: newAstrologer.id,
             email: email.trim() || null,
-            user_metadata: { full_name: astroFullName, phone: phoneDigits, role: "astrologer" },
+            user_metadata: { full_name: astroFullName, phone: phoneDigits || null, role: "astrologer" },
             role: "astrologer",
             astrologerProfile: newAstrologer
           });
@@ -528,7 +506,7 @@ export function AuthPage() {
             id: existingUser.id,
             fullName: existingUser.fullName,
             email: existingUser.email || email.trim() || null,
-            phone: phoneDigits
+            phone: phoneDigits || null
           };
           localStorage.setItem(`Nakshra_registered_user_phone_${phoneDigits}`, JSON.stringify(userObj));
           if (existingUser.email) {
@@ -550,7 +528,7 @@ export function AuthPage() {
             const signupRes = await api("/auth/signup", {
               method: "POST",
               body: JSON.stringify({
-                phone: phoneDigits,
+                phone: phoneDigits || null,
                 fullName: name.trim(),
                 email: email.trim() || undefined
               })
@@ -565,7 +543,7 @@ export function AuthPage() {
             id: finalUserId,
             fullName: name.trim(),
             email: email.trim() || null,
-            phone: phoneDigits
+            phone: phoneDigits || null
           };
 
           // Save local cache
@@ -577,7 +555,7 @@ export function AuthPage() {
               id: finalUserId,
               full_name: name.trim(),
               email: email.trim() || null,
-              phone: phoneDigits
+              phone: phoneDigits || null
             });
           } catch (supaErr) {
             console.warn("Direct Supabase user upsert warning:", supaErr);
@@ -587,7 +565,7 @@ export function AuthPage() {
           setDoc(doc(db, "users", finalUserId), {
             fullName: name.trim(),
             email: email.trim() || null,
-            phone: phoneDigits,
+            phone: phoneDigits || null,
             createdAt: serverTimestamp()
           }, { merge: true }).catch(err => console.warn("Firestore setDoc warning:", err));
 
@@ -595,7 +573,7 @@ export function AuthPage() {
           login({
             id: finalUserId,
             email: email.trim() || null,
-            user_metadata: { full_name: name.trim(), phone: phoneDigits }
+            user_metadata: { full_name: name.trim(), phone: phoneDigits || null }
           });
           handleAuthSuccess();
         } else {
@@ -652,7 +630,7 @@ export function AuthPage() {
             id: finalUserId,
             full_name: astroFullName,
             email: email.trim() || null,
-            phone: phoneDigits,
+            phone: phoneDigits || null,
             title: newAstrologer.title,
             experience_years: parseInt(astroExperience) || 5,
             specialties: newAstrologer.specialties,
@@ -671,7 +649,7 @@ export function AuthPage() {
         setDoc(doc(db, "astrologers", finalUserId), {
           fullName: astroFullName,
           email: email.trim() || null,
-          phone: phoneDigits,
+          phone: phoneDigits || null,
           title: newAstrologer.title,
           role: "astrologer",
           createdAt: serverTimestamp()
@@ -681,7 +659,7 @@ export function AuthPage() {
         login({
           id: finalUserId,
           email: email.trim() || null,
-          user_metadata: { full_name: astroFullName, phone: phoneDigits, role: "astrologer" },
+          user_metadata: { full_name: astroFullName, phone: phoneDigits || null, role: "astrologer" },
           role: "astrologer",
           astrologerProfile: newAstrologer
         });
@@ -695,7 +673,7 @@ export function AuthPage() {
         const signupRes = await api("/auth/signup", {
           method: "POST",
           body: JSON.stringify({
-            phone: phoneDigits,
+            phone: phoneDigits || null,
             fullName: name.trim(),
             email: email.trim() || undefined
           })
@@ -710,7 +688,7 @@ export function AuthPage() {
         id: finalUserId,
         fullName: name.trim(),
         email: email.trim() || null,
-        phone: phoneDigits
+        phone: phoneDigits || null
       };
 
       if (phoneDigits) {
@@ -723,7 +701,7 @@ export function AuthPage() {
           id: finalUserId,
           full_name: name.trim(),
           email: email.trim() || null,
-          phone: phoneDigits
+          phone: phoneDigits || null
         });
       } catch (supaErr) {
         console.warn("Direct Supabase user upsert warning:", supaErr);
@@ -732,7 +710,7 @@ export function AuthPage() {
       setDoc(doc(db, "users", finalUserId), {
         fullName: name.trim(),
         email: email.trim() || null,
-        phone: phoneDigits,
+        phone: phoneDigits || null,
         createdAt: serverTimestamp()
       }, { merge: true }).catch(err => console.warn("Firestore setDoc warning:", err));
 
@@ -740,7 +718,7 @@ export function AuthPage() {
       login({
         id: finalUserId,
         email: email.trim() || null,
-        user_metadata: { full_name: name.trim(), phone: phoneDigits }
+        user_metadata: { full_name: name.trim(), phone: phoneDigits || null }
       });
       handleAuthSuccess();
     } catch (e: any) {
@@ -814,8 +792,8 @@ export function AuthPage() {
                 ? "Enter your details to access your live consultation workstation"
                 : "Register your profile as a certified Vedic Astrologer")
             : (activeTab === "signin"
-                ? t("auth.welcome_subtitle", "Enter your mobile number to sign in to your account")
-                : t("auth.create_subtitle", "Enter your full name and mobile number to get started"))}
+                ? t("auth.welcome_subtitle", "Enter your email address to sign in to your account")
+                : t("auth.create_subtitle", "Enter your full name and email address to get started"))}
         </p>
       </div>
 
@@ -868,44 +846,23 @@ export function AuthPage() {
 
       <div>
         <label className="block text-xs font-semibold mb-1" style={{ color: MAROON, fontFamily: SANS }}>
-          {t("auth.mobile_number", "Mobile Number")}
+          {t("auth.email_label", "Email address")}
         </label>
-        <div className="flex items-center rounded-2xl overflow-hidden" style={{ background: "#FFFFFF", border: "1.5px solid rgba(91,31,36,0.14)" }}>
-          <span className="px-3.5 py-3 text-xs font-bold border-r flex items-center gap-1 flex-shrink-0 select-none" style={{ background: "rgba(91,31,36,0.04)", color: MAROON, borderColor: "rgba(91,31,36,0.1)", fontFamily: SANS }}>
-            🇮🇳 +91
-          </span>
-          <input
-            type="tel"
-            placeholder={t("auth.mobile_placeholder", "10-digit mobile number")}
-            maxLength={10}
-            value={phone}
-            onChange={e => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-            className="flex-1 px-3 py-3 text-sm bg-transparent outline-none font-medium"
-            style={{ color: MAROON, fontFamily: SANS }}
-          />
-        </div>
+        <input
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          placeholder={t("auth.email_placeholder", "you@example.com")}
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter" && !loading) handleSendEmailOtp(); }}
+          className="w-full px-3.5 py-3 text-sm rounded-2xl bg-white outline-none font-medium"
+          style={{ color: MAROON, fontFamily: SANS, border: "1.5px solid rgba(91,31,36,0.14)" }}
+        />
+        <p className="text-[11px] mt-1" style={{ color: "#7A6A58" }}>
+          {t("auth.email_hint", "We'll send your login code here.")}
+        </p>
       </div>
-
-      {(activeTab === "signup" || needEmail) && (
-        <div>
-          <label className="block text-xs font-semibold mb-1" style={{ color: MAROON, fontFamily: SANS }}>
-            {t("auth.email_label", "Email address")}
-          </label>
-          <input
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            placeholder={t("auth.email_placeholder", "you@example.com")}
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            className="w-full px-3.5 py-3 text-sm rounded-2xl bg-white outline-none font-medium"
-            style={{ color: MAROON, fontFamily: SANS, border: "1.5px solid rgba(91,31,36,0.14)" }}
-          />
-          <p className="text-[11px] mt-1" style={{ color: "#7A6A58" }}>
-            {t("auth.email_hint", "We'll send your login code here.")}
-          </p>
-        </div>
-      )}
 
       <p className="text-xs text-center leading-relaxed px-4" style={{ color: "#7A6A58" }}>
         {t("auth.terms_agree", "By continuing, you agree to Nakshra's")}{" "}
@@ -919,7 +876,7 @@ export function AuthPage() {
       </p>
 
       <button
-        onClick={() => handleSendPhoneOtp()}
+        onClick={() => handleSendEmailOtp()}
         disabled={loading}
         className="group w-full py-4 rounded-2xl text-sm font-semibold tracking-wide transition-all hover:opacity-90 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
         style={{ background: `linear-gradient(135deg,${MAROON},#7A2A30)`, color: IVORY }}
@@ -977,18 +934,16 @@ export function AuthPage() {
           </div>
         </div>
         <h2 className="mb-2" style={{ fontFamily: SERIF, fontSize: "2rem", fontWeight: 600, color: MAROON }}>
-          Verify Your Number
+          Check Your Email
         </h2>
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{ background: "rgba(91,31,36,0.06)" }}>
           <Verified size={16} style={{ color: GOLD }} />
           <p className="text-sm font-medium" style={{ color: MAROON }}>
-            +91 {phone}
+            {otpSentTo || email}
           </p>
         </div>
         <p className="text-xs leading-relaxed pt-1" style={{ color: "#7A6A58" }}>
-          {otpSentTo
-            ? <>Enter the 6-digit code we emailed to <strong style={{ color: MAROON }}>{maskEmail(otpSentTo)}</strong></>
-            : "Enter the 6-digit code we emailed you"}
+          Enter the 6-digit code we just sent you
         </p>
       </div>
 
@@ -1007,7 +962,7 @@ export function AuthPage() {
       <div className="text-center">
         {canResend ? (
           <button
-            onClick={() => { setCanResend(false); handleSendPhoneOtp(); }}
+            onClick={() => { setCanResend(false); handleSendEmailOtp(); }}
             className="text-sm font-semibold hover:opacity-70 transition-opacity inline-flex items-center gap-1"
             style={{ color: MAROON }}
           >
@@ -1046,7 +1001,7 @@ export function AuthPage() {
         className="w-full text-sm font-medium text-center hover:opacity-70 transition-opacity flex items-center justify-center gap-1"
         style={{ color: "#7A6A58" }}
       >
-        ← Edit Mobile Number
+        ← Edit Email Address
       </button>
     </div>
   );
@@ -1082,7 +1037,14 @@ export function AuthPage() {
 
       <div className="space-y-4">
         <AuthInput label="Full Name" value={name} onChange={setName} />
-        <AuthInput label="Email Address (Optional)" type="email" value={email} onChange={setEmail} />
+        {/* Email is already verified at this point — it's the account identifier.
+            Phone is optional here; checkout collects it with the delivery address. */}
+        <AuthInput
+          label="Mobile Number (Optional)"
+          type="tel"
+          value={phone}
+          onChange={(v: string) => setPhone(String(v).replace(/\D/g, "").slice(0, 10))}
+        />
       </div>
 
       <button
