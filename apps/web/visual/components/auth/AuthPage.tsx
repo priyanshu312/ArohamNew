@@ -25,7 +25,7 @@ type AuthState = "signin" | "signup" | "otp" | "profile-setup" | "success";
 const LEFT_PANELS = {
   signin:        { img: "/images/auth-bg.png", headline: "Welcome Back.",                       sub: "Continue your sacred journey toward harmony, prosperity and divine energy.", items: ["Access Orders", "Astrology Reports", "Consultations", "Saved Wishlist"] },
   signup:        { img: "/images/auth-bg.png", headline: "Your Spiritual Journey Begins.",    sub: "Join India's most trusted ecosystem for authentic Vedic solutions.", items: ["Temple Energized", "Expert Guidance", "Personalized Path"] },
-  otp:           { img: "/images/auth-bg.png", headline: "Securing Your Sacred Path.",        sub: "Verifying your identity with encrypted SMS authentication.", items: ["Instant Verification", "Privacy Protected", "100% Secure"] },
+  otp:           { img: "/images/auth-bg.png", headline: "Securing Your Sacred Path.",        sub: "Verifying your identity with an encrypted one-time code.", items: ["Instant Verification", "Privacy Protected", "100% Secure"] },
   "profile-setup":{ img: "/images/auth-bg.png", headline: "Complete Your Profile.",          sub: "Share your details to unlock personalized cosmic guidance.", items: ["Personalized Horoscope", "Order Tracking", "Exclusive Offers"] },
   success:       { img: "/images/auth-bg.png", headline: "Welcome to Nakshra.",                sub: "Your journey toward harmony and prosperity begins now.", items: ["Explore Sacred Products", "Book Consultation", "Divine Blessings"] },
 };
@@ -65,6 +65,9 @@ export function AuthPage() {
   const [agreed, setAgreed] = useState(false);
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const [needEmail, setNeedEmail] = useState(false);
+  // Where /auth/otp/send actually delivered the code, so the OTP screen can say
+  // so instead of claiming "SMS".
+  const [otpSentTo, setOtpSentTo] = useState<string>("");
   const [canResend, setCanResend] = useState(false);
   const [panelVisible, setPanelVisible] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -105,6 +108,14 @@ export function AuthPage() {
   const [noAccountNotice, setNoAccountNotice] = useState(false);
 
   const emailValid = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+  // "heroicmortal84@gmail.com" -> "h••••••••84@gmail.com" — enough to recognise
+  // your own address without exposing it on a shared screen.
+  const maskEmail = (v: string) => {
+    const [local, domain] = String(v || "").split("@");
+    if (!domain) return v;
+    if (local.length <= 3) return `${local[0] || ""}••@${domain}`;
+    return `${local[0]}${"•".repeat(Math.max(2, local.length - 3))}${local.slice(-2)}@${domain}`;
+  };
 
   // Send the login OTP. The code is delivered by EMAIL; `phone` stays the
   // account identifier and `email` is where the code goes.
@@ -173,6 +184,7 @@ export function AuthPage() {
           setErrorMsg("Enter your email address — we'll send the code there.");
           return;
         }
+        setOtpSentTo(r?.email || "");
         goTo("otp");
       } catch (e: any) {
         setLoading(false);
@@ -254,6 +266,7 @@ export function AuthPage() {
         setErrorMsg("Enter your email address — we'll send the code there.");
         return;
       }
+      setOtpSentTo(r?.email || "");
       goTo("otp");
     } catch (e: any) {
       setLoading(false);
@@ -972,7 +985,9 @@ export function AuthPage() {
           </p>
         </div>
         <p className="text-xs leading-relaxed pt-1" style={{ color: "#7A6A58" }}>
-          Enter the 6-digit code we sent via SMS
+          {otpSentTo
+            ? <>Enter the 6-digit code we emailed to <strong style={{ color: MAROON }}>{maskEmail(otpSentTo)}</strong></>
+            : "Enter the 6-digit code we emailed you"}
         </p>
       </div>
 
