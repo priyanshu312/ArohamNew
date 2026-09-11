@@ -104,11 +104,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               if (!merged.some((u: any) => String(u.id) === String(go.id))) {
                 const updatedGo = { ...go, user_id: userId };
                 merged.push(updatedGo);
-                if (go.id) {
-                  Promise.resolve(
-                    supabase.from("orders").update({ user_id: userId }).eq("id", go.id)
-                  ).catch(() => {});
-                }
+                /* The database write is handled by /auth/claim-orders below —
+                   a direct update from the browser is refused by row-level
+                   security, which is why guest orders stopped being attached. */
               }
             }
           });
@@ -118,6 +116,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       console.error("Failed to migrate guest orders", e);
     }
+
+    // Attach any orders this account placed as a guest. The server re-checks
+    // that each order's delivery email/phone really is this user's before
+    // claiming it, so this is safe to call unconditionally on every sign-in
+    // (including when there is nothing cached locally to migrate).
+    api("/auth/claim-orders", { method: "POST" }).catch(() => {});
   };
 
   const handleUserSupabaseSync = (userData: any) => {

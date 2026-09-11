@@ -443,12 +443,11 @@ export function ProfilePage() {
                 if (!fetchedOrders.some(existing => String(existing.id) === String(o.id))) {
                   fetchedOrders.push(o);
 
-                  // Auto-link unlinked orders to current user_id
-                  if (user?.id && (!o.user_id || o.user_id !== user.id)) {
-                    Promise.resolve(
-                      supabase.from("orders").update({ user_id: user.id }).eq("id", o.id)
-                    ).catch(() => {});
-                  }
+                  // Linking unclaimed orders to this account is done by
+                  // /auth/claim-orders (called on sign-in): row-level security
+                  // refuses a direct orders update from the browser, and the
+                  // server can actually verify the order's contact details
+                  // belong to this user before reassigning it.
                 }
               });
             }
@@ -570,9 +569,12 @@ export function ProfilePage() {
   const handleSaveProfile = async () => {
     if (!user?.id) return;
 
+    // Phone is optional — email is the account identifier. Requiring it here
+    // locked every email-only account out of editing its own profile (including
+    // out of correcting a wrong date of birth). Validate only what was entered.
     const phoneDigits = editForm.phone.replace(/\D/g, "");
-    if (phoneDigits.length !== 10) {
-      alert("Please enter a valid 10-digit mobile number.");
+    if (phoneDigits.length > 0 && phoneDigits.length !== 10) {
+      alert("Please enter a valid 10-digit mobile number, or leave it blank.");
       return;
     }
 
@@ -606,21 +608,38 @@ export function ProfilePage() {
         created_at: profile?.created_at || new Date().toISOString()
       };
 
-      // 1. Instant save to Session Storage & Local Storage
+      // 1. Persist to the database FIRST and wait for it. This used to flip the
+      //    UI to "Saved!" before the write ran and then swallow any failure, so
+      //    a rejected write still looked like a success and the change was gone
+      //    on the next reload. Blank fields are stored as NULL — never as an
+      //    invented placeholder date.
+      await api("/auth/profile", {
+        method: "POST",
+        body: JSON.stringify({
+          fullName: editForm.fullName,
+          phone: phoneDigits || "",
+          gender: editForm.gender || "",
+          dob: editForm.dob || "",
+          pobCity: editForm.pobCity || "",
+        }),
+      });
+
+      // 2. Only now is it safe to cache and report success.
       sessionStorage.setItem("Nakshra_user_profile", JSON.stringify(profileData));
-      if (editForm.phone) {
-        const phoneDigits = editForm.phone.replace(/\D/g, "");
+      if (phoneDigits) {
         localStorage.setItem(`Nakshra_registered_user_phone_${phoneDigits}`, JSON.stringify(profileData));
       }
+      if (editForm.email.trim()) {
+        localStorage.setItem(`Nakshra_registered_user_email_${editForm.email.trim().toLowerCase()}`, JSON.stringify(profileData));
+      }
 
-      // Update UI profile state & finish saving instantly
       setProfile(profileData);
       setIsEditing(false);
       setSaveSuccess(true);
       setSaving(false);
       setTimeout(() => setSaveSuccess(false), 3000);
 
-      // 2. Non-blocking background sync with Firestore & Supabase
+      // 3. Best-effort mirror to Firestore; failure here is cosmetic only.
       Promise.race([
         setDoc(doc(db, "users", user.id), {
           fullName: editForm.fullName,
@@ -634,25 +653,10 @@ export function ProfilePage() {
         new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 2500))
       ]).catch(err => console.warn("Firestore save profile warning:", err));
 
-      // Direct Supabase DB upsert
-      try {
-        await supabase.from("users").upsert({
-          id: user.id,
-          full_name: editForm.fullName,
-          email: editForm.email || null,
-          phone: editForm.phone || null,
-          gender: editForm.gender || "Other",
-          dob: editForm.dob || "2000-01-01",
-          pob_city: editForm.pobCity || null,
-          updated_at: new Date().toISOString()
-        });
-      } catch (supaErr) {
-        console.warn("Supabase profile save warning:", supaErr);
-      }
-
     } catch (e: any) {
-      alert("Failed to save profile: " + (e.message || "Please try again."));
       setSaving(false);
+      setSaveSuccess(false);
+      alert("Failed to save profile: " + (e.message || "Please try again."));
     }
   };
 

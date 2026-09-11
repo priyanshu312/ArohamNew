@@ -62,7 +62,12 @@ export function AuthPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [dob, setDob] = useState("");
-  const [gender, setGender] = useState("Other");
+  const [gender, setGender] = useState("");
+  // The account id that /auth/otp/verify created or matched for this email.
+  // profile-setup MUST write to this row — it used to mint a fresh UUID, which
+  // created a second, orphaned user record that the signed-in session never
+  // pointed at (so the details entered there effectively vanished).
+  const [verifiedUserId, setVerifiedUserId] = useState<string | null>(null);
   const [agreed, setAgreed] = useState(false);
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const [needEmail, setNeedEmail] = useState(false);
@@ -290,6 +295,7 @@ export function AuthPage() {
           await applySupabaseAuth(vr.token);
         }
         otpUser = vr?.user || null;
+        if (otpUser?.id) setVerifiedUserId(otpUser.id);
       } catch (e: any) {
         setLoading(false);
         setErrorMsg(e?.message || "Invalid or expired code. Please try again.");
@@ -508,9 +514,15 @@ export function AuthPage() {
             email: existingUser.email || email.trim() || null,
             phone: phoneDigits || null
           };
-          localStorage.setItem(`Nakshra_registered_user_phone_${phoneDigits}`, JSON.stringify(userObj));
+          // Guard the phone key: an empty phone collapses every email-only
+          // account on this device onto one shared cache entry.
+          if (phoneDigits) {
+            localStorage.setItem(`Nakshra_registered_user_phone_${phoneDigits}`, JSON.stringify(userObj));
+          }
           if (existingUser.email) {
-            localStorage.setItem(`Nakshra_registered_user_email_${existingUser.email}`, JSON.stringify(userObj));
+            // Lower-case to match how this key is written and read everywhere
+            // else — a mixed-case address never hit the cache otherwise.
+            localStorage.setItem(`Nakshra_registered_user_email_${String(existingUser.email).trim().toLowerCase()}`, JSON.stringify(userObj));
           }
 
           setLoading(false);
@@ -546,8 +558,14 @@ export function AuthPage() {
             phone: phoneDigits || null
           };
 
-          // Save local cache
-          localStorage.setItem(`Nakshra_registered_user_phone_${phoneDigits}`, JSON.stringify(userProfile));
+          // Save local cache (phone key only when we actually have a phone —
+          // otherwise every email-only account shares one entry).
+          if (phoneDigits) {
+            localStorage.setItem(`Nakshra_registered_user_phone_${phoneDigits}`, JSON.stringify(userProfile));
+          }
+          if (email.trim()) {
+            localStorage.setItem(`Nakshra_registered_user_email_${email.trim().toLowerCase()}`, JSON.stringify(userProfile));
+          }
 
           // Direct client-side Supabase DB upsert to guarantee persistence in users table
           try {
@@ -669,47 +687,53 @@ export function AuthPage() {
         return;
       }
 
+      // The account already exists — /auth/otp/verify created (or matched) it a
+      // moment ago and handed back its id. Update THAT row. Minting a new UUID
+      // here, as this used to, produced a second orphaned record that the
+      // signed-in session never referenced.
+      if (verifiedUserId) finalUserId = verifiedUserId;
+
+      const em = email.trim().toLowerCase();
+
+      // Persist through the authenticated endpoint: it patches only the fields
+      // we send and is the only path that still works now that row-level
+      // security restricts direct writes to the caller's own row.
       try {
-        const signupRes = await api("/auth/signup", {
+        const saved = await api("/auth/profile", {
           method: "POST",
           body: JSON.stringify({
-            phone: phoneDigits || null,
             fullName: name.trim(),
-            email: email.trim() || undefined
-          })
+            phone: phoneDigits || "",
+            dob: dob || "",
+            gender: gender || "",
+          }),
         }).catch(() => null);
-
-        if (signupRes?.user?.id) {
-          finalUserId = signupRes.user.id;
-        }
-      } catch (e) {}
+        if (saved?.id) finalUserId = saved.id;
+      } catch (e) {
+        /* non-fatal: the account exists regardless, details can be added later */
+      }
 
       const userProfile = {
         id: finalUserId,
         fullName: name.trim(),
-        email: email.trim() || null,
+        email: em || null,
         phone: phoneDigits || null
       };
 
+      // Only key this cache by a phone we actually have. With phone optional,
+      // an empty value collapsed every email-only account on this device onto
+      // the single key "Nakshra_registered_user_phone_", so one person's cached
+      // profile could be handed to the next.
       if (phoneDigits) {
         localStorage.setItem(`Nakshra_registered_user_phone_${phoneDigits}`, JSON.stringify(userProfile));
       }
-
-      // Direct client-side Supabase DB upsert to guarantee persistence in users table for normal seekers
-      try {
-        await supabase.from("users").upsert({
-          id: finalUserId,
-          full_name: name.trim(),
-          email: email.trim() || null,
-          phone: phoneDigits || null
-        });
-      } catch (supaErr) {
-        console.warn("Direct Supabase user upsert warning:", supaErr);
+      if (em) {
+        localStorage.setItem(`Nakshra_registered_user_email_${em}`, JSON.stringify(userProfile));
       }
 
       setDoc(doc(db, "users", finalUserId), {
         fullName: name.trim(),
-        email: email.trim() || null,
+        email: em || null,
         phone: phoneDigits || null,
         createdAt: serverTimestamp()
       }, { merge: true }).catch(err => console.warn("Firestore setDoc warning:", err));
@@ -717,7 +741,7 @@ export function AuthPage() {
       setLoading(false);
       login({
         id: finalUserId,
-        email: email.trim() || null,
+        email: em || null,
         user_metadata: { full_name: name.trim(), phone: phoneDigits || null }
       });
       handleAuthSuccess();
@@ -1045,6 +1069,68 @@ export function AuthPage() {
           value={phone}
           onChange={(v: string) => setPhone(String(v).replace(/\D/g, "").slice(0, 10))}
         />
+
+        {/* Birth details drive every horoscope/kundli feature, so they have to be
+            asked for. They were previously never collected anywhere in signup —
+            the backend just stored the signup date as the user's date of birth.
+            Optional: an unanswered field is stored as NULL, never guessed. */}
+        <div className="relative">
+          <input
+            id="auth-input-dob"
+            type="date"
+            value={dob}
+            max={new Date().toISOString().split("T")[0]}
+            onChange={(e) => setDob(e.target.value)}
+            className="w-full pt-6 pb-2.5 rounded-2xl text-sm outline-none transition-all duration-200"
+            style={{
+              paddingLeft: "1rem", paddingRight: "1rem", background: "#FFFFFF",
+              border: "1.5px solid rgba(91,31,36,0.14)",
+              color: dob ? "#222222" : "#9A8A78", fontFamily: SANS,
+            }}
+          />
+          <label
+            htmlFor="auth-input-dob"
+            className="absolute pointer-events-none"
+            style={{
+              left: "1rem", top: "8px", fontSize: "10px", color: "#9A8A78",
+              fontFamily: SANS, fontWeight: 600, letterSpacing: "0.06em",
+              textTransform: "uppercase",
+            }}
+          >
+            Date of Birth (Optional)
+          </label>
+        </div>
+
+        <div className="relative">
+          <select
+            id="auth-input-gender"
+            value={gender}
+            onChange={(e) => setGender(e.target.value)}
+            className="w-full pt-6 pb-2.5 rounded-2xl text-sm outline-none transition-all duration-200 appearance-none"
+            style={{
+              paddingLeft: "1rem", paddingRight: "2.5rem", background: "#FFFFFF",
+              border: "1.5px solid rgba(91,31,36,0.14)",
+              color: gender ? "#222222" : "#9A8A78", fontFamily: SANS,
+            }}
+          >
+            <option value="">Prefer not to say</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+          <label
+            htmlFor="auth-input-gender"
+            className="absolute pointer-events-none"
+            style={{
+              left: "1rem", top: "8px", fontSize: "10px", color: "#9A8A78",
+              fontFamily: SANS, fontWeight: 600, letterSpacing: "0.06em",
+              textTransform: "uppercase",
+            }}
+          >
+            Gender (Optional)
+          </label>
+          <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "#9A8A78" }} />
+        </div>
       </div>
 
       <button

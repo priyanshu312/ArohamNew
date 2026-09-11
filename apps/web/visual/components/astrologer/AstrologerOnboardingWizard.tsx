@@ -184,7 +184,7 @@ export const AstrologerOnboardingWizard: React.FC<AstrologerOnboardingWizardProp
       email: formData.email,
       mobile: formData.mobile,
       gender: formData.gender,
-      date_of_birth: formData.dateOfBirth || "1990-01-01",
+      date_of_birth: formData.dateOfBirth || null,
       city: formData.city,
       state: formData.state,
       years_experience: parseInt(formData.yearsExperience) || 5,

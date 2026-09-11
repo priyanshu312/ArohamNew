@@ -65,8 +65,12 @@ async function findOrCreateUser(email, fullName, extra = {}) {
       full_name: fullName || "Devotee",
       email: e,
       phone: phone || null,
-      gender: extra.gender || "Other",
-      dob: extra.dob || new Date().toISOString().split("T")[0],
+      // Both columns are nullable. Never invent values here: a fabricated dob
+      // (it used to default to "today") is indistinguishable from a real one
+      // once written, and it silently poisons any horoscope/kundli feature that
+      // reads it. Unknown stays unknown until the user tells us.
+      gender: extra.gender || null,
+      dob: extra.dob || null,
     })
     .select()
     .single();
@@ -183,13 +187,20 @@ router.post("/signup", async (req, res) => {
         return res.status(403).json({ error: "Sorry, you are blocked. Can't login." });
       }
 
-      // Update existing profile details
+      // SECURITY: this endpoint is unauthenticated, so it must never be able to
+      // change an existing account's identity. It used to overwrite `email` with
+      // whatever the caller passed — and since email is now the login
+      // identifier, anyone who knew a phone number could point that account at
+      // their own address and then sign in as that user via email OTP.
+      // Only fill in a display name that is missing; touch nothing else.
+      const patch = {};
+      if (fullName && !existingProfile.full_name) patch.full_name = fullName;
+      if (!Object.keys(patch).length) {
+        return res.json({ success: true, message: "Account already exists", user: existingProfile });
+      }
       const { data: updated, error: updateErr } = await supabase
         .from("users")
-        .update({
-          full_name: fullName || existingProfile.full_name,
-          email: finalEmail
-        })
+        .update(patch)
         .eq("id", existingProfile.id)
         .select()
         .single();
@@ -232,8 +243,8 @@ router.post("/signup", async (req, res) => {
         full_name: fullName || "Devotee",
         phone: phone.trim(),
         email: finalEmail,
-        gender: gender || "Other",
-        dob: dob || new Date().toISOString().split("T")[0],
+        gender: gender || null,
+        dob: dob || null,
         tob: tob || null,
         pob_city: pobCity || null,
         pob_state: pobState || null,
@@ -271,23 +282,41 @@ router.get("/profile", requireAuth, async (req, res) => {
 // POST /api/auth/profile - Update profile details
 router.post("/profile", requireAuth, async (req, res) => {
   const { fullName, phone, gender, dob, tob, pobCity, pobState, pobCountry, address } = req.body;
-  if (!phone || !/^\d{10}$/.test(phone.trim())) {
-    return res.status(400).json({ error: "Phone number must be exactly 10 digits" });
+
+  // Phone is optional now (email is the identifier) — only validate it when the
+  // caller actually sends one. Requiring it here locked every email-only account
+  // out of editing its own profile.
+  if (phone !== undefined && phone !== null && String(phone).trim() !== "") {
+    if (!/^\d{10}$/.test(String(phone).trim())) {
+      return res.status(400).json({ error: "Phone number must be exactly 10 digits" });
+    }
   }
+
+  // Build a PARTIAL patch: only touch the columns the caller actually sent.
+  // The previous version wrote every column on every call, so a request that
+  // omitted (say) dob silently erased it.
+  const patch = {};
+  const setIf = (key, val, transform = (v) => v) => {
+    if (val !== undefined) patch[key] = val === null || val === "" ? null : transform(val);
+  };
+  setIf("full_name", fullName);
+  setIf("phone", phone, (v) => String(v).trim());
+  setIf("gender", gender);
+  setIf("dob", dob);
+  setIf("tob", tob);
+  setIf("pob_city", pobCity);
+  setIf("pob_state", pobState);
+  setIf("pob_country", pobCountry);
+  setIf("address", address);
+
+  if (!Object.keys(patch).length) {
+    return res.status(400).json({ error: "Nothing to update." });
+  }
+
   try {
     const { data, error } = await supabase
       .from("users")
-      .update({
-        full_name: fullName,
-        phone: phone ? phone.trim() : null,
-        gender: gender || null,
-        dob: dob || null,
-        tob: tob || null,
-        pob_city: pobCity || null,
-        pob_state: pobState || null,
-        pob_country: pobCountry || null,
-        address: address || null
-      })
+      .update(patch)
       .eq("id", req.user.id)
       .select()
       .maybeSingle();
@@ -295,6 +324,55 @@ router.post("/profile", requireAuth, async (req, res) => {
     if (error) throw error;
     res.json(data);
   } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/auth/claim-orders — attach this account's guest orders to it.
+//
+// Orders placed before signing in carry user_id = NULL and are identified only
+// by the email/phone on the delivery address. The web app used to do this with a
+// direct `orders.update({user_id})` from the browser, which row-level security
+// now (correctly) refuses — so guest orders silently stopped appearing in order
+// history. Matching has to happen somewhere trusted anyway: doing it here means
+// the caller can only ever claim orders that carry their OWN verified contact
+// details, instead of any unclaimed order whose id they happen to hold.
+router.post("/claim-orders", requireAuth, async (req, res) => {
+  try {
+    const { data: me } = await supabase
+      .from("users").select("email, phone").eq("id", req.user.id).maybeSingle();
+
+    const myEmail = normEmail(me?.email || req.user.email);
+    const myPhone = digits10(me?.phone || req.user.user_metadata?.phone);
+    if (!myEmail && !myPhone) return res.json({ claimed: 0 });
+
+    const { data: unclaimed, error } = await supabase
+      .from("orders")
+      .select("id, user_phone, address, shipping_address")
+      .is("user_id", null)
+      .limit(500);
+    if (error) throw error;
+
+    const mine = (unclaimed || []).filter((o) => {
+      const addr = o.shipping_address || o.address || {};
+      const orderEmail = normEmail(addr.email);
+      const orderPhone = digits10(addr.phone || o.user_phone);
+      return (
+        (myEmail && orderEmail && orderEmail === myEmail) ||
+        (myPhone && orderPhone && orderPhone === myPhone)
+      );
+    });
+    if (!mine.length) return res.json({ claimed: 0 });
+
+    const { error: updErr } = await supabase
+      .from("orders")
+      .update({ user_id: req.user.id })
+      .in("id", mine.map((o) => o.id));
+    if (updErr) throw updErr;
+
+    res.json({ claimed: mine.length });
+  } catch (e) {
+    console.error("[auth/claim-orders]", e.message);
     res.status(500).json({ error: e.message });
   }
 });
