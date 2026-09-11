@@ -1,8 +1,8 @@
-// Unit tests for services/otp.js (identifier normalisation + mock-mode behaviour).
+// Unit tests for services/otp.js (phone normalisation + mock-mode behaviour).
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 
-// Force the "111111" mock path, no external call.
+// Force the "111111" mock path, no Twilio call.
 process.env.OTP_FORCE_MOCK = "true";
 delete process.env.TWILIO_ACCOUNT_SID;
 delete process.env.TWILIO_AUTH_TOKEN;
@@ -28,13 +28,13 @@ test("isEmail", () => {
 });
 
 test("sendOtp in mock mode is a no-op that reports dev:true", async () => {
-  const r = await sendOtp("9876543210");
+  const r = await sendOtp("user@example.com");
   assert.deepEqual(r, { sent: true, dev: true });
 });
 
 test("checkOtp in mock mode accepts 111111 and rejects anything else", async () => {
-  assert.deepEqual(await checkOtp("9876543210", "111111"), { approved: true });
-  assert.deepEqual(await checkOtp("9876543210", "000000"), { approved: false });
-  assert.deepEqual(await checkOtp("9876543210", "abcd"), { approved: false });
-  assert.deepEqual(await checkOtp("9876543210", ""), { approved: false });
+  assert.deepEqual(await checkOtp("user@example.com", "111111"), { approved: true });
+  assert.deepEqual(await checkOtp("user@example.com", "000000"), { approved: false });
+  assert.deepEqual(await checkOtp("user@example.com", "abcd"), { approved: false });
+  assert.deepEqual(await checkOtp("user@example.com", ""), { approved: false });
 });

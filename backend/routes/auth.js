@@ -63,24 +63,30 @@ async function findOrCreateUser(phone, fullName, extra = {}) {
   return inserted;
 }
 
+// Login OTP is delivered by EMAIL via Twilio Verify. `phone` stays the account
+// identifier; the email is only the delivery target (and gets saved onto the
+// account). OTP_CHANNEL=sms flips the same Verify service back to SMS.
+const EMAIL_CHANNEL = () => (process.env.OTP_CHANNEL || "email").toLowerCase() !== "sms";
+
+async function destEmailForPhone(phone10, bodyEmail) {
+  const b = String(bodyEmail || "").trim().toLowerCase();
+  if (b) return b;
+  const { data: u } = await supabase.from("users").select("email").eq("phone", phone10).maybeSingle();
+  if (u && u.email && !/@Nakshra\.in$/i.test(u.email)) return u.email.toLowerCase();
+  return null;
+}
+
 // POST /api/auth/otp/send  { phone, email? }
-// The code is delivered by EMAIL (free). `phone` stays the account identifier;
-// `email` is where the code is sent. If no email is given and we don't already
-// have a real one on file for this phone, respond { needEmail: true } so the
-// client can ask for it.
+// If we have no email (body or on file) for this number, reply { needEmail: true }
+// so the client can ask for one.
 router.post("/otp/send", otpSendLimiter, async (req, res) => {
   const phone = String(req.body.phone || "").replace(/\D/g, "").slice(-10);
-  const bodyEmail = String(req.body.email || "").trim().toLowerCase();
   if (phone.length !== 10) return res.status(400).json({ error: "Enter a valid 10-digit mobile number." });
   try {
-    let dest = bodyEmail || null;
-    if (!dest) {
-      const { data: u } = await supabase.from("users").select("email").eq("phone", phone).maybeSingle();
-      if (u && u.email && !/@Nakshra\.in$/i.test(u.email)) dest = u.email;
-    }
-    const r = await sendOtp(phone, dest);
+    const dest = await destEmailForPhone(phone, req.body.email);
+    const r = await sendOtp(EMAIL_CHANNEL() ? (dest || phone) : phone, dest);
     if (r && r.needEmail) return res.json({ sent: false, needEmail: true });
-    res.json({ sent: true, dev: !!r.dev, via: r.channel || (r.dev ? "mock" : "email") });
+    res.json({ sent: true, dev: !!r.dev, via: r.channel || (r.dev ? "mock" : "email"), email: r.to });
   } catch (e) {
     console.error("[auth/otp/send]", e.status, e.message);
     res.status(e.status || 500).json({ error: e.message || "Could not send OTP" });
@@ -95,12 +101,13 @@ router.post("/otp/verify", otpVerifyLimiter, async (req, res) => {
   const p = String(phone || "").replace(/\D/g, "");
   if (p.slice(-10).length !== 10 || !code) return res.status(400).json({ error: "Phone and code are required." });
   try {
-    const { approved } = await checkOtp(p, code);
+    const dest = await destEmailForPhone(p.slice(-10), email);
+    const { approved } = await checkOtp(EMAIL_CHANNEL() ? (dest || p) : p, code);
     if (!approved) return res.status(401).json({ error: "Invalid or expired code." });
 
     if (verifyOnly) return res.json({ success: true, approved: true });
 
-    const user = await findOrCreateUser(p, fullName, { email, gender, dob });
+    const user = await findOrCreateUser(p, fullName, { email: dest || email, gender, dob });
     const token = issueToken(user.id, p.slice(-10));
     res.json({ success: true, token, user });
   } catch (e) {
