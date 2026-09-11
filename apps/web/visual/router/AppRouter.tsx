@@ -4,6 +4,7 @@ import { Nav } from "@visual/components/layout/Nav";
 import { Footer } from "@visual/components/layout/Footer";
 import { WhatsAppButton } from "@visual/components/layout/WhatsAppButton";
 import { AstroChatWidget } from "@visual/components/product/AstroChatWidget";
+import { FEATURE_CHAT } from "@visual/config/features";
 import { CartSidebar } from "@visual/components/cart/CartSidebar";
 import { AuthPage } from "@visual/components/auth/AuthPage";
 import { NakshraLogoLoader } from "@visual/components/layout/NakshraLogoLoader";
@@ -106,7 +107,7 @@ function MainLayout() {
 
       <Footer />
       <WhatsAppButton />
-      <AstroChatWidget />
+      {FEATURE_CHAT && <AstroChatWidget />}
     </div>
   );
 }

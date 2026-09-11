@@ -19,6 +19,7 @@ import "react-day-picker/dist/style.css";
 
 import { useTranslation } from "react-i18next";
 import { LanguageSelector } from "@visual/components/layout/LanguageSelector";
+import { FEATURE_I18N } from "@visual/config/features";
 
 type AuthState = "signin" | "signup" | "otp" | "profile-setup" | "success";
 
@@ -1236,7 +1237,7 @@ export function AuthPage() {
           <span className="font-semibold text-lg" style={{ fontFamily: SERIF, color: MAROON }}>Nakshra</span>
         </Link>
         <div className="flex items-center gap-3">
-          <LanguageSelector solid />
+          {FEATURE_I18N && <LanguageSelector solid />}
           <button onClick={handleClose} className="p-2 rounded-full hover:bg-black/5 text-gray-500 transition-colors" aria-label="Close">
             <X size={20} />
           </button>

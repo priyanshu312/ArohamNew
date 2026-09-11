@@ -9,6 +9,7 @@ import { SearchModal } from "./SearchModal";
 import { LanguageSelector } from "./LanguageSelector";
 import { useTranslation } from "react-i18next";
 import { KundliModal } from "../product/KundliModal";
+import { FEATURE_KUNDLI, FEATURE_I18N } from "@visual/config/features";
 
 export function Nav() {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ export function Nav() {
     [t("nav.home", "Home"), () => { navigate("/"); setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 50); }],
     [t("nav.shop", "Shop"), () => navigate("/shop")],
     [t("nav.consult", "Consult"), () => navigate("/consult")],
-    ["📜 Make My Kundli", () => setIsKundliOpen(true)],
+    ...(FEATURE_KUNDLI ? [["📜 Make My Kundli", () => setIsKundliOpen(true)] as [string, () => void]] : []),
     ...(isLoggedIn ? [[t("nav.my_orders", "My Orders"), () => navigate("/profile?tab=orders")] as [string, () => void]] : []),
   ];
 
@@ -87,7 +88,7 @@ export function Nav() {
           
           <div className="hidden lg:flex items-center gap-4 transition-all duration-300">
             {/* Multilingual Selector Placed Directly in Front of Search Button */}
-            <LanguageSelector solid={solid} />
+            {FEATURE_I18N && <LanguageSelector solid={solid} />}
             <div className="relative">
               <div className="flex items-center transition-all duration-500 ease-out overflow-hidden rounded-full"
                    style={{
@@ -142,7 +143,7 @@ export function Nav() {
           {/* Mobile Right Action Icons */}
           <div className="lg:hidden flex items-center gap-3 transition-all duration-300" style={{ color: solid ? MAROON : IVORY }}>
             {/* Multilingual Selector Placed Directly in Front of Search Button on Mobile */}
-            <LanguageSelector solid={solid} isMobile />
+            {FEATURE_I18N && <LanguageSelector solid={solid} isMobile />}
             <div className="relative w-full flex justify-end">
               <div className="flex items-center transition-all duration-500 ease-out overflow-hidden rounded-full"
                    style={{ 
@@ -207,7 +208,7 @@ export function Nav() {
           </div>
         </div>
       </nav>
-      <KundliModal isOpen={isKundliOpen} onClose={() => setIsKundliOpen(false)} />
+      {FEATURE_KUNDLI && <KundliModal isOpen={isKundliOpen} onClose={() => setIsKundliOpen(false)} />}
     </>
   );
 }

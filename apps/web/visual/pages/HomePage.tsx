@@ -12,6 +12,7 @@ import { NakshraProduct } from "@nakshra/shared-types/product";
 import { useCart } from "@nakshra/shared-state";
 import { useProducts } from "@nakshra/shared-hooks/useProducts";
 import { AstroChatWidget } from "@visual/components/product/AstroChatWidget";
+import { FEATURE_CHAT } from "@visual/config/features";
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ export function HomePage() {
       <VideoTestimonials />
       <CommunityComments products={products} />
       <Newsletter />
-      <AstroChatWidget />
+      {FEATURE_CHAT && <AstroChatWidget />}
     </main>
   );
 }
