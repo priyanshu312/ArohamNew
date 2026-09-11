@@ -60,3 +60,30 @@ select
   count(*) filter (where dob = '2000-01-01')      as dob_is_2000_placeholder,
   count(*) filter (where dob is null)             as dob_null
 from public.users;
+
+-- ---------------------------------------------------------------------------
+-- APPLIED 2026-09-12. Results:
+--   dob = signup date        21 -> 0
+--   dob = 2000-01-01          1 -> 0
+--   genuine dates of birth preserved (2 rows)
+--
+-- Follow-up applied in the same pass, now that email is the identity key:
+--   create index idx_users_email_lower on users (lower(email));
+--   create unique index users_email_unique on users (lower(email))
+--     where email is not null;
+--
+-- The unique index needed the duplicate addresses gone first. Rather than
+-- delete anyone, the address was detached (set to NULL) from the rows that had
+-- merely inherited it; every row and all its data was kept:
+--   c4665d7e… "Flow Check"          — a test account created during the
+--                                     2026-09-09 Razorpay run; it held
+--                                     heroicmortal84@gmail.com alongside the
+--                                     real account, so that address resolved to
+--                                     an arbitrary one of the two per login.
+--   ac70cbe2… "Manas Maheshwari"    — both inherited the placeholder
+--   a1a6b075… "lmaoaoaoao"            acharya.vedic@aroham.com
+--   astro-4ce679e1…                 — duplicate of astro-1 (same name + phone)
+--
+-- To undo any of those, set the address back on the row in question (the unique
+-- index will refuse if it would collide again).
+-- ---------------------------------------------------------------------------

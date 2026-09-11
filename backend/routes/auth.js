@@ -20,8 +20,15 @@ async function findOrCreateUser(email, fullName, extra = {}) {
   if (!isEmail(e)) throw Object.assign(new Error("A valid email address is required."), { status: 400 });
   const phone = digits10(extra.phone);
 
+  // `.limit(1)` with no ORDER BY returns an arbitrary row, so where legacy
+  // duplicates of an address exist (they predate email-as-identifier) the same
+  // person could land on a different account from one login to the next — and
+  // see a different order history each time. Pin it to the newest row, which is
+  // the one the email-identity flow creates and keeps up to date.
   const { data: matches } = await supabase
-    .from("users").select("*").ilike("email", e).limit(1);
+    .from("users").select("*").ilike("email", e)
+    .order("created_at", { ascending: false })
+    .limit(1);
   const existing = (matches || [])[0] || null;
 
   if (existing) {
@@ -122,7 +129,11 @@ router.get("/user-by-email", async (req, res) => {
   if (!isEmail(email)) return res.status(400).json({ error: "A valid email is required" });
   try {
     const { data, error } = await supabase
-      .from("users").select("id, email, full_name, phone, status").ilike("email", email).limit(1);
+      .from("users").select("id, email, full_name, phone, status").ilike("email", email)
+      // Same ordering as findOrCreateUser, so this "does an account exist"
+      // lookup reports the row the user will actually be signed in as.
+      .order("created_at", { ascending: false })
+      .limit(1);
     if (error) throw error;
     const u = (data || [])[0];
     if (!u) return res.status(404).json({ error: "No account found with this email" });
