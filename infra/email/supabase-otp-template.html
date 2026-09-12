@@ -1,15 +1,3 @@
-<!--
-  Nakshra — login code email, adapted for SUPABASE's template editor.
-
-  Paste into: Supabase → Authentication → Emails → Templates → Magic Link
-  Subject line: Your Nakshra verification code
-
-  The only real difference from the SendGrid version is the placeholder:
-      SendGrid : {{{twilio_code}}}
-      Supabase : {{ .Token }}
-  Everything else is the same table-based HTML with inline styles, which is what
-  keeps it rendering in Outlook as well as Gmail.
--->
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0;padding:0;background-color:#FAF7F2;">
   <tr>
     <td align="center" style="padding:32px 12px;">
