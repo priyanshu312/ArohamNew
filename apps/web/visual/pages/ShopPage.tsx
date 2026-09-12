@@ -252,7 +252,12 @@ export function ShopPage() {
       <div>
         <h3 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: MAROON }}>Curated Collections</h3>
         <div className="space-y-2">
-          {["Trending Products", "Discount Zone", "Combos & Kits", "Combo Deals"].map(c => {
+          {/* "Combos & Kits" and "Combo Deals" are hidden for now: they read as
+              the same thing to a shopper and the filter logic treats them
+              identically (both match on kit/combo/bundle), so picking either
+              gave the same results. Restore by putting them back in this list —
+              nothing else was removed. */}
+          {["Trending Products", "Discount Zone"].map(c => {
             const isSelected = cols.includes(c);
             return (
               <button

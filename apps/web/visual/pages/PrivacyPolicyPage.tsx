@@ -135,7 +135,7 @@ export function PrivacyPolicyPage() {
             </p>
             <div className="mt-3 p-4 rounded-xl" style={{ background: "#FAF7F2" }}>
               <p><strong>Nakshra</strong></p>
-              <p>Email: <a href="mailto:priyanshubansal720@gmail.com" style={{ color: GOLD }} className="hover:underline">priyanshubansal720@gmail.com</a></p>
+              <p>Email: <a href="mailto:director@nakshra.in" style={{ color: GOLD }} className="hover:underline">director@nakshra.in</a></p>
             </div>
           </section>
 

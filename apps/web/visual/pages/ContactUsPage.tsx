@@ -59,7 +59,7 @@ export function ContactUsPage() {
                   </div>
                   <div>
                     <div className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: "#9A8A78" }}>Email Support</div>
-                    <a href="mailto:priyanshubansal720@gmail.com" className="text-sm font-medium hover:underline" style={{ color: MAROON }}>priyanshubansal720@gmail.com</a>
+                    <a href="mailto:director@nakshra.in" className="text-sm font-medium hover:underline" style={{ color: MAROON }}>director@nakshra.in</a>
                   </div>
                 </div>
 

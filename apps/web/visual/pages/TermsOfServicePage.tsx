@@ -87,7 +87,7 @@ export function TermsOfServicePage() {
           {/* Header Preamble matching Astrotalk format */}
           <div className="space-y-4 text-sm md:text-base text-[#4A3A2A]">
             <p>
-              This website is owned and operated by Nakshra ("us", "We", "the Company" or "Nakshra" which also includes its affiliates) (<a href="mailto:priyanshubansal720@gmail.com" style={{ color: GOLD }} className="hover:underline">priyanshubansal720@gmail.com</a>). The Platform may be provided or be accessible via multiple websites or applications whether owned and/or operated by us or by third parties, including, without limitation, the website <a href="https://Nakshra.in" style={{ color: GOLD }} className="hover:underline font-semibold">Nakshra.in</a> and its related apps.
+              This website is owned and operated by Nakshra ("us", "We", "the Company" or "Nakshra" which also includes its affiliates) (<a href="mailto:director@nakshra.in" style={{ color: GOLD }} className="hover:underline">director@nakshra.in</a>). The Platform may be provided or be accessible via multiple websites or applications whether owned and/or operated by us or by third parties, including, without limitation, the website <a href="https://Nakshra.in" style={{ color: GOLD }} className="hover:underline font-semibold">Nakshra.in</a> and its related apps.
             </p>
             <p>
               Following Terms and Conditions (the "Agreement") govern your access and use of our online platform through which consulting, information related to Indian Astrology, temple-energized products and other allied spiritual sciences (collectively, the "Spiritual Advisory Services") are administered and accessible to any person.
@@ -138,7 +138,7 @@ export function TermsOfServicePage() {
             <div className="p-5 rounded-2xl border border-amber-900/10 bg-[#FAF7F2]/80 shadow-xs">
               <p className="font-bold text-[#5B1F24] text-base">Nakshra</p>
               <p className="text-sm mt-1 text-[#4A3A2A]">
-                Email: <a href="mailto:priyanshubansal720@gmail.com" style={{ color: GOLD }} className="hover:underline font-semibold">priyanshubansal720@gmail.com</a>
+                Email: <a href="mailto:director@nakshra.in" style={{ color: GOLD }} className="hover:underline font-semibold">director@nakshra.in</a>
               </p>
             </div>
           </section>

@@ -239,7 +239,7 @@ const SHIPPING_SECTIONS = [
 const RETURN_SECTIONS = [
   { h: '1. 7-Day Return Window', b: 'We stand by the authenticity and quality of our sacred products. If you are not completely satisfied, you may initiate a return within 7 days of receiving your delivery.' },
   { h: '2. Conditions for Return', b: 'To be eligible for a return or replacement, the following conditions must be strictly met:\n\n• The item must be unused and in the exact condition you received it.\n• All original tags, packaging, and the Certificate of Authenticity (Lab Certificate) must be intact and returned with the product.\n• The sacred item must not have been physically altered, broken, or improperly handled by the user.' },
-  { h: '3. Damaged or Defective Goods', b: 'If your product arrives damaged or defective due to transit, we require a continuous unboxing video as proof. Because our items are high-value and uniquely energized, this standard practice helps us process your replacement immediately without dispute. Please email the video to priyanshubansal720@gmail.com within 24 hours of delivery.' },
+  { h: '3. Damaged or Defective Goods', b: 'If your product arrives damaged or defective due to transit, we require a continuous unboxing video as proof. Because our items are high-value and uniquely energized, this standard practice helps us process your replacement immediately without dispute. Please email the video to director@nakshra.in within 24 hours of delivery.' },
   { h: '4. Custom Energized Products', b: 'Some specific products that undergo highly personalized, multi-day rituals based on your exact Kundali (birth chart) may be exempt from standard returns unless they arrive physically damaged. This will be explicitly stated on the product page if applicable.' },
   { h: '5. Refund Processing', b: 'Once your returned item is received and inspected at our spiritual center, we will send you an email to notify you of the approval or rejection of your refund. If approved, the refund will be processed and credited back to your original method of payment within 5-7 business days.' },
 ];
@@ -256,7 +256,7 @@ const PRIVACY_SECTIONS = [
   { h: '9. Third-Party Links', b: 'The Site may link to third-party websites not owned or controlled by Nakshra. We are not responsible for their privacy practices.' },
   { h: "10. Children's Privacy", b: 'Our Site is not intended for individuals under 18. We do not knowingly collect data from children; if we become aware we have, we will delete it promptly.' },
   { h: '11. Changes to This Policy', b: 'We may update this Privacy Policy at any time. Changes are effective immediately upon posting with an updated "Last Updated" date. Continued use constitutes acceptance.' },
-  { h: '12. Contact Us', b: 'Questions about this Privacy Policy: Nakshra, priyanshubansal720@gmail.com' },
+  { h: '12. Contact Us', b: 'Questions about this Privacy Policy: Nakshra, director@nakshra.in' },
 ];
 
 const TERMS_SECTIONS = [
@@ -275,7 +275,7 @@ const TERMS_SECTIONS = [
   { h: '13. Governing Law and Jurisdiction', b: 'These Terms are governed by the laws of India. Disputes are subject to the exclusive jurisdiction of the courts in Varanasi, Uttar Pradesh, India.' },
   { h: '14. Severability', b: 'If any provision of these Terms is found unlawful or unenforceable, that provision is severable and does not affect the remaining provisions.' },
   { h: '15. Entire Agreement', b: 'These Terms, together with our Privacy Policy, Shipping Policy, and Return Policy, constitute the entire agreement between you and Nakshra regarding use of the Site.' },
-  { h: '16. Contact Information', b: 'Questions about these Terms: Nakshra, priyanshubansal720@gmail.com' },
+  { h: '16. Contact Information', b: 'Questions about these Terms: Nakshra, director@nakshra.in' },
 ];
 
 type PolicyTab = 'faq' | 'shipping' | 'returns' | 'contact' | 'privacy' | 'terms';
@@ -385,9 +385,9 @@ export const PoliciesScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => 
           <>
             <Text style={styles.secHeading}>Get in Touch</Text>
             <View style={styles.contactInfoCard}>
-              <TouchableOpacity onPress={() => Linking.openURL('mailto:priyanshubansal720@gmail.com')}>
+              <TouchableOpacity onPress={() => Linking.openURL('mailto:director@nakshra.in')}>
                 <Text style={styles.contactLabel}>✉️ Email Support</Text>
-                <Text style={styles.contactValue}>priyanshubansal720@gmail.com</Text>
+                <Text style={styles.contactValue}>director@nakshra.in</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => Linking.openURL('tel:+918000153840')} style={{ marginTop: 14 }}>
                 <Text style={styles.contactLabel}>📞 Call Us</Text>
