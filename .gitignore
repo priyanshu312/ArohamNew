@@ -12,3 +12,6 @@ __MACOSX/
 !.env.example
 !**/.env.example
 backend/.cache/
+
+# Claude Code personal overrides (not shared)
+.claude/settings.local.json

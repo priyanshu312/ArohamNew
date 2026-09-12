@@ -68,9 +68,17 @@ async function fetchProductsOnce(): Promise<NakshraProduct[]> {
   if (inFlight) return inFlight;
 
   inFlight = (async () => {
-    // 1. Backend API
+    // 1. Backend API.
+    //
+    // Capped deliberately low. The backend sleeps on Render's free plan, and a
+    // cold start holds the connection open for 30-50 s without ever failing —
+    // which used to leave the catalogue blank until the visitor reloaded two or
+    // three times. Supabase (step 2) serves the same catalogue in under a
+    // second and never sleeps, so giving up quickly and falling through is far
+    // better than waiting. When the backend is awake it answers in ~1 s, well
+    // inside this budget.
     try {
-      const data = await api("/products");
+      const data = await api("/products", { timeoutMs: 5000 });
       if (Array.isArray(data) && data.length > 0) {
         safeSessionStorage.setItem("Nakshra_products_cache", JSON.stringify(data));
         resolvedOnce = data;
@@ -96,11 +104,14 @@ async function fetchProductsOnce(): Promise<NakshraProduct[]> {
       console.error("Direct Supabase product query error:", e);
     }
 
-    // 3. Cached, then bundled defaults
+    // 3. Cached, then the 7 bundled defaults — a visibly incomplete catalogue
+    //    (the real one has 23 items), so treat it as a stopgap, NOT an answer:
+    //    deliberately do not set `resolvedOnce`. Memoising it here meant one
+    //    unlucky first request pinned every component on the page to the
+    //    fallback for the rest of the session, with no retry short of a full
+    //    reload. Leaving it unset lets the next mount try the network again.
     const cached = readCache();
-    const result = cached || DEFAULT_PRODUCTS;
-    resolvedOnce = result;
-    return result;
+    return cached || DEFAULT_PRODUCTS;
   })();
 
   try {
