@@ -8,7 +8,7 @@ import { safeLocalStorage, safeSessionStorage } from "@nakshra/shared-utils/stor
 
 export interface AppliedCoupon {
   code: string;
-  type: "percent" | "flat";
+  type: "percent" | "flat" | "fixed_total";
   value: number;
   label: string;
 }
@@ -18,7 +18,7 @@ export interface AppliedCoupon {
 // client); the backend works in paise. The backend re-validates on order
 // creation and PaymentPage reconciles, so a mismatch can't overcharge — but
 // keep these in sync so the UI shows the truth.
-type CouponDef = { type: "percent" | "flat"; value: number; label: string; minPurchase?: number };
+type CouponDef = { type: "percent" | "flat" | "fixed_total"; value: number; label: string; minPurchase?: number };
 export const VALID_COUPONS: Record<string, CouponDef> = {
   NAKSHRA10: { type: "percent", value: 10, label: "10% OFF sacred items" },
   DEVOTION20: { type: "percent", value: 20, label: "20% OFF on orders above ₹3,000", minPurchase: 3000 },
@@ -26,6 +26,20 @@ export const VALID_COUPONS: Record<string, CouponDef> = {
   FREEENERGIZATION: { type: "flat", value: 99, label: "Free Temple Consecration (₹99 off)" },
   FIRST300: { type: "flat", value: 300, label: "₹300 OFF your first order" },
 };
+
+// Test-only code that makes the cart total ₹1, so a real Razorpay payment can
+// be exercised on live keys without paying full price. Hidden unless
+// VITE_TEST_COUPON=true is set for the build.
+//
+// The client flag is only about not advertising it: the SERVER decides whether
+// it applies (TEST_COUPON_ENABLED there), and PaymentPage refuses to charge a
+// discounted total the server did not agree to. So even if this shipped
+// enabled by accident, nobody gets a ₹1 order unless the backend also allows it.
+// Must be the literal `import.meta.env.VITE_...` form — Vite does not substitute
+// a dynamic or optional-chained lookup.
+if (String(import.meta.env.VITE_TEST_COUPON).toLowerCase() === "true") {
+  VALID_COUPONS.WELCOME1 = { type: "fixed_total", value: 1, label: "TEST — pay ₹1" };
+}
 
 interface CartContextValue {
   items: CartItem[];
@@ -152,6 +166,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   if (appliedCoupon && subtotal > 0) {
     if (appliedCoupon.type === "percent") {
       discount = Math.round((subtotal * appliedCoupon.value) / 100);
+    } else if (appliedCoupon.type === "fixed_total") {
+      // `value` is the final price to charge, not an amount off.
+      discount = Math.max(0, subtotal - appliedCoupon.value);
     } else {
       discount = Math.min(subtotal, appliedCoupon.value);
     }

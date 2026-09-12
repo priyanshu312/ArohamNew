@@ -6,7 +6,7 @@ export function ShippingPolicyPage() {
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] font-sans selection:bg-[#C8A044] selection:text-[#0D0508] pb-10">
-      <div className="max-w-4xl mx-auto px-6 pt-32 pb-20">
+      <div className="max-w-4xl mx-auto px-3 sm:px-6 pt-24 sm:pt-32 pb-20">
         <div className="text-center mb-12">
           <h1 style={{ fontFamily: SERIF, color: MAROON }} className="text-4xl md:text-5xl font-medium mb-4">
             {t("shipping.title", "Shipping Policy")}
@@ -17,7 +17,7 @@ export function ShippingPolicyPage() {
           </p>
         </div>
         
-        <div className="bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-[rgba(91,31,36,0.05)] space-y-8" style={{ color: "#4A3A2A" }}>
+        <div className="bg-white rounded-3xl p-5 sm:p-8 md:p-12 shadow-sm border border-[rgba(91,31,36,0.05)] space-y-8" style={{ color: "#4A3A2A" }}>
           
           <section>
             <h2 style={{ fontFamily: SERIF, color: MAROON }} className="text-2xl font-semibold mb-3">

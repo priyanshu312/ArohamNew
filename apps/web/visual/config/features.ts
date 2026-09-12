@@ -29,3 +29,9 @@ export const FEATURE_KUNDLI = flag(import.meta.env.VITE_FEATURE_KUNDLI, false);
 
 /** Language translator dropdown (Nav + auth page). App stays in the default language. */
 export const FEATURE_I18N = flag(import.meta.env.VITE_FEATURE_I18N, false);
+
+/** Home: "From Earth to Sacred Artifact" — the 5-step craftsmanship section. */
+export const FEATURE_CRAFTSMANSHIP = flag(import.meta.env.VITE_FEATURE_CRAFTSMANSHIP, false);
+
+/** Home: the community section where visitors post reviews/comments. */
+export const FEATURE_REVIEWS = flag(import.meta.env.VITE_FEATURE_REVIEWS, false);

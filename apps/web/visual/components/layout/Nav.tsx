@@ -14,6 +14,10 @@ import { FEATURE_KUNDLI, FEATURE_I18N } from "@visual/config/features";
 export function Nav() {
   const navigate = useNavigate();
   const location = useLocation();
+  // Product search only belongs where there are products to search. It used to
+  // sit in the nav on every route, so opening it on (say) the profile page
+  // dropped a "POPULAR: Shree Yantra…" panel over the page content.
+  const showSearch = location.pathname === "/shop" || location.pathname.startsWith("/shop/");
   const { cartCount, openCart } = useCart();
   const { isLoggedIn, openAuth } = useAuth();
   const { wishlist } = useWishlist();
@@ -89,7 +93,7 @@ export function Nav() {
           <div className="hidden lg:flex items-center gap-4 transition-all duration-300">
             {/* Multilingual Selector Placed Directly in Front of Search Button */}
             {FEATURE_I18N && <LanguageSelector solid={solid} />}
-            <div className="relative">
+            {showSearch && <div className="relative">
               <div className="flex items-center transition-all duration-500 ease-out overflow-hidden rounded-full"
                    style={{
                      width: isSearchOpen ? '280px' : '36px',
@@ -115,7 +119,7 @@ export function Nav() {
               <div className="hidden lg:block">
                 <SearchModal isOpen={isSearchOpen} onClose={() => { setIsSearchOpen(false); setQuery(""); }} query={query} setQuery={setQuery} solid={solid} isMobile={false} />
               </div>
-            </div>
+            </div>}
             <button aria-label="Wishlist" onClick={() => navigate("/wishlist")} className="relative p-2 rounded-full transition-colors hover:bg-black/5" style={{ color: solid ? MAROON : IVORY }}>
               <Heart size={18} strokeWidth={1.5} />
               {wishlist.length > 0 && <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-white text-[10px] flex items-center justify-center font-semibold" style={{ background: "#E74C3C" }}>{wishlist.length}</span>}
@@ -144,7 +148,7 @@ export function Nav() {
           <div className="lg:hidden flex items-center gap-3 transition-all duration-300" style={{ color: solid ? MAROON : IVORY }}>
             {/* Multilingual Selector Placed Directly in Front of Search Button on Mobile */}
             {FEATURE_I18N && <LanguageSelector solid={solid} isMobile />}
-            <div className="relative w-full flex justify-end">
+            {showSearch && <div className="relative w-full flex justify-end">
               <div className="flex items-center transition-all duration-500 ease-out overflow-hidden rounded-full"
                    style={{ 
                      width: isSearchOpen ? 'calc(100vw - 140px)' : '28px',
@@ -169,7 +173,7 @@ export function Nav() {
               <div className="lg:hidden block">
                 <SearchModal isOpen={isSearchOpen} onClose={() => { setIsSearchOpen(false); setQuery(""); }} query={query} setQuery={setQuery} solid={solid} isMobile={true} />
               </div>
-            </div>
+            </div>}
             <button aria-label="Wishlist" onClick={() => navigate("/wishlist")} className="relative p-1 flex-shrink-0">
               <Heart size={20} strokeWidth={1.5} />
               {wishlist.length > 0 && <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full text-white text-[9px] flex items-center justify-center font-semibold" style={{ background: "#E74C3C" }}>{wishlist.length}</span>}

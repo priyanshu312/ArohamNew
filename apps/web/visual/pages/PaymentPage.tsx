@@ -166,6 +166,28 @@ export function PaymentPage() {
       const cleanPhone = rawPhone.length > 10 ? rawPhone.slice(-10) : rawPhone;
       const fullContact = cleanPhone.length === 10 ? `+91${cleanPhone}` : cleanPhone;
 
+      // The order row is created BEFORE payment is attempted, so closing the
+      // Razorpay window or failing a card used to strand it as PENDING forever:
+      // `ondismiss` only reset the button. Those ghosts then showed up in the
+      // customer's order history as things they had apparently bought.
+      // /orders/:id/cancel already accepts PENDING orders (it also releases the
+      // reserved stock) — it was simply never called. Only meaningful when the
+      // BACKEND created the row; on the offline fallback path internalOrderId is
+      // a client-generated UUID the server knows nothing about.
+      let abandonHandled = false;
+      const abandonOrder = async (why: string) => {
+        if (abandonHandled) return;
+        abandonHandled = true;
+        if (String(internalOrderId) === String(orderUuid)) return;
+        try {
+          await api(`/orders/${internalOrderId}/cancel`, { method: "POST" });
+        } catch (err) {
+          // Non-fatal: the customer has not paid, so the worst case is the same
+          // stray PENDING row we had before rather than anything they can see.
+          console.warn(`Could not cancel abandoned order (${why}):`, err);
+        }
+      };
+
       const options: any = {
         key: rzpKey,
         amount: amountPaisa,
@@ -287,7 +309,10 @@ export function PaymentPage() {
         notes: { items_count: items.length },
         theme: { color: MAROON },
         modal: {
-          ondismiss: () => setPlacing(false)
+          ondismiss: () => {
+            setPlacing(false);
+            abandonOrder("closed the payment window");
+          }
         }
       };
 
@@ -299,6 +324,7 @@ export function PaymentPage() {
       rzp.on("payment.failed", function (response: any) {
         alert("Payment failed: " + (response.error?.description || "Please try again."));
         setPlacing(false);
+        abandonOrder("payment failed");
       });
       rzp.open();
 

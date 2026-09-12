@@ -48,21 +48,22 @@ export function NavagrahaHero({ onShop, onConsult }: { onShop: () => void; onCon
             <div className="w-1.5 h-1.5 rounded-full" style={{ background: SAFFRON }} />
             <span className="text-[11px] tracking-[0.28em] uppercase font-semibold" style={{ color: SAFFRON, fontFamily: "'Space Grotesk',sans-serif" }}>{t("hero.badge", "AUTHENTIC VEDIC PRODUCTS & TEMPLE ENERGIZED YANTRAS")}</span>
           </div>
-          <h1 className="mb-5" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(2.4rem,5vw,4.2rem)", fontWeight: 700, color: IVORY, lineHeight: 1.05, letterSpacing: "-0.02em" }}>
-            <span style={{ color: "#FFFFFF" }}>{t("hero.title1", "Invoke Divine Energy With")}</span><br />
+          {/* Dropped "With" and lowered the minimum size: at clamp's old 2.4rem
+              floor the old wording ran to four lines on a phone. Two now. */}
+          <h1 className="mb-6" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(1.95rem,5vw,4.2rem)", fontWeight: 700, color: IVORY, lineHeight: 1.1, letterSpacing: "-0.02em" }}>
+            <span style={{ color: "#FFFFFF" }}>{t("hero.title1", "Invoke Divine Energy")}</span><br />
             <span style={{ color: SAFFRON }}>{t("hero.title2", "Sacred Vedic Products")}</span>
           </h1>
-          <p className="text-sm mb-7 max-w-sm mx-auto lg:mx-0" style={{ color: "rgba(250,247,242,0.55)", fontFamily: "'Space Grotesk', sans-serif", fontWeight: 400, lineHeight: 1.7 }}>
-            {t("hero.subtitle", "Authentic Vedic products & expert consultations to align your life with cosmic energy. Temple energized. Astrologer recommended.")}
-          </p>
+          {/* The descriptive paragraph that sat here is gone — the eyebrow line
+              above is the only subheading now. */}
           <div className="flex flex-wrap gap-3 justify-center lg:justify-start mb-8">
             <button onClick={onShop} className="flex items-center gap-2 px-7 py-3.5 rounded-full text-sm font-semibold tracking-wide transition-all hover:scale-105 hover:shadow-2xl whitespace-nowrap"
               style={{ background: `linear-gradient(135deg,${SAFFRON},${GOLD})`, color: "#1A0D0E", fontFamily: "'Space Grotesk',sans-serif", boxShadow: `0 4px 20px rgba(231,139,47,0.35)` }}>
-              🛍 {t("hero.cta_shop", "Explore Sacred Shop")}
+              {t("hero.cta_shop", "Shop Now")}
             </button>
             <button onClick={onConsult} className="flex items-center gap-2 px-7 py-3.5 rounded-full text-sm font-semibold tracking-wide border transition-all hover:bg-white/8 whitespace-nowrap"
               style={{ borderColor: "rgba(250,247,242,0.2)", color: IVORY, fontFamily: "'Space Grotesk',sans-serif", background: "rgba(255,255,255,0.05)" }}>
-              🔮 {t("hero.cta_consult", "Book Consultation")}
+              {t("hero.cta_consult", "Consult Now")}
             </button>
           </div>
 

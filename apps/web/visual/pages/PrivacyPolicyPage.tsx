@@ -3,14 +3,14 @@ import { MAROON, GOLD, SERIF, SANS } from "@nakshra/shared-config/theme";
 export function PrivacyPolicyPage() {
   return (
     <div className="min-h-screen bg-[#FAF7F2] font-sans selection:bg-[#C8A044] selection:text-[#0D0508] pb-10">
-      <div className="max-w-4xl mx-auto px-6 pt-32 pb-20">
+      <div className="max-w-4xl mx-auto px-3 sm:px-6 pt-24 sm:pt-32 pb-20">
         <div className="text-center mb-12">
           <h1 style={{ fontFamily: SERIF, color: MAROON }} className="text-4xl md:text-5xl font-medium mb-4">Privacy Policy</h1>
           <div className="h-1 w-24 mx-auto" style={{ background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }} />
           <p className="mt-6 text-sm" style={{ color: "#7A6A58" }}>Last Updated: 22 July 2026</p>
         </div>
         
-        <div className="bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-[rgba(91,31,36,0.05)] space-y-10" style={{ color: "#4A3A2A", lineHeight: 1.8 }}>
+        <div className="bg-white rounded-3xl p-5 sm:p-8 md:p-12 shadow-sm border border-[rgba(91,31,36,0.05)] space-y-10" style={{ color: "#4A3A2A", lineHeight: 1.8 }}>
 
           <section>
             <h2 style={{ fontFamily: SERIF, color: MAROON }} className="text-2xl font-semibold mb-3">1. Introduction</h2>

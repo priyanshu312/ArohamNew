@@ -12,6 +12,7 @@ import { supabase } from "@nakshra/shared-services";
 import { db } from "@nakshra/shared-services";
 import { doc, setDoc, serverTimestamp } from "@nakshra/shared-services";
 import { INDIA_STATES } from "@nakshra/shared-config/data";
+import { useProducts } from "@nakshra/shared-hooks/useProducts";
 
 const ORDER_STEPS = [
   { label: "Ordered", icon: "✓" },
@@ -19,6 +20,29 @@ const ORDER_STEPS = [
   { label: "Shipped", icon: "🚚" },
   { label: "Delivered", icon: "🏠" },
 ];
+
+// `amount` (paise) is the figure the backend actually computes and is correct
+// on every row. `total_amount` is a legacy column that only the offline
+// fallback path ever wrote; worse, it used to carry a DEFAULT of 0, so reading
+// it first made every order render as ₹0. Prefer amount, fall back, never trust
+// a zero.
+function orderRupees(order: any): number {
+  const paise = Number(order?.amount) || Number(order?.total_amount) || 0;
+  return Math.round(paise) / 100;
+}
+
+// The line items table stores `name`/`qty`/`price`. The card previously read
+// `product_name`/`quantity`/`unit_price`, which do not exist, so items rendered
+// as "Sacred Item xundefined" at ₹NaN.
+function itemName(it: any): string {
+  return it?.name || it?.product_name || "Sacred Item";
+}
+function itemQty(it: any): number {
+  return Number(it?.qty ?? it?.quantity ?? 1) || 1;
+}
+function itemPaise(it: any): number {
+  return Number(it?.price ?? it?.unit_price ?? 0) || 0;
+}
 
 function getOrderStep(status: string, awbCode?: string) {
   if (status === "CANCELLED" || status === "Cancelled") return -1;
@@ -31,6 +55,22 @@ function getOrderStep(status: string, awbCode?: string) {
 export function ProfilePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  // order_items records product_id but no image, so the picture comes from the
+  // catalogue we already load elsewhere. Falls back to the item's emoji.
+  const { products: catalogue } = useProducts();
+  const orderItems = (order: any): any[] => order?.order_items || order?.items || [];
+  const orderThumb = (order: any): string | null => {
+    const first = orderItems(order)[0];
+    if (!first) return null;
+    const match = catalogue.find(p => String(p.id) === String(first.product_id));
+    return match?.img || null;
+  };
+  const orderTitle = (order: any): string => {
+    const list = orderItems(order);
+    if (!list.length) return "Order";
+    const extra = list.length - 1;
+    return extra > 0 ? `${itemName(list[0])} +${extra} more` : itemName(list[0]);
+  };
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<"profile" | "addresses" | "orders">(
     (searchParams.get("tab") as "profile" | "addresses" | "orders") || "profile"
@@ -363,9 +403,12 @@ export function ProfilePage() {
       // the reserved/sold stock. Let a real failure surface instead of faking success.
       await api(`/orders/${orderId}/cancel`, { method: "POST" });
 
-      localStorage.setItem(`Nakshra_order_status_${orderId}`, "CANCELLED");
+      // Update the list in place only — no localStorage status override. The
+      // cancel already succeeded server-side, so the next load reads CANCELLED
+      // from the database rather than from a browser entry that could later
+      // contradict it.
       setOrders(prev => prev.map(o => String(o.id) === String(orderId) ? { ...o, status: "CANCELLED" } : o));
-      alert(`Order #${orderId} has been cancelled successfully.`);
+      alert("Your order has been cancelled.");
     } catch (err: any) {
       console.error("Order cancellation error:", err);
       alert(err?.message || `Could not cancel Order #${orderId}. Please contact support.`);
@@ -423,7 +466,9 @@ export function ProfilePage() {
 
         // 1. Fetch orders from Supabase filtered by user_id OR phone
         try {
-          const query = supabase.from("orders").select("*").order("created_at", { ascending: false });
+          // Pull the line items too. Without them the card had nothing to show
+          // but the raw order UUID, and `order.order_items` was always undefined.
+          const query = supabase.from("orders").select("*, order_items(*)").order("created_at", { ascending: false });
           let hasFilter = false;
           if (user?.id && userPhone) {
             query.or(`user_id.eq.${user.id},user_phone.eq.${userPhone}`);
@@ -535,11 +580,11 @@ export function ProfilePage() {
           }
         }
 
-        // Apply saved status overrides from localStorage for all orders
-        fetchedOrders = fetchedOrders.map(o => {
-          const overrideStatus = localStorage.getItem(`Nakshra_order_status_${o.id}`);
-          return overrideStatus ? { ...o, status: overrideStatus } : o;
-        });
+        // NOTE: status is shown exactly as the database reports it. There used
+        // to be a localStorage override here, which meant the badge could
+        // contradict reality — an order the server had marked PAYMENT_FAILED
+        // still displayed as PENDING because a stale browser entry won. The
+        // server is the only source of truth for order state.
 
         // Sort by creation date descending
         fetchedOrders.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
@@ -1030,13 +1075,26 @@ export function ProfilePage() {
               const isCancelled = order.status === "CANCELLED" || order.status === "Cancelled";
               return (
                 <div key={order.id} className="rounded-2xl overflow-hidden transition-all" style={{ background: "#fff", border: "1px solid rgba(91,31,36,0.08)" }}>
-                  <div className="p-4 flex items-center justify-between cursor-pointer" onClick={() => toggleOrder(order.id)}>
-                    <div>
-                      <p className="text-xs font-semibold" style={{ color: MAROON }}>Order #{order.id}</p>
-                      <p className="text-[10px]" style={{ color: "#9A8A78" }}>{new Date(order.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</p>
+                  <div className="p-4 flex items-center justify-between gap-3 cursor-pointer" onClick={() => toggleOrder(order.id)}>
+                    <div className="flex items-center gap-3 min-w-0">
+                      {/* Lead with what was actually bought. The card used to show
+                          the raw order UUID, which means nothing to a customer and
+                          swallowed the whole row. */}
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden"
+                        style={{ background: "rgba(200,160,68,0.10)", border: "1px solid rgba(91,31,36,0.08)" }}>
+                        {orderThumb(order) ? (
+                          <img src={orderThumb(order)} alt="" className="w-full h-full object-cover" loading="lazy" />
+                        ) : (
+                          <span className="text-xl">{itemsList[0]?.emoji || "🪔"}</span>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold truncate" style={{ color: MAROON }}>{orderTitle(order)}</p>
+                        <p className="text-[10px]" style={{ color: "#9A8A78" }}>{new Date(order.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold" style={{ fontFamily: PRICE_FONT, color: MAROON }}>₹{(order.total_amount / 100).toLocaleString("en-IN")}</p>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-sm font-semibold" style={{ fontFamily: PRICE_FONT, color: MAROON }}>₹{orderRupees(order).toLocaleString("en-IN")}</p>
                       <span className="px-2 py-0.5 rounded-full text-[9px] font-bold"
                         style={{
                           background: isCancelled ? "rgba(220,38,38,0.12)" : "rgba(74,138,74,0.12)",
@@ -1075,8 +1133,8 @@ export function ProfilePage() {
                       <div className="space-y-2 pt-2 border-t border-black/5">
                         {itemsList.map((it: any, i: number) => (
                           <div key={i} className="flex justify-between items-center text-xs">
-                            <span>{it.product_name || "Sacred Item"} x{it.quantity}</span>
-                            <span className="font-semibold">₹{((it.unit_price * it.quantity) / 100).toLocaleString("en-IN")}</span>
+                            <span>{itemName(it)} x{itemQty(it)}</span>
+                            <span className="font-semibold">₹{((itemPaise(it) * itemQty(it)) / 100).toLocaleString("en-IN")}</span>
                           </div>
                         ))}
                       </div>

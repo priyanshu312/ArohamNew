@@ -40,10 +40,16 @@ export function OtpBoxes({ value, onChange, onComplete }: { value:string[]; onCh
     if(n.every(c=>c))onComplete?.(n.join(""));
   };
 
+  // inputMode="numeric" is what actually summons a number pad. `pattern` alone
+  // is an old iOS-only trick that Android ignores, so phones were opening the
+  // full QWERTY keyboard for a digit-only field, with autocorrect and the
+  // suggestion bar fighting every keystroke. autoComplete="one-time-code" lets
+  // the phone offer to fill the code itself; it was "off", suppressing that.
   return(
     <div className="flex gap-1.5 sm:gap-2.5 justify-center w-full my-2">
       {value.map((_,i)=>(
-        <input key={i} ref={el=>{refs.current[i]=el;}} type="text" pattern="[0-9]*" maxLength={1} autoComplete="off"
+        <input key={i} ref={el=>{refs.current[i]=el;}} type="text" inputMode="numeric" pattern="[0-9]*" maxLength={1}
+          autoComplete={i === 0 ? "one-time-code" : "off"} enterKeyHint="done"
           value={value[i]||""} onKeyDown={e=>handleKey(i,e)} onChange={e=>handleChange(i,e.target.value)}
           onPaste={e => { e.preventDefault(); fill(e.clipboardData.getData("text"), 0); }}
           className="w-9 sm:w-11 h-12 sm:h-14 text-center text-lg sm:text-xl font-bold rounded-xl sm:rounded-2xl outline-none transition-all duration-200"

@@ -12,7 +12,7 @@ import { NakshraProduct } from "@nakshra/shared-types/product";
 import { useCart } from "@nakshra/shared-state";
 import { useProducts } from "@nakshra/shared-hooks/useProducts";
 import { AstroChatWidget } from "@visual/components/product/AstroChatWidget";
-import { FEATURE_CHAT } from "@visual/config/features";
+import { FEATURE_CHAT, FEATURE_CRAFTSMANSHIP, FEATURE_REVIEWS } from "@visual/config/features";
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -34,11 +34,11 @@ export function HomePage() {
     <main>
       <NavagrahaHero onShop={goToShop} onConsult={() => navigate("/consult")} />
       <ShopConsultCards products={products} onShop={goToShop} onProductClick={goToProduct} />
-      <HowItsMade />
+      {FEATURE_CRAFTSMANSHIP && <HowItsMade />}
       <ProductsAndCombos products={products} onProductClick={goToProduct} onAddToCart={p => addToCart(p)} onAddCombo={handleAddCombo} />
       <WhyNakshra />
       <VideoTestimonials />
-      <CommunityComments products={products} />
+      {FEATURE_REVIEWS && <CommunityComments products={products} />}
       <Newsletter />
       {FEATURE_CHAT && <AstroChatWidget />}
     </main>

@@ -74,7 +74,7 @@ export function TermsOfServicePage() {
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] font-sans selection:bg-[#C8A044] selection:text-[#0D0508] pb-10">
-      <div className="max-w-4xl mx-auto px-6 pt-32 pb-20">
+      <div className="max-w-4xl mx-auto px-3 sm:px-6 pt-24 sm:pt-32 pb-20">
         <div className="text-center mb-10">
           <h1 style={{ fontFamily: SERIF, color: MAROON }} className="text-3xl md:text-4xl font-bold tracking-tight mb-4 uppercase">
             TERMS AND CONDITIONS OF USAGE
@@ -82,7 +82,7 @@ export function TermsOfServicePage() {
           <div className="h-1 w-24 mx-auto" style={{ background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }} />
         </div>
         
-        <div className="bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-[rgba(91,31,36,0.05)] space-y-8" style={{ color: "#4A3A2A", lineHeight: 1.8 }}>
+        <div className="bg-white rounded-3xl p-5 sm:p-8 md:p-12 shadow-sm border border-[rgba(91,31,36,0.05)] space-y-8" style={{ color: "#4A3A2A", lineHeight: 1.8 }}>
           
           {/* Header Preamble matching Astrotalk format */}
           <div className="space-y-4 text-sm md:text-base text-[#4A3A2A]">

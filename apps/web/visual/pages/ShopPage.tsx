@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { 
   Star, Heart, Eye, Filter, X, ChevronRight, ChevronDown, 
@@ -33,6 +33,16 @@ export function ShopPage() {
   const [maxPrice, setMaxPrice] = useState<number>(30000);
   const [sort, setSort] = useState<string>("recommended");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Reset the filter drawer's scroll when it OPENS, and only then. Doing it in
+  // a ref callback instead re-ran on every render, so ticking a checkbox
+  // yanked the panel back to the top mid-interaction.
+  const filterPanelRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    // behavior:"instant" because the app sets scroll-behavior:smooth globally —
+    // a plain scrollTop assignment would animate the panel visibly back to the
+    // top as it opens, instead of simply starting there.
+    if (sidebarOpen) filterPanelRef.current?.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+  }, [sidebarOpen]);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [quickViewProduct, setQuickViewProduct] = useState<any>(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
@@ -326,13 +336,18 @@ export function ShopPage() {
         {recommendations.length > 0 && !hasActiveFilters && (
           <div className="mb-10 p-6 rounded-3xl bg-gradient-to-r from-[#4D1418] via-[#5B1F24] to-[#3C1014] text-white border border-amber-500/20 shadow-xl relative overflow-hidden">
             <div className="flex items-center justify-between mb-4 relative z-10">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-amber-500/20 flex items-center justify-center border border-amber-400/30">
+              {/* items-start, not items-center: the heading wraps to two lines on
+                  a phone, and centring floated the badge into the gap between
+                  them. mt-0.5 sits it on the first line's optical baseline.
+                  The ✨ in the heading text was a second sparkle next to the
+                  badge icon — one is enough. */}
+              <div className="flex items-start gap-2.5">
+                <div className="w-8 h-8 mt-0.5 rounded-xl bg-amber-500/20 flex items-center justify-center border border-amber-400/30 flex-shrink-0">
                   <Sparkles className="w-4 h-4 text-amber-300" />
                 </div>
-                <div>
-                  <h3 className="font-bold text-xl text-amber-100" style={{ fontFamily: SERIF }}>
-                    ✨ Specially Curated For You
+                <div className="min-w-0">
+                  <h3 className="font-bold text-lg sm:text-xl text-amber-100" style={{ fontFamily: SERIF }}>
+                    Specially Curated For You
                   </h3>
                   <p className="text-sm text-amber-200/80 font-medium mt-1">
                     Sacred remedies and temple-energized tools selected for your spiritual journey.
@@ -892,21 +907,34 @@ export function ShopPage() {
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 flex lg:hidden">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-xs" onClick={() => setSidebarOpen(false)} />
-          <div className="relative w-80 max-w-[85vw] bg-white h-full overflow-y-auto p-6 shadow-2xl ml-auto flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between pb-4 border-b border-amber-900/10 mb-6">
-                <div className="flex items-center gap-2">
-                  <Filter size={18} style={{ color: MAROON }} />
-                  <h3 className="font-bold text-base" style={{ fontFamily: SERIF, color: MAROON }}>Filter Products</h3>
-                </div>
-                <button onClick={() => setSidebarOpen(false)} className="p-1 rounded-full hover:bg-black/5">
-                  <X size={20} style={{ color: MAROON }} />
-                </button>
+          {/* Two problems lived here. `h-full` never resolved against the fixed
+              parent, so the panel grew to its full content height (measured
+              4809px against an 812px viewport) and the PAGE scrolled instead of
+              the panel — open the filters after browsing and you landed
+              mid-list with CATEGORY scrolled off above.
+
+              Pinning the height alone was not enough: a flex container with
+              `justify-between` refuses to scroll its own overflow, so setting
+              scrollTop did nothing at all. The scroll has to live on an inner
+              child, and that child needs `min-h-0` — flex items default to
+              min-height:auto, which stops them shrinking below their content
+              and silently kills the overflow. */}
+          <div className="relative w-80 max-w-[85vw] bg-white h-[100dvh] max-h-[100dvh] shadow-2xl ml-auto flex flex-col">
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-amber-900/10 flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <Filter size={18} style={{ color: MAROON }} />
+                <h3 className="font-bold text-base" style={{ fontFamily: SERIF, color: MAROON }}>Filter Products</h3>
               </div>
+              <button onClick={() => setSidebarOpen(false)} className="p-1 rounded-full hover:bg-black/5">
+                <X size={20} style={{ color: MAROON }} />
+              </button>
+            </div>
+
+            <div ref={filterPanelRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6">
               <FilterPanel />
             </div>
 
-            <div className="pt-6 border-t border-amber-900/10 mt-6 sticky bottom-0 bg-white">
+            <div className="px-6 pb-6 pt-4 border-t border-amber-900/10 bg-white flex-shrink-0">
               <button
                 onClick={() => setSidebarOpen(false)}
                 className="w-full py-3 rounded-2xl text-xs font-bold tracking-wider uppercase shadow-md active:scale-95"

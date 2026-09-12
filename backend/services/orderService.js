@@ -38,6 +38,35 @@ const PROMO_CODES = [
   }
 ];
 
+// Test-only code that charges exactly ₹1 whatever is in the cart, so a real
+// Razorpay payment can be run end-to-end on LIVE keys without spending real
+// money on a full-price order.
+//
+// It is deliberately NOT in PROMO_CODES: it only exists while
+// TEST_COUPON_ENABLED=true is set on the server. Without that, the code is
+// rejected like any unknown string. That matters because the alternative — a
+// permanently live code — would let anyone who learned the word "Welcome1" buy
+// a ₹7,909 rudraksha for ₹1. The server is authoritative here (the client
+// refuses to charge a discounted total the server did not agree to), so the
+// flag alone is enough to switch it off.
+//
+// Turn on:  TEST_COUPON_ENABLED=true   Turn off: remove the var. No redeploy of
+// code needed either way, and leave it OFF in normal operation.
+const TEST_PROMO = {
+  code: "Welcome1",
+  type: "fixed_total",
+  value: 100, // ₹1 in paise — the final amount charged, not a discount
+  description: "TEST ONLY — charges ₹1."
+};
+
+function testCouponEnabled() {
+  return String(process.env.TEST_COUPON_ENABLED).toLowerCase() === "true";
+}
+
+function activePromoCodes() {
+  return testCouponEnabled() ? [...PROMO_CODES, TEST_PROMO] : PROMO_CODES;
+}
+
 async function createPendingOrder(userId, products, address, promoCode) {
   const subtotal = products.reduce((s, p) => s + p.subtotal, 0);
   let discount = 0;
@@ -45,11 +74,15 @@ async function createPendingOrder(userId, products, address, promoCode) {
   let promoReason = null;
 
   if (promoCode) {
-    const promo = PROMO_CODES.find(p => p.code.toUpperCase() === String(promoCode).toUpperCase());
+    const promo = activePromoCodes().find(p => p.code.toUpperCase() === String(promoCode).toUpperCase());
     if (!promo) {
       promoReason = "That code isn't valid.";
     } else if (promo.minPurchase && subtotal < promo.minPurchase) {
       promoReason = `Add ₹${((promo.minPurchase - subtotal) / 100).toFixed(0)} more to use ${promo.code}.`;
+    } else if (promo.type === "fixed_total") {
+      // Charge exactly `value`, whatever the cart holds.
+      discount = Math.max(0, subtotal - promo.value);
+      promoApplied = true;
     } else {
       discount = promo.type === "percentage"
         ? Math.floor(subtotal * (promo.value / 100))
