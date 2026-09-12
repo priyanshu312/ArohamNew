@@ -1,0 +1,95 @@
+<!--
+  Nakshra — login code email, adapted for SUPABASE's template editor.
+
+  Paste into: Supabase → Authentication → Emails → Templates → Magic Link
+  Subject line: Your Nakshra verification code
+
+  The only real difference from the SendGrid version is the placeholder:
+      SendGrid : {{{twilio_code}}}
+      Supabase : {{ .Token }}
+  Everything else is the same table-based HTML with inline styles, which is what
+  keeps it rendering in Outlook as well as Gmail.
+-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0;padding:0;background-color:#FAF7F2;">
+  <tr>
+    <td align="center" style="padding:32px 12px;">
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;background-color:#FFFFFF;border-radius:16px;overflow:hidden;border:1px solid rgba(91,31,36,0.10);">
+
+        <!-- Header -->
+        <tr>
+          <td align="center" style="background-color:#5B1F24;background-image:linear-gradient(135deg,#5B1F24 0%,#7B2D33 50%,#5B1F24 100%);padding:36px 24px 30px 24px;">
+            <div style="font-family:'Lora',Georgia,serif;font-size:40px;line-height:44px;color:#C8A044;">&#2384;</div>
+            <div style="font-family:'Lora',Georgia,serif;font-size:26px;line-height:32px;color:#FAF7F2;letter-spacing:3px;padding-top:8px;">NAKSHRA</div>
+            <div style="font-family:'Nunito Sans',system-ui,sans-serif;font-size:11px;line-height:16px;color:#C8A044;letter-spacing:2px;text-transform:uppercase;padding-top:6px;">Sacred Vedic Products</div>
+          </td>
+        </tr>
+
+        <!-- Gold divider -->
+        <tr><td style="height:3px;background-color:#C8A044;background-image:linear-gradient(90deg,#C8A044 0%,#E78B2F 50%,#C8A044 100%);font-size:0;line-height:0;">&nbsp;</td></tr>
+
+        <!-- Body -->
+        <tr>
+          <td align="center" style="padding:36px 32px 12px 32px;">
+            <div style="font-family:'Lora',Georgia,serif;font-size:22px;line-height:28px;color:#5B1F24;font-weight:600;">Your verification code</div>
+            <div style="font-family:'Nunito Sans',system-ui,sans-serif;font-size:14px;line-height:22px;color:#7A6A58;padding-top:10px;">
+              Enter this code to sign in to your Nakshra account.
+            </div>
+          </td>
+        </tr>
+
+        <!-- The code -->
+        <tr>
+          <td align="center" style="padding:22px 32px 8px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" style="background-color:#FAF7F2;border:1.5px solid #C8A044;border-radius:14px;padding:18px 34px;">
+                  <span style="font-family:'Courier New',Courier,monospace;font-size:36px;line-height:42px;font-weight:700;color:#5B1F24;letter-spacing:10px;">{{ .Token }}</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td align="center" style="padding:14px 32px 30px 32px;">
+            <div style="font-family:'Nunito Sans',system-ui,sans-serif;font-size:12px;line-height:20px;color:#9A8A78;">
+              This code expires shortly and can be used once.
+            </div>
+          </td>
+        </tr>
+
+        <!-- Security note -->
+        <tr>
+          <td style="padding:0 32px 30px 32px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="background-color:rgba(231,139,47,0.07);border-left:3px solid #E78B2F;border-radius:6px;padding:12px 14px;">
+                  <div style="font-family:'Nunito Sans',system-ui,sans-serif;font-size:12px;line-height:19px;color:#7A6A58;">
+                    Didn't request this? You can safely ignore this email &mdash; nobody can access your account without the code above. Never share it with anyone.
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td align="center" style="background-color:#FAF7F2;border-top:1px solid rgba(91,31,36,0.08);padding:22px 32px;">
+            <div style="font-family:'Lora',Georgia,serif;font-size:13px;line-height:20px;color:#5B1F24;">With warm regards,</div>
+            <div style="font-family:'Lora',Georgia,serif;font-size:15px;line-height:22px;color:#5B1F24;font-weight:600;padding-top:2px;">The Nakshra Family</div>
+            <div style="font-family:'Nunito Sans',system-ui,sans-serif;font-size:11px;line-height:18px;color:#9A8A78;padding-top:12px;">
+              Temple energized &middot; Authentically Vedic
+            </div>
+            <div style="font-family:'Nunito Sans',system-ui,sans-serif;font-size:11px;line-height:18px;color:#9A8A78;padding-top:4px;">
+              <a href="https://nakshra.in" style="color:#C8A044;text-decoration:none;">nakshra.in</a>
+            </div>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
