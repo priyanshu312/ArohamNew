@@ -23,6 +23,21 @@ import { FEATURE_I18N } from "@visual/config/features";
 
 type AuthState = "signin" | "signup" | "otp" | "profile-setup" | "success";
 
+// How many digits the login code has. Twilio Verify (current provider) sends 6;
+// Supabase Auth's email codes are 8. Changing this one number re-sizes the OTP
+// boxes, the paste handler and the length check together — they used to each
+// hardcode 6, so a longer code was silently truncated on paste and then failed
+// verification with no useful error. Override per environment if the provider
+// changes without a redeploy.
+// Read as a literal `import.meta.env.VITE_...` expression — Vite only
+// substitutes that exact shape, so an optional-chained or dynamic lookup
+// silently yields undefined. See the same note in visual/config/features.ts.
+const OTP_LENGTH = (() => {
+  const raw = Number(import.meta.env.VITE_OTP_LENGTH);
+  return Number.isInteger(raw) && raw >= 4 && raw <= 10 ? raw : 6;
+})();
+
+
 const LEFT_PANELS = {
   signin:        { img: "/images/auth-bg.png", headline: "Welcome Back.",                       sub: "Continue your sacred journey toward harmony, prosperity and divine energy.", items: ["Access Orders", "Astrology Reports", "Consultations", "Saved Wishlist"] },
   signup:        { img: "/images/auth-bg.png", headline: "Your Spiritual Journey Begins.",    sub: "Join India's most trusted ecosystem for authentic Vedic solutions.", items: ["Temple Energized", "Expert Guidance", "Personalized Path"] },
@@ -69,7 +84,7 @@ export function AuthPage() {
   // pointed at (so the details entered there effectively vanished).
   const [verifiedUserId, setVerifiedUserId] = useState<string | null>(null);
   const [agreed, setAgreed] = useState(false);
-  const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
+  const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [needEmail, setNeedEmail] = useState(false);
   // Where /auth/otp/send actually delivered the code, so the OTP screen can say
   // so instead of claiming "SMS".
@@ -92,7 +107,7 @@ export function AuthPage() {
   const switchTab = (t: "signin" | "signup") => {
     setActiveTab(t);
     setAuthState(t);
-    setOtp(Array(6).fill(""));
+    setOtp(Array(OTP_LENGTH).fill(""));
     setErrorMsg("");
     try {
       sessionStorage.setItem("Nakshra_auth_tab", t);
@@ -263,8 +278,8 @@ export function AuthPage() {
   // Verify OTP handler
   const handleVerifyOtp = async (autoFilledCode?: any) => {
     const joinedOtp = typeof autoFilledCode === 'string' ? autoFilledCode : otp.join("");
-    if (joinedOtp.length < 6) {
-      setErrorMsg("Please enter the full 6-digit OTP code.");
+    if (joinedOtp.length < OTP_LENGTH) {
+      setErrorMsg(`Please enter the full ${OTP_LENGTH}-digit OTP code.`);
       return;
     }
     setLoading(true);
@@ -967,7 +982,7 @@ export function AuthPage() {
           </p>
         </div>
         <p className="text-xs leading-relaxed pt-1" style={{ color: "#7A6A58" }}>
-          Enter the 6-digit code we just sent you
+          Enter the {OTP_LENGTH}-digit code we just sent you
         </p>
       </div>
 

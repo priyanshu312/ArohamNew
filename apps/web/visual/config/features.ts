@@ -9,21 +9,23 @@
 // Vite env var — handy for showing a hidden feature on staging only:
 //   VITE_FEATURE_CHAT=true  VITE_FEATURE_KUNDLI=true  VITE_FEATURE_I18N=true
 
-function flag(envKey: string, fallback: boolean): boolean {
-  try {
-    const v = (import.meta as any)?.env?.[envKey];
-    if (v === undefined || v === null || v === "") return fallback;
-    return String(v).toLowerCase() === "true";
-  } catch {
-    return fallback;
-  }
+// Each flag must read `import.meta.env.VITE_...` as a literal member expression.
+// Vite substitutes these at build time by matching that exact shape, so a
+// dynamic lookup — `(import.meta as any)?.env?.[key]` — is never substituted and
+// leaves `import.meta.env` as an empty object. That is what the first version of
+// this file did, which meant the env override below silently did nothing and
+// every flag always took its fallback. It went unnoticed only because the
+// fallback happened to be the value we wanted.
+function flag(value: unknown, fallback: boolean): boolean {
+  if (value === undefined || value === null || value === "") return fallback;
+  return String(value).toLowerCase() === "true";
 }
 
 /** AstroGuide AI chat widget (floating bubble on Home + all routes). */
-export const FEATURE_CHAT = flag("VITE_FEATURE_CHAT", false);
+export const FEATURE_CHAT = flag(import.meta.env.VITE_FEATURE_CHAT, false);
 
 /** "Make My Kundli" nav entry + the birth-chart PDF modal. */
-export const FEATURE_KUNDLI = flag("VITE_FEATURE_KUNDLI", false);
+export const FEATURE_KUNDLI = flag(import.meta.env.VITE_FEATURE_KUNDLI, false);
 
 /** Language translator dropdown (Nav + auth page). App stays in the default language. */
-export const FEATURE_I18N = flag("VITE_FEATURE_I18N", false);
+export const FEATURE_I18N = flag(import.meta.env.VITE_FEATURE_I18N, false);
