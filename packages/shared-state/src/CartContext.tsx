@@ -150,10 +150,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const merged: Record<string, CouponDef> = { ...VALID_COUPONS };
         data.forEach((c: any) => {
           if (c.code) {
+            // Respect the row's own type. This used to collapse anything that
+            // was not "flat" into "percent", so a fixed_total row would have
+            // been applied as a percentage discount — e.g. a ₹1 target read as
+            // 1% off.
+            const rowType: CouponDef["type"] =
+              c.type === "flat" ? "flat" : c.type === "fixed_total" ? "fixed_total" : "percent";
+            const rowValue = Number(c.value) || 10;
             merged[c.code.trim().toUpperCase()] = {
-              type: c.type === "flat" ? "flat" : "percent",
-              value: Number(c.value) || 10,
-              label: c.label || (c.type === "flat" ? `₹${c.value} OFF` : `${c.value}% OFF sacred items`)
+              type: rowType,
+              value: rowValue,
+              label: c.label || (
+                rowType === "flat" ? `₹${rowValue} OFF`
+                : rowType === "fixed_total" ? `Pay just ₹${rowValue}`
+                : `${rowValue}% OFF sacred items`
+              ),
+              ...(c.minimum_order ? { minPurchase: Number(c.minimum_order) } : {})
             };
           }
         });
