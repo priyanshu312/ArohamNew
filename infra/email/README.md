@@ -56,3 +56,20 @@ Georgia and the system sans — close to the site, not identical.
 Not live. Login codes still go through Twilio Verify → SendGrid's own dynamic
 template (`d-35981befa66d4e46a7042b4c5ffd1634`). This file only takes over if
 and when logins move to Supabase Auth.
+
+## Code length: do not assume 6 digits
+
+Supabase's email codes came through as **8 digits** (e.g. `05620213`), while
+Twilio Verify sends 6. The login screen hardcodes six boxes
+(`Array(6).fill("")` in `AuthPage.tsx`) and truncates pasted input with
+`slice(0, 6)`, so an 8-digit code is unusable: pasting silently drops the last
+two digits and verification fails with no useful error.
+
+Checked on 2026-09-12: the hosted dashboard does not appear to expose an
+*email* OTP length control (the documented `SMS_OTP_LENGTH` is for SMS), and
+changing Email provider settings produced a config reload with no
+`OTP_LENGTH changed` entry in `auth_logs` — the code stayed 8 digits.
+
+Fix it on our side rather than fighting the dashboard: before migrating logins
+to Supabase, make the OTP UI length-agnostic instead of assuming 6. Longer
+codes are stronger, so accommodating them is the right direction anyway.
