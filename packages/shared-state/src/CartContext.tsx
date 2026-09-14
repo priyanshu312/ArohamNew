@@ -58,12 +58,18 @@ interface CartContextValue {
   updateQty: (id: number, delta: number) => void;
   clearCart: () => void;
   toast: string | null;
+  /** False until the saved cart has been read from storage. The cart starts
+   *  empty and fills in on the first effect, so an empty `items` array means
+   *  nothing until this is true. Checkout relies on it so a real shopper whose
+   *  cart simply has not loaded yet is never shown an empty cart. */
+  cartReady: boolean;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [cartReady, setCartReady] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -108,6 +114,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         try { setItems(JSON.parse(local)); } catch (e) {}
       }
     }
+    // Batched with the setItems calls above, so no render sees "ready" while a
+    // stored cart is still missing.
+    setCartReady(true);
   }, [isLoggedIn, user?.id]);
 
   useEffect(() => {
@@ -272,7 +281,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       items, cartCount, subtotal, discount, total,
       appliedCoupon, applyCoupon, removeCoupon,
       showCart, openCart: () => setShowCart(true), closeCart: () => setShowCart(false),
-      addToCart, removeFromCart, updateQty, clearCart, toast,
+      addToCart, removeFromCart, updateQty, clearCart, toast, cartReady,
     }}>
       {children}
       {/* Add-to-cart toast for Web DOM */}

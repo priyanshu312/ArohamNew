@@ -7,6 +7,7 @@ import { useCart } from "@nakshra/shared-state";
 import { useAuth } from "@nakshra/shared-auth";
 import { api } from "@nakshra/shared-api";
 import { supabase } from "@nakshra/shared-services";
+import { EmptyCheckout } from "@visual/components/checkout/EmptyCheckout";
 
 declare global {
   interface Window {
@@ -39,7 +40,7 @@ function CheckoutHeader() {
 
 export function PaymentPage() {
   const navigate = useNavigate();
-  const { items, clearCart, subtotal, discount, total, appliedCoupon, applyCoupon, removeCoupon } = useCart();
+  const { items, clearCart, subtotal, discount, total, appliedCoupon, applyCoupon, removeCoupon, cartReady } = useCart();
   const { user } = useAuth();
   const [placing, setPlacing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"online" | "cod">("online");
@@ -390,6 +391,19 @@ export function PaymentPage() {
       setPlacing(false);
     }
   };
+
+  // The cart is read from storage just after first render, so an empty `items`
+  // array means nothing until `cartReady` flips. Show the bare header while it
+  // loads (no ₹0 flash), then either the real page or an empty-cart message.
+  // Never a redirect: that would bounce a shopper whose cart is still loading.
+  if (!cartReady || items.length === 0) {
+    return (
+      <div className="w-full overflow-x-hidden" style={{ background: "#FAF7F2", minHeight: "100vh", fontFamily: SANS }}>
+        <CheckoutHeader />
+        {cartReady && <EmptyCheckout />}
+      </div>
+    );
+  }
 
   return (
     <div className="w-full overflow-x-hidden" style={{ background: "#FAF7F2", minHeight: "100vh", fontFamily: SANS }}>
