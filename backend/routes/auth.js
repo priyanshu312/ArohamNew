@@ -46,23 +46,30 @@ async function findOrCreateUser(email, fullName, extra = {}) {
     return existing;
   }
 
-  let userId;
-  const { data, error: authErr } = await supabase.auth.admin.createUser({
-    email: e,
-    email_confirm: true,
-    user_metadata: { full_name: fullName, phone: phone || null },
-  });
-  if (authErr) {
-    if (/already (registered|exists)/i.test(authErr.message)) {
-      const { data: list } = await supabase.auth.admin.listUsers();
-      const u = (list?.users || []).find((x) => normEmail(x.email) === e);
-      if (!u) throw authErr;
-      userId = u.id;
+  // With Supabase issuing the codes, verifying one already tells us the auth
+  // account's id (services/otp.js creates it confirmed before sending), so use
+  // it directly. The lookup below only runs for the Twilio provider — and it is
+  // worth skipping: listUsers() returns just its first page (50 users), so the
+  // "already registered" branch stops finding people as the project grows.
+  let userId = extra.authUserId || null;
+  if (!userId) {
+    const { data, error: authErr } = await supabase.auth.admin.createUser({
+      email: e,
+      email_confirm: true,
+      user_metadata: { full_name: fullName, phone: phone || null },
+    });
+    if (authErr) {
+      if (/already (registered|exists)/i.test(authErr.message)) {
+        const { data: list } = await supabase.auth.admin.listUsers();
+        const u = (list?.users || []).find((x) => normEmail(x.email) === e);
+        if (!u) throw authErr;
+        userId = u.id;
+      } else {
+        throw authErr;
+      }
     } else {
-      throw authErr;
+      userId = data.user.id;
     }
-  } else {
-    userId = data.user.id;
   }
 
   const { data: inserted, error: profErr } = await supabase
@@ -108,12 +115,12 @@ router.post("/otp/verify", otpVerifyLimiter, async (req, res) => {
   const email = normEmail(req.body.email);
   if (!isEmail(email) || !code) return res.status(400).json({ error: "Email and code are required." });
   try {
-    const { approved } = await checkOtp(email, code);
+    const { approved, authUserId } = await checkOtp(email, code);
     if (!approved) return res.status(401).json({ error: "Invalid or expired code." });
 
     if (verifyOnly) return res.json({ success: true, approved: true });
 
-    const user = await findOrCreateUser(email, fullName, { phone, gender, dob });
+    const user = await findOrCreateUser(email, fullName, { phone, gender, dob, authUserId });
     const token = issueToken(user.id, user.email);
     res.json({ success: true, token, user });
   } catch (e) {

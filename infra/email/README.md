@@ -53,9 +53,15 @@ Georgia and the system sans — close to the site, not identical.
 
 ### Status
 
-Not live. Login codes still go through Twilio Verify → SendGrid's own dynamic
-template (`d-35981befa66d4e46a7042b4c5ffd1634`). This file only takes over if
-and when logins move to Supabase Auth.
+**Live since 2026-09-14.** `backend/services/otp.js` sends login codes through
+Supabase Auth by default (`OTP_PROVIDER=supabase`), so this template is what
+customers receive. The Twilio Verify flow and its SendGrid dynamic template
+(`d-35981befa66d4e46a7042b4c5ffd1634`) are kept only as a rollback
+(`OTP_PROVIDER=twilio`).
+
+Only "Magic Link" needs this template. The backend creates every account
+confirmed before sending, so Supabase never falls back to "Confirm signup",
+which would email a link instead of a code.
 
 ## Code length: do not assume 6 digits — FIXED 2026-09-12
 

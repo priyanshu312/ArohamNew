@@ -1010,7 +1010,7 @@ export function AuthPage() {
           </button>
         ) : (
           <p className="text-sm" style={{ color: "#7A6A58" }}>
-            Resend code in <Countdown seconds={30} onEnd={() => setCanResend(true)} />
+            Resend code in <Countdown seconds={60} onEnd={() => setCanResend(true)} />
           </p>
         )}
       </div>

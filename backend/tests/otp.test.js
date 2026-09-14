@@ -8,7 +8,23 @@ delete process.env.TWILIO_ACCOUNT_SID;
 delete process.env.TWILIO_AUTH_TOKEN;
 delete process.env.TWILIO_VERIFY_SERVICE_SID;
 
-const { digits10, isEmail, sendOtp, checkOtp } = require("../services/otp");
+const { digits10, isEmail, sendOtp, checkOtp, provider } = require("../services/otp");
+
+test("provider defaults to supabase; only an explicit 'twilio' selects Twilio", () => {
+  const prev = process.env.OTP_PROVIDER;
+  try {
+    delete process.env.OTP_PROVIDER;
+    assert.equal(provider(), "supabase");
+    process.env.OTP_PROVIDER = " Twilio ";
+    assert.equal(provider(), "twilio");
+    // A typo must land on the working default, never on "no provider".
+    process.env.OTP_PROVIDER = "supabse";
+    assert.equal(provider(), "supabase");
+  } finally {
+    if (prev === undefined) delete process.env.OTP_PROVIDER;
+    else process.env.OTP_PROVIDER = prev;
+  }
+});
 
 test("digits10 normalises 10-digit and prefixed inputs", () => {
   assert.equal(digits10("9876543210"), "9876543210");
