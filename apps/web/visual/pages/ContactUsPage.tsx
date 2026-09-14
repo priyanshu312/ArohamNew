@@ -69,7 +69,7 @@ export function ContactUsPage() {
                   </div>
                   <div>
                     <div className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: "#9A8A78" }}>Call Us</div>
-                    <div className="text-sm font-medium" style={{ color: MAROON }}>+91 80001 53840</div>
+                    <div className="text-sm font-medium" style={{ color: MAROON }}>+91 83061 60032</div>
                   </div>
                 </div>
 

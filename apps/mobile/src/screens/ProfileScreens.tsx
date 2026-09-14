@@ -389,9 +389,9 @@ export const PoliciesScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => 
                 <Text style={styles.contactLabel}>✉️ Email Support</Text>
                 <Text style={styles.contactValue}>director@nakshra.in</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => Linking.openURL('tel:+918000153840')} style={{ marginTop: 14 }}>
+              <TouchableOpacity onPress={() => Linking.openURL('tel:+918306160032')} style={{ marginTop: 14 }}>
                 <Text style={styles.contactLabel}>📞 Call Us</Text>
-                <Text style={styles.contactValue}>+91 80001 53840 · Mon-Sat, 10 AM to 6 PM</Text>
+                <Text style={styles.contactValue}>+91 83061 60032 · Mon-Sat, 10 AM to 6 PM</Text>
               </TouchableOpacity>
               <View style={{ marginTop: 14 }}>
                 <Text style={styles.contactLabel}>📍 Spiritual Center</Text>
