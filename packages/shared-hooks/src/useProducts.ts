@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { api } from "@nakshra/shared-api";
 import { supabase } from "@nakshra/shared-services";
 import { NakshraProduct } from "@nakshra/shared-types/product";
-import { DEFAULT_PRODUCTS } from "@nakshra/shared-config/products";
 import { safeLocalStorage } from "@nakshra/shared-utils/storage";
 
-const CACHE_KEY = "Nakshra_products_cache";
+// v2: the old cache still lists the test products taken off the shop on
+// 17 Sep 2026, and would show them until the network answered.
+const CACHE_KEY = "Nakshra_products_cache_v2";
+const OLD_CACHE_KEY = "Nakshra_products_cache";
 
 // Only what the storefront shows.
 const PRODUCT_COLUMNS =
@@ -87,10 +89,12 @@ async function fetchProductsOnce(): Promise<NakshraProduct[]> {
       const { data: supaData, error } = await supabase
         .from("products")
         .select(PRODUCT_COLUMNS)
+        .eq("is_active", true)
         .order("id", { ascending: false });
       if (!error && Array.isArray(supaData) && supaData.length > 0) {
         const mapped = mapSupaProducts(supaData);
         safeLocalStorage.setItem(CACHE_KEY, JSON.stringify(mapped));
+        safeLocalStorage.removeItem(OLD_CACHE_KEY);
         resolvedOnce = mapped;
         return mapped;
       }
@@ -110,14 +114,14 @@ async function fetchProductsOnce(): Promise<NakshraProduct[]> {
       console.error("API products endpoint unavailable:", err);
     }
 
-    // 3. Cached, then the 7 bundled defaults — a visibly incomplete catalogue
-    //    (the real one has 23 items), so treat it as a stopgap, NOT an answer:
-    //    deliberately do not set `resolvedOnce`. Memoising it here meant one
-    //    unlucky first request pinned every component on the page to the
-    //    fallback for the rest of the session, with no retry short of a full
-    //    reload. Leaving it unset lets the next mount try the network again.
-    const cached = readCache();
-    return cached || DEFAULT_PRODUCTS;
+    // 3. Cached, else nothing. The bundled DEFAULT_PRODUCTS are the old test
+    //    products, which can't be ordered any more, so they're no stopgap.
+    //    Either way this is NOT an answer: deliberately do not set
+    //    `resolvedOnce`. Memoising it here meant one unlucky first request
+    //    pinned every component on the page to the fallback for the rest of
+    //    the session, with no retry short of a full reload. Leaving it unset
+    //    lets the next mount try the network again.
+    return readCache() || [];
   })();
 
   try {

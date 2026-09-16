@@ -19,7 +19,8 @@ router.get("/", requireAuth, async (req, res) => {
       .eq("is_temporary", isTemp);
 
     if (error) throw error;
-    const items = data.map((item) => {
+    // Leave out products taken off the shop; checkout would refuse them anyway.
+    const items = data.filter((item) => item.product && item.product.is_active).map((item) => {
       const p = item.product || {};
       return {
         id: p.id,
@@ -57,8 +58,8 @@ router.post("/", requireAuth, async (req, res) => {
   if (badQty(qty)) return res.status(400).json({ error: "Quantity must be a positive whole number" });
   try {
     const { data: prod, error: pErr } = await supabase
-      .from("products").select("stock").eq("id", productId).single();
-    if (pErr || !prod) return res.status(404).json({ error: "Product not found" });
+      .from("products").select("stock, is_active").eq("id", productId).single();
+    if (pErr || !prod || !prod.is_active) return res.status(404).json({ error: "Product not found" });
     if (prod.stock < qty) return res.status(400).json({ error: "Insufficient stock" });
 
     const { data: existing } = await supabase
@@ -93,8 +94,8 @@ router.post("/buy-now", requireAuth, async (req, res) => {
   if (badQty(qty)) return res.status(400).json({ error: "Quantity must be a positive whole number" });
   try {
     const { data: prod, error: pErr } = await supabase
-      .from("products").select("stock").eq("id", productId).single();
-    if (pErr || !prod) return res.status(404).json({ error: "Product not found" });
+      .from("products").select("stock, is_active").eq("id", productId).single();
+    if (pErr || !prod || !prod.is_active) return res.status(404).json({ error: "Product not found" });
     if (prod.stock < qty) return res.status(400).json({ error: "Insufficient stock" });
 
     await supabase.from("cart_items").delete().eq("user_id", req.user.id).eq("is_temporary", true);

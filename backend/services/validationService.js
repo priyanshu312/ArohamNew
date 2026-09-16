@@ -14,7 +14,7 @@ async function validateItems(items) {
   const ids = items.map((i) => i.id);
   const { data: products, error } = await supabase
     .from("products")
-    .select("id, name, price, stock, emoji")
+    .select("id, name, price, stock, emoji, is_active")
     .in("id", ids);
 
   if (error) return { valid: false, errors: [error.message], products: [] };
@@ -23,6 +23,8 @@ async function validateItems(items) {
   for (const item of items) {
     const p = products.find((x) => x.id === item.id);
     if (!p) { errors.push(`Product ${item.id} not found`); continue; }
+    // Taken off the shop, but a cart saved earlier can still hold it.
+    if (!p.is_active) { errors.push(`${p.name} is no longer available`); continue; }
     if (!Number.isInteger(item.qty) || item.qty < 1) {
       errors.push(`Invalid quantity for ${p.name}`); continue;
     }

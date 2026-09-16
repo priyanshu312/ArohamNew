@@ -131,7 +131,7 @@ export const AstrologerPortal: React.FC = () => {
     } catch (e) {}
 
     try {
-      const { data: prods } = await supabase.from('products').select('*').limit(15);
+      const { data: prods } = await supabase.from('products').select('*').eq('is_active', true).limit(15);
       if (prods && prods.length > 0) {
         setDbRemedyProducts(prods.map((p: any) => ({ ...p, price: p.price / 100 })));
       }

@@ -678,7 +678,7 @@ export function AstrologerDashboard() {
 
 
     try {
-      const { data: prods } = await supabase.from("products").select("*").limit(15);
+      const { data: prods } = await supabase.from("products").select("*").eq("is_active", true).limit(15);
       if (prods && prods.length > 0) {
         const filtered = prods
           .filter(p => p.slug !== "nepal-origin-1-mukhi-rudraksha-17mm-to-22mm-kaju-shape" && p.slug !== "nepal-origin-5-mukhi-rudraksha-bead-8mm-to-12mm-free-gift")

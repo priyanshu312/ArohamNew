@@ -8,6 +8,7 @@ router.get("/", async (req, res) => {
   const { data, error } = await supabase
     .from("products")
     .select("*")
+    .eq("is_active", true)
     .order("id");
   if (error) return res.status(500).json({ error: error.message });
 

@@ -8,6 +8,7 @@ create table if not exists products (
   price bigint not null,
   stock int not null default 100,
   reserved int not null default 0,
+  is_active boolean not null default true, -- false = taken off the shop, kept for past orders
   emoji text default '🕉️'
 );
 

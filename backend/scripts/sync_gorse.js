@@ -18,7 +18,7 @@ async function syncCatalogToGorse() {
 
   const gorseItems = products.map(p => ({
     ItemId: String(p.id),
-    IsHidden: p.stock <= 0,
+    IsHidden: p.stock <= 0 || !p.is_active,
     Categories: p.category ? [p.category] : ["general"],
     Timestamp: new Date().toISOString(),
     Comment: `${p.name} - ${p.short_desc || p.subtitle || ''}`

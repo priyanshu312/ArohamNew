@@ -31,6 +31,7 @@ router.post("/", chatLimiter, async (req, res) => {
         const { data: dbProducts } = await supabase
           .from("products")
           .select("*")
+          .eq("is_active", true)
           .in("id", itemIds);
 
         if (dbProducts) {

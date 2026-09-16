@@ -39,6 +39,7 @@ router.get("/:userId", async (req, res) => {
       const { data: dbProducts } = await supabase
         .from("products")
         .select("*")
+        .eq("is_active", true)
         .in("id", numericIds.length > 0 ? numericIds : itemIds);
 
       if (dbProducts) {
@@ -51,6 +52,7 @@ router.get("/:userId", async (req, res) => {
       const { data: topSellingProducts } = await supabase
         .from("products")
         .select("*")
+        .eq("is_active", true)
         .order("reviews", { ascending: false })
         .order("rating", { ascending: false })
         .limit(4);
@@ -97,6 +99,7 @@ router.get("/item/:itemId", async (req, res) => {
       const { data: dbProducts } = await supabase
         .from("products")
         .select("*")
+        .eq("is_active", true)
         .in("id", numericIds.length > 0 ? numericIds : itemIds);
 
       if (dbProducts) {
