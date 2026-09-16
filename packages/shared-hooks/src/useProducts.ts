@@ -3,7 +3,13 @@ import { api } from "@nakshra/shared-api";
 import { supabase } from "@nakshra/shared-services";
 import { NakshraProduct } from "@nakshra/shared-types/product";
 import { DEFAULT_PRODUCTS } from "@nakshra/shared-config/products";
-import { safeSessionStorage } from "@nakshra/shared-utils/storage";
+import { safeLocalStorage } from "@nakshra/shared-utils/storage";
+
+const CACHE_KEY = "Nakshra_products_cache";
+
+// Only what the storefront shows.
+const PRODUCT_COLUMNS =
+  "id,slug,name,subtitle,category,purpose,price,original_price,rating,reviews,img,badges,short_desc,description,benefits,use_for,size,material,stock";
 
 function formatImageUrl(url: any) {
   if (!url || typeof url !== "string") return url;
@@ -33,8 +39,10 @@ function mapSupaProducts(data: any[]): NakshraProduct[] {
       purpose: p.purpose || "Sacred Harmony",
       price: priceVal,
       original: origVal,
-      rating: Number(p.rating) || 5.0,
-      reviews: Number(p.reviews) || 1,
+      // Shown as stored. Defaulting a missing rating to 5.0 with one review
+      // invented social proof for products nobody has reviewed yet.
+      rating: Number(p.rating) || 0,
+      reviews: Number(p.reviews) || 0,
       img: formatImageUrl(p.img || p.image || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=400&q=80"),
       badges: p.badges || ["Temple Energized"],
       shortDesc: p.short_desc || p.description || "",
@@ -42,13 +50,16 @@ function mapSupaProducts(data: any[]): NakshraProduct[] {
       size: p.size || "NA",
       material: p.material || "NA",
       useFor: p.use_for || ["Pooja Ghar", "Daily Wear"],
-      stock: p.stock || 100
+      // 0 means sold out; `p.stock || 100` turned a sold-out item back into 100.
+      stock: Number(p.stock) || 0
     };
   });
 }
 
+// localStorage, which every tab shares. This used to be sessionStorage, which
+// is per tab, so each new tab started with no products and waited on the network.
 function readCache(): NakshraProduct[] | null {
-  const cached = safeSessionStorage.getItem("Nakshra_products_cache");
+  const cached = safeLocalStorage.getItem(CACHE_KEY);
   if (!cached) return null;
   try {
     const parsed = JSON.parse(cached);
@@ -68,40 +79,35 @@ async function fetchProductsOnce(): Promise<NakshraProduct[]> {
   if (inFlight) return inFlight;
 
   inFlight = (async () => {
-    // 1. Backend API.
-    //
-    // Capped deliberately low. The backend sleeps on Render's free plan, and a
-    // cold start holds the connection open for 30-50 s without ever failing —
-    // which used to leave the catalogue blank until the visitor reloaded two or
-    // three times. Supabase (step 2) serves the same catalogue in under a
-    // second and never sleeps, so giving up quickly and falling through is far
-    // better than waiting. When the backend is awake it answers in ~1 s, well
-    // inside this budget.
-    try {
-      const data = await api("/products", { timeoutMs: 5000 });
-      if (Array.isArray(data) && data.length > 0) {
-        safeSessionStorage.setItem("Nakshra_products_cache", JSON.stringify(data));
-        resolvedOnce = data;
-        return data;
-      }
-    } catch (err) {
-      console.warn("API products endpoint unavailable, querying Supabase directly...", err);
-    }
-
-    // 2. Direct Supabase query (works on the deployed site if the API is down)
+    // 1. Supabase directly. It never sleeps and returns the catalogue in about a
+    //    second. The backend used to go first, but it sleeps on Render's free
+    //    plan, so a visitor waited out the whole 5 s timeout below before this
+    //    query even started.
     try {
       const { data: supaData, error } = await supabase
         .from("products")
-        .select("*")
+        .select(PRODUCT_COLUMNS)
         .order("id", { ascending: false });
       if (!error && Array.isArray(supaData) && supaData.length > 0) {
         const mapped = mapSupaProducts(supaData);
-        safeSessionStorage.setItem("Nakshra_products_cache", JSON.stringify(mapped));
+        safeLocalStorage.setItem(CACHE_KEY, JSON.stringify(mapped));
         resolvedOnce = mapped;
         return mapped;
       }
     } catch (e) {
-      console.error("Direct Supabase product query error:", e);
+      console.warn("Supabase products query failed, trying the API...", e);
+    }
+
+    // 2. Backend API, capped at 5 s so a sleeping backend can't hold the page.
+    try {
+      const data = await api("/products", { timeoutMs: 5000 });
+      if (Array.isArray(data) && data.length > 0) {
+        safeLocalStorage.setItem(CACHE_KEY, JSON.stringify(data));
+        resolvedOnce = data;
+        return data;
+      }
+    } catch (err) {
+      console.error("API products endpoint unavailable:", err);
     }
 
     // 3. Cached, then the 7 bundled defaults — a visibly incomplete catalogue
@@ -122,8 +128,10 @@ async function fetchProductsOnce(): Promise<NakshraProduct[]> {
 }
 
 export function useProducts() {
-  const [products, setProducts] = useState<NakshraProduct[]>(() => readCache() || []);
-  const [loading, setLoading] = useState(true);
+  // Show what this browser loaded last time straight away, then refresh it.
+  const [cached] = useState(() => readCache());
+  const [products, setProducts] = useState<NakshraProduct[]>(cached || []);
+  const [loading, setLoading] = useState(!cached);
 
   useEffect(() => {
     let alive = true;

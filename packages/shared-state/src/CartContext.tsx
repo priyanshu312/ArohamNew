@@ -153,7 +153,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Fetch dynamic coupons from Supabase DB on mount
   useEffect(() => {
     Promise.resolve(
-      supabase.from("coupons").select("*")
+      // Active coupons only: an inactive row, like a switched-off test code,
+      // would otherwise still be offered here and then refused at payment.
+      supabase.from("coupons").select("*").eq("is_active", true)
     ).then(({ data, error }) => {
       if (data && data.length > 0 && !error) {
         const merged: Record<string, CouponDef> = { ...VALID_COUPONS };
