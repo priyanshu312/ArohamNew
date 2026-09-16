@@ -35,3 +35,11 @@ export const FEATURE_CRAFTSMANSHIP = flag(import.meta.env.VITE_FEATURE_CRAFTSMAN
 
 /** Home: the community section where visitors post reviews/comments. */
 export const FEATURE_REVIEWS = flag(import.meta.env.VITE_FEATURE_REVIEWS, false);
+
+/** Home: "Customer Stories" video testimonials. Off because the stories name test
+ *  products no longer sold, and the thumbnails load from another brand's Shopify store. */
+export const FEATURE_CUSTOMER_STORIES = flag(import.meta.env.VITE_FEATURE_CUSTOMER_STORIES, false);
+
+/** Home: "Not just products. Sacred instruments." Off because its photos load from
+ *  another brand's Shopify store. */
+export const FEATURE_WHY_NAKSHRA = flag(import.meta.env.VITE_FEATURE_WHY_NAKSHRA, false);
