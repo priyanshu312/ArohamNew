@@ -10,7 +10,7 @@ import { Newsletter } from "@visual/components/home/Newsletter";
 import { COMBOS } from "@nakshra/shared-config/data";
 import { NakshraProduct } from "@nakshra/shared-types/product";
 import { useCart } from "@nakshra/shared-state";
-import { useProducts } from "@nakshra/shared-hooks/useProducts";
+import { useProducts, groupVariants } from "@nakshra/shared-hooks/useProducts";
 import { AstroChatWidget } from "@visual/components/product/AstroChatWidget";
 import { FEATURE_CHAT, FEATURE_CRAFTSMANSHIP, FEATURE_CUSTOMER_STORIES, FEATURE_REVIEWS, FEATURE_WHY_NAKSHRA } from "@visual/config/features";
 
@@ -35,7 +35,7 @@ export function HomePage() {
       <NavagrahaHero onShop={goToShop} onConsult={() => navigate("/consult")} />
       <ShopConsultCards products={products} onShop={goToShop} onProductClick={goToProduct} />
       {FEATURE_CRAFTSMANSHIP && <HowItsMade />}
-      <ProductsAndCombos products={products} onProductClick={goToProduct} onAddToCart={p => addToCart(p)} onAddCombo={handleAddCombo} />
+      <ProductsAndCombos products={groupVariants(products)} onProductClick={goToProduct} onAddToCart={p => addToCart(p)} onAddCombo={handleAddCombo} />
       {FEATURE_WHY_NAKSHRA && <WhyNakshra />}
       {FEATURE_CUSTOMER_STORIES && <VideoTestimonials />}
       {FEATURE_REVIEWS && <CommunityComments products={products} />}

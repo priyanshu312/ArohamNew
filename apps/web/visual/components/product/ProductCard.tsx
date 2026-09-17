@@ -24,7 +24,8 @@ export function ProductCard({ product: p, onProductClick, onAddToCart, wishKey =
 
   const isItemWished = propWished !== undefined ? propWished : isInWishlist(p.id);
   const cartItem = items.find(item => item.product.id === p.id);
-  const qty = cartItem ? cartItem.qty : 0;
+  // A variant group's card stands for all its options, so it never shows one option's cart count.
+  const qty = cartItem && !p.variantCount ? cartItem.qty : 0;
 
   const handleWishClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -81,6 +82,7 @@ export function ProductCard({ product: p, onProductClick, onAddToCart, wishKey =
       <div className="p-3 pt-1 flex flex-col gap-2">
         <div className="flex items-baseline justify-between gap-1 flex-wrap">
           <div className="flex items-baseline gap-1.5 min-w-0">
+            {p.variantCount && <span className="text-[10px] font-semibold" style={{ color: "#9A8A78" }}>From</span>}
             <span className="text-sm font-bold" style={{ fontFamily: PRICE_FONT, color: MAROON }}>₹{Math.round(p.price).toLocaleString("en-IN")}</span>
             {p.original > p.price && (
               <span className="text-[10px] line-through opacity-70" style={{ fontFamily: PRICE_FONT, color: "#9A8A78" }}>₹{Math.round(p.original).toLocaleString("en-IN")}</span>
@@ -113,11 +115,16 @@ export function ProductCard({ product: p, onProductClick, onAddToCart, wishKey =
             <button aria-label="Increase quantity" onClick={() => updateQty(p.id, 1)} className="w-7 h-7 rounded-lg flex items-center justify-center text-base font-bold transition-all hover:bg-white/20 active:scale-95" style={{ color: GOLD }}>+</button>
           </div>
         ) : (
-          <button aria-label={`Add ${p.name} to cart`}
-            onClick={e => { e.stopPropagation(); if (onAddToCart) onAddToCart(p); else addToCart(p, 1, false); }}
+          <button aria-label={p.variantCount ? `See ${p.name} options` : `Add ${p.name} to cart`}
+            onClick={e => {
+              e.stopPropagation();
+              if (p.variantCount) handleCardClick();
+              else if (onAddToCart) onAddToCart(p);
+              else addToCart(p, 1, false);
+            }}
             className="w-full py-2 rounded-xl flex items-center justify-center text-[11px] font-bold tracking-wide transition-all hover:opacity-90 active:scale-95 shadow-sm uppercase mt-0.5"
             style={{ background: `linear-gradient(135deg,${MAROON},#7A2A30)`, color: IVORY, border: "none", cursor: "pointer", fontFamily: SANS }}>
-            <span>Add to Cart</span>
+            <span>{p.variantCount ? `See ${p.variantCount} options` : "Add to Cart"}</span>
           </button>
         )}
       </div>

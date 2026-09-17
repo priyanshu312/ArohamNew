@@ -9,6 +9,8 @@ create table if not exists products (
   stock int not null default 100,
   reserved int not null default 0,
   is_active boolean not null default true, -- false = taken off the shop, kept for past orders
+  variant_group text,                      -- products sharing this show as one listing, e.g. 'Baglamukhi Yantra'
+  variant_label text,                      -- this product's option in that listing, e.g. 'Silver, 4 inch'
   emoji text default '🕉️'
 );
 

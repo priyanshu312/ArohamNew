@@ -7,7 +7,7 @@ import {
 import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@nakshra/shared-config/theme";
 import * as Select from "@radix-ui/react-select";
 import { CATEGORIES, PURPOSES } from "@nakshra/shared-config/data";
-import { useProducts } from "@nakshra/shared-hooks/useProducts";
+import { useProducts, groupVariants } from "@nakshra/shared-hooks/useProducts";
 import { useCart } from "@nakshra/shared-state";
 import { useWishlist } from "@nakshra/shared-state";
 
@@ -81,8 +81,10 @@ export function ShopPage() {
   const isCustom = displayTitle !== "Sacred Products";
 
   const { products, loading: productsLoading } = useProducts();
+  // One card per variant group; its options are picked on the product page.
+  const listed = groupVariants(products);
 
-  const filtered = products.filter(p => {
+  const filtered = listed.filter(p => {
     if (cats.length) {
       const matchesCat = cats.some(c => isSameCategory(p.category, c));
       if (!matchesCat) return false;
@@ -155,7 +157,7 @@ export function ShopPage() {
         </h3>
         <div className="space-y-2">
           {CATEGORIES.map(c => {
-            const count = products.filter(p => isSameCategory(p.category, c)).length;
+            const count = listed.filter(p => isSameCategory(p.category, c)).length;
             const isSelected = cats.includes(c);
             return (
               <button
@@ -587,7 +589,8 @@ export function ShopPage() {
                   {filtered.map(p => {
                     const discountPct = p.original > p.price ? Math.round((1 - p.price / p.original) * 100) : 0;
                     const itemInCart = items.find(i => i.product.id === p.id);
-                    const cartQty = itemInCart ? itemInCart.qty : 0;
+                    // A group's card stands for all its options, so it never shows one option's cart count.
+                    const cartQty = itemInCart && !p.variantCount ? itemInCart.qty : 0;
                     const isWish = isInWishlist(p.id);
 
                     return (
@@ -678,6 +681,7 @@ export function ShopPage() {
                             {/* Pricing row */}
                             <div className="flex items-baseline gap-1 sm:gap-2 flex-wrap justify-between">
                               <div className="flex items-baseline gap-1 sm:gap-2 flex-wrap">
+                                {p.variantCount && <span className="text-[10px] sm:text-xs font-semibold" style={{ color: "#8A7A68" }}>From</span>}
                                 <span className="text-sm sm:text-xl font-extrabold" style={{ fontFamily: PRICE_FONT, color: MAROON }}>
                                   ₹{Math.round(p.price).toLocaleString("en-IN")}
                                 </span>
@@ -733,15 +737,16 @@ export function ShopPage() {
                               </div>
                             ) : (
                               <button
-                                aria-label={`Add ${p.name} to cart`}
+                                aria-label={p.variantCount ? `See ${p.name} options` : `Add ${p.name} to cart`}
                                 onClick={e => {
                                   e.stopPropagation();
-                                  addToCart(p, 1, false);
+                                  if (p.variantCount) navigate(`/shop/${p.slug}`);
+                                  else addToCart(p, 1, false);
                                 }}
                                 className="w-full py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg sm:rounded-2xl text-[10px] sm:text-xs font-bold tracking-wider transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-2 shadow-xs hover:shadow-md hover:opacity-95 active:scale-98 uppercase border border-[#5B1F24] sm:border-0 bg-transparent sm:bg-[linear-gradient(135deg,#5B1F24,#7A2A30)] text-[#5B1F24] sm:text-[#FAF7F2]"
                               >
                                 <ShoppingCart size={12} className="sm:w-[14px] sm:h-[14px]" />
-                                <span>ADD TO CART</span>
+                                <span>{p.variantCount ? `SEE ${p.variantCount} OPTIONS` : "ADD TO CART"}</span>
                               </button>
                             )}
                           </div>
@@ -756,7 +761,8 @@ export function ShopPage() {
                   {filtered.map(p => {
                     const discountPct = p.original > p.price ? Math.round((1 - p.price / p.original) * 100) : 0;
                     const itemInCart = items.find(i => i.product.id === p.id);
-                    const cartQty = itemInCart ? itemInCart.qty : 0;
+                    // A group's card stands for all its options, so it never shows one option's cart count.
+                    const cartQty = itemInCart && !p.variantCount ? itemInCart.qty : 0;
                     const isWish = isInWishlist(p.id);
 
                     return (
@@ -832,6 +838,7 @@ export function ShopPage() {
                         <div className="w-full sm:w-48 flex-shrink-0 flex flex-col sm:items-end justify-center gap-3 pt-3 sm:pt-0 border-t sm:border-t-0 border-amber-900/10">
                           <div className="flex flex-col sm:items-end">
                             <div className="flex items-baseline gap-2">
+                              {p.variantCount && <span className="text-xs font-semibold" style={{ color: "#8A7A68" }}>From</span>}
                               <span className="text-xl font-extrabold" style={{ fontFamily: PRICE_FONT, color: MAROON }}>
                                 ₹{Math.round(p.price).toLocaleString("en-IN")}
                               </span>
@@ -885,16 +892,17 @@ export function ShopPage() {
                             </div>
                           ) : (
                             <button
-                              aria-label={`Add ${p.name} to cart`}
+                              aria-label={p.variantCount ? `See ${p.name} options` : `Add ${p.name} to cart`}
                               onClick={e => {
                                 e.stopPropagation();
-                                addToCart(p, 1, false);
+                                if (p.variantCount) navigate(`/shop/${p.slug}`);
+                                else addToCart(p, 1, false);
                               }}
                               className="w-full sm:w-40 py-2.5 px-4 rounded-2xl text-xs font-bold tracking-wider transition-all duration-200 flex items-center justify-center gap-2 shadow-xs hover:shadow-md active:scale-98 uppercase"
                               style={{ background: `linear-gradient(135deg, ${MAROON}, #7A2A30)`, color: IVORY }}
                             >
                               <ShoppingCart size={14} />
-                              <span>ADD TO CART</span>
+                              <span>{p.variantCount ? `SEE ${p.variantCount} OPTIONS` : "ADD TO CART"}</span>
                             </button>
                           )}
                         </div>

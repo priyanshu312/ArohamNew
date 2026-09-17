@@ -4,14 +4,14 @@ import { supabase } from "@nakshra/shared-services";
 import { NakshraProduct } from "@nakshra/shared-types/product";
 import { safeLocalStorage } from "@nakshra/shared-utils/storage";
 
-// v2: the old cache still lists the test products taken off the shop on
-// 17 Sep 2026, and would show them until the network answered.
-const CACHE_KEY = "Nakshra_products_cache_v2";
-const OLD_CACHE_KEY = "Nakshra_products_cache";
+// Bumped whenever cached products would show something wrong until the network
+// answers: v2 dropped the test products (17 Sep 2026), v3 added variant groups.
+const CACHE_KEY = "Nakshra_products_cache_v3";
+const OLD_CACHE_KEYS = ["Nakshra_products_cache", "Nakshra_products_cache_v2"];
 
 // Only what the storefront shows.
 const PRODUCT_COLUMNS =
-  "id,slug,name,subtitle,category,purpose,price,original_price,rating,reviews,img,badges,short_desc,description,benefits,use_for,size,material,stock";
+  "id,slug,name,subtitle,category,purpose,price,original_price,rating,reviews,img,badges,short_desc,description,benefits,use_for,size,material,stock,variant_group,variant_label";
 
 function formatImageUrl(url: any) {
   if (!url || typeof url !== "string") return url;
@@ -53,9 +53,38 @@ function mapSupaProducts(data: any[]): NakshraProduct[] {
       material: p.material || "NA",
       useFor: p.use_for || ["Pooja Ghar", "Daily Wear"],
       // 0 means sold out; `p.stock || 100` turned a sold-out item back into 100.
-      stock: Number(p.stock) || 0
+      stock: Number(p.stock) || 0,
+      variantGroup: p.variant_group || undefined,
+      variantLabel: p.variant_label || undefined
     };
   });
+}
+
+/** The options of `product`'s group, cheapest first, or [] if it has no group. */
+export function variantOptions(products: NakshraProduct[], product: NakshraProduct): NakshraProduct[] {
+  if (!product.variantGroup) return [];
+  return products.filter(p => p.variantGroup === product.variantGroup).sort((a, b) => a.price - b.price);
+}
+
+/**
+ * For listings: one card per variant group, like Amazon. The card is the
+ * group's cheapest option under the group's name, so its price reads "from",
+ * and the buyer picks the option on the product page. Order is kept.
+ */
+export function groupVariants(products: NakshraProduct[]): NakshraProduct[] {
+  const seen = new Set<string>();
+  const out: NakshraProduct[] = [];
+  for (const p of products) {
+    if (!p.variantGroup) {
+      out.push(p);
+      continue;
+    }
+    if (seen.has(p.variantGroup)) continue;
+    seen.add(p.variantGroup);
+    const options = variantOptions(products, p);
+    out.push(options.length > 1 ? { ...options[0], name: p.variantGroup, variantCount: options.length } : p);
+  }
+  return out;
 }
 
 // localStorage, which every tab shares. This used to be sessionStorage, which
@@ -94,7 +123,7 @@ async function fetchProductsOnce(): Promise<NakshraProduct[]> {
       if (!error && Array.isArray(supaData) && supaData.length > 0) {
         const mapped = mapSupaProducts(supaData);
         safeLocalStorage.setItem(CACHE_KEY, JSON.stringify(mapped));
-        safeLocalStorage.removeItem(OLD_CACHE_KEY);
+        OLD_CACHE_KEYS.forEach(k => safeLocalStorage.removeItem(k));
         resolvedOnce = mapped;
         return mapped;
       }

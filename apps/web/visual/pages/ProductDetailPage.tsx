@@ -6,7 +6,7 @@ import { CONTACT_INFO } from "@nakshra/shared-config/contact";
 import { useCart } from "@nakshra/shared-state";
 import { useAuth } from "@nakshra/shared-auth";
 import { useWishlist } from "@nakshra/shared-state";
-import { useProducts } from "@nakshra/shared-hooks/useProducts";
+import { useProducts, variantOptions } from "@nakshra/shared-hooks/useProducts";
 import { NakshraProduct } from "@nakshra/shared-types/product";
 import { DEFAULT_PRODUCTS } from "@nakshra/shared-config/products";
 import { getShiprocketDeliveryEstimate } from "@nakshra/shared-api/shipping";
@@ -188,6 +188,9 @@ export function ProductDetailPage() {
       </div>
     );
   }
+
+  // Other options of the same listing (e.g. copper / silver yantra), cheapest first.
+  const options = variantOptions(products, product);
 
   const tabContent = [
     <div className="space-y-5">
@@ -426,6 +429,38 @@ export function ProductDetailPage() {
             </div>
 
             <p className="text-[11px] mb-4 font-medium text-amber-900/70">INCL. OF ALL TAXES · FREE SHIPPING · TEMPLE ENERGIZED</p>
+
+            {/* Option picker, like Amazon's. Each option is its own product, so
+                picking one swaps the URL, and with it the price, photo and what
+                goes into the cart. */}
+            {options.length > 1 && (
+              <div className="mb-5">
+                <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: MAROON }}>
+                  Choose type: <span className="normal-case tracking-normal font-semibold" style={{ color: "#5A4A3A" }}>{product.variantLabel}</span>
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {options.map(o => {
+                    const active = o.id === product.id;
+                    return (
+                      <button
+                        key={o.id}
+                        onClick={() => { if (!active) navigate(`/shop/${o.slug}`, { replace: true }); }}
+                        aria-pressed={active}
+                        className="flex items-center gap-2 text-left rounded-xl p-2 border transition-all"
+                        style={{ background: active ? "rgba(200,160,68,0.10)" : "#FFFFFF", borderColor: active ? MAROON : "rgba(91,31,36,0.15)", boxShadow: active ? `0 0 0 1px ${MAROON}` : "none" }}
+                      >
+                        <img src={o.img} alt="" className="w-10 h-10 rounded-lg object-contain flex-shrink-0 bg-[#FAF7F2]" />
+                        <span className="min-w-0">
+                          <span className="block text-[11px] font-semibold leading-tight" style={{ color: MAROON }}>{o.variantLabel || o.name}</span>
+                          <span className="block text-sm font-extrabold" style={{ fontFamily: PRICE_FONT, color: MAROON }}>₹{o.price.toLocaleString("en-IN")}</span>
+                          {o.stock === 0 && <span className="block text-[10px] font-semibold text-red-600">Out of stock</span>}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Sticky Action Button Container (Glides in page flow and sticks to screen bottom when scrolling on mobile) */}
             <div className="sticky bottom-0 z-50 -mx-4 px-4 py-3 bg-[#FAF7F2]/95 backdrop-blur-md border-t border-amber-900/15 shadow-[0_-4px_24px_rgba(91,31,36,0.12)] sm:static sm:mx-0 sm:px-0 sm:py-0 sm:bg-transparent sm:border-0 sm:shadow-none space-y-2 mb-6">

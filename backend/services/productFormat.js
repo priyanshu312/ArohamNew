@@ -35,6 +35,8 @@ function formatProduct(p, extra = {}) {
     material: p.material,
     useFor: p.use_for || [],
     stock: p.stock,
+    variantGroup: p.variant_group || undefined,
+    variantLabel: p.variant_label || undefined,
     ...extra,
   };
 }

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { Search, X, ArrowRight } from "lucide-react";
 import { MAROON, GOLD, IVORY, SANS, SERIF } from "@nakshra/shared-config/theme";
-import { useProducts } from "@nakshra/shared-hooks/useProducts";
+import { useProducts, groupVariants } from "@nakshra/shared-hooks/useProducts";
 import { NakshraProduct } from "@nakshra/shared-types/product";
 
 interface SearchModalProps {
@@ -23,8 +23,10 @@ export function SearchModal({ isOpen, onClose, query, setQuery, solid, isMobile 
 
   if (!isOpen) return null;
 
+  // Grouped after matching: "silver yantra" lands on that one option, while
+  // "baglamukhi" shows each group once.
   const results = query.trim().length > 1
-    ? products.filter(p => p.name.toLowerCase().includes(query.toLowerCase()) || (Array.isArray(p.description) ? p.description.join(" ") : (p.description || "")).toLowerCase().includes(query.toLowerCase()))
+    ? groupVariants(products.filter(p => p.name.toLowerCase().includes(query.toLowerCase()) || (Array.isArray(p.description) ? p.description.join(" ") : (p.description || "")).toLowerCase().includes(query.toLowerCase())))
     : [];
 
   const handleSelect = (slug: string) => {
@@ -63,7 +65,7 @@ export function SearchModal({ isOpen, onClose, query, setQuery, solid, isMobile 
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-sm truncate" style={{ color: solid ? MAROON : IVORY, fontFamily: SERIF }}>{product.name}</h3>
-                    <div className="font-medium text-xs mt-0.5" style={{ color: solid ? "#7A6A58" : GOLD, fontFamily: SANS }}>₹{product.price.toLocaleString("en-IN")}</div>
+                    <div className="font-medium text-xs mt-0.5" style={{ color: solid ? "#7A6A58" : GOLD, fontFamily: SANS }}>{product.variantCount ? "From " : ""}₹{product.price.toLocaleString("en-IN")}</div>
                   </div>
                 </div>
               ))}
