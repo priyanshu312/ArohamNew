@@ -35,7 +35,6 @@ export function Footer() {
               links: [
                 { label: t("footer.yantras", "Yantras"), href: "/shop?category=Yantra" },
                 { label: t("footer.pendants", "Pendants"), href: "/shop?category=Pendant" },
-                { label: t("footer.crystals", "Crystals"), href: "/shop?category=Crystals" },
                 { label: t("footer.rudraksha", "Rudraksha"), href: "/shop?category=Rudraksha" },
                 { label: t("footer.combo_kits", "Combo Kits"), href: "/shop?title=Combo%20Deals" }
               ] 

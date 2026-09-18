@@ -31,7 +31,8 @@ export function ShopPage() {
   const [prps, setPrps] = useState<string[]>([]);
   const [cols, setCols] = useState<string[]>(titleParam ? [titleParam] : []);
   const [maxPrice, setMaxPrice] = useState<number>(30000);
-  const [sort, setSort] = useState<string>("recommended");
+  // Must match one of the dropdown's values, or its trigger renders blank.
+  const [sort, setSort] = useState<string>("newest");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Reset the filter drawer's scroll when it OPENS, and only then. Doing it in
   // a ref callback instead re-ran on every render, so ticking a checkbox
@@ -135,8 +136,9 @@ export function ShopPage() {
   }).sort((a, b) => {
     if (sort === "price-asc") return a.price - b.price;
     if (sort === "price-desc") return b.price - a.price;
-    if (sort === "rating") return (b.rating || 0) - (a.rating || 0);
-    return (b.reviews || 0) - (a.reviews || 0);
+    // Newest first. Sorting by rating or review count is meaningless while every
+    // product sits at zero of both, so those options are gone.
+    return b.id - a.id;
   });
 
   const toggleCat = (c: string) => setCats(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
@@ -525,10 +527,9 @@ export function ShopPage() {
                     >
                       <Select.Viewport className="space-y-1">
                         {[
-                          { v: "popular", l: "Most Popular" },
+                          { v: "newest", l: "Newest First" },
                           { v: "price-asc", l: "Price: Low to High" },
-                          { v: "price-desc", l: "Price: High to Low" },
-                          { v: "rating", l: "Highest Rated" }
+                          { v: "price-desc", l: "Price: High to Low" }
                         ].map(opt => (
                           <Select.Item
                             key={opt.v}
