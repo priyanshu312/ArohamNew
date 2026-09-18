@@ -103,7 +103,7 @@ export const COMMENTS_DATA = [
   { name: "Vikram Nair",   city: "Kochi",     rating: 5, text: "I was sceptical about online purchase of sacred items. But Nakshra changed my mind. The Pran Pratishtha certificate is a genuine differentiator.", product: "Dhan Yog Necklace", init: "VN", bg: "#3A5A3A", likes: 22, date: "5 days ago" },
 ];
 
-export const CATEGORIES = ["Yantra", "Pendant", "Crystals", "Bracelet", "Rudraksha"];
+export const CATEGORIES = ["Yantra", "Pendant", "Vastu", "Mala", "Bracelet", "Rudraksha", "Crystals"];
 export const PURPOSES = ["Wealth", "Love", "Protection", "Peace", "Career", "Health", "Home Harmony"];
 export const PRICE_RANGES = [
   { label: "Under ₹1,000", min: 0, max: 1000 },
