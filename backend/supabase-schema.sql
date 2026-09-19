@@ -157,3 +157,22 @@ create policy "Public read chat_sessions" on chat_sessions for select using (tru
 create policy "Allow chat_sessions insert" on chat_sessions for insert with check (true);
 create policy "Public read chat_messages" on chat_messages for select using (true);
 create policy "Allow chat_messages insert" on chat_messages for insert with check (true);
+
+-- Customer reviews. Created by infra/db/2026-09-19_product_reviews.sql, which
+-- also carries the triggers and row-level security this table depends on: the
+-- verified-purchase badge and the published name are derived server-side, and
+-- products.rating / products.reviews are a cache recomputed from these rows
+-- (aggregated across a variant group).
+create table if not exists product_reviews (
+  id uuid primary key default gen_random_uuid(),
+  product_id bigint references products on delete cascade not null,
+  user_id uuid not null default auth.uid(),
+  display_name text,
+  rating int not null check (rating between 1 and 5),
+  title text, body text,
+  verified_purchase boolean not null default false,
+  status text not null default 'published',   -- published | hidden (moderation)
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (product_id, user_id)                -- one review per person per option
+);

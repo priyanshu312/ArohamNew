@@ -1,76 +1,71 @@
 import { useState, useEffect, useRef } from "react";
 import { Star, ChevronLeft, ChevronRight } from "lucide-react";
-import { MAROON, GOLD, IVORY, SANS, SERIF } from "@nakshra/shared-config/theme";
-import { COMMENTS_DATA } from "@nakshra/shared-config/data";
-import { NakshraProduct } from "@nakshra/shared-types/product";
-import { FloatingInput } from "@visual/components/auth/FloatingInput";
-import { FloatingSelect } from "@visual/components/auth/FloatingSelect";
+import { Link } from "react-router";
+import { MAROON, GOLD, SANS, SERIF } from "@nakshra/shared-config/theme";
 import { supabase } from "@nakshra/shared-services";
+import { timeAgo } from "@nakshra/shared-hooks/useReviews";
 import { useTranslation } from "react-i18next";
 
-export function CommunityComments({ products = [] }: { products?: NakshraProduct[] }) {
-  const [liked, setLiked] = useState<Record<string | number, boolean>>({});
-  const [showForm, setShowForm] = useState(false);
-  const [review, setReview] = useState({ name: "", rating: 5, text: "", product: "" });
-  const [submitted, setSubmitted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+interface CommunityReview {
+  id: string;
+  name: string;
+  rating: number;
+  title: string;
+  body: string;
+  verified: boolean;
+  createdAt: string;
+  productName: string;
+  productSlug: string;
+}
+
+/**
+ * The newest reviews customers have actually written, pulled from the same
+ * table the product pages write to. Nothing is seeded: with no reviews yet the
+ * section renders nothing at all rather than showing invented testimonials.
+ * Writing happens on the product page, where a rating attaches to a product.
+ */
+export function CommunityComments() {
+  const [reviews, setReviews] = useState<CommunityReview[]>([]);
   const [isPaused, setIsPaused] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
 
-
-  // Custom user-submitted reviews list + default comments
-  const [customReviews, setCustomReviews] = useState<any[]>(() => {
-    try {
-      const cached = localStorage.getItem("Nakshra_custom_reviews");
-      return cached ? JSON.parse(cached) : [];
-    } catch (e) {
-      return [];
-    }
-  });
-
-  // Fetch reviews from Supabase on mount and merge with localStorage
   useEffect(() => {
+    let cancelled = false;
     Promise.resolve(
-      supabase.from("reviews").select("*").order("created_at", { ascending: false })
-    ).then(({ data, error }) => {
-      const cachedStr = localStorage.getItem("Nakshra_custom_reviews");
-      const cached: any[] = cachedStr ? JSON.parse(cachedStr) : [];
-      const combinedMap = new Map();
-
-      // First add local cached reviews
-      cached.forEach(r => combinedMap.set(r.id || `${r.name}-${r.text}`, r));
-
-      // Then add Supabase reviews
-      if (data && data.length > 0 && !error) {
-        data.forEach((r: any) => {
-          const item = {
-            id: r.id,
-            name: r.name,
-            city: r.city || "Verified Buyer",
-            rating: r.rating || 5,
-            text: r.text,
-            product: r.product || "Sacred Item",
-            likes: r.likes || 0,
-            date: "Just now",
-            init: r.name ? r.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) : "VB",
-            bg: "#5B1F24"
-          };
-          combinedMap.set(r.id || `${r.name}-${r.text}`, item);
-        });
-      }
-
-      const merged = Array.from(combinedMap.values());
-      setCustomReviews(merged);
-      localStorage.setItem("Nakshra_custom_reviews", JSON.stringify(merged));
-    }).catch(() => {});
+      supabase
+        .from("product_reviews")
+        .select("id,display_name,rating,title,body,verified_purchase,created_at,products(name,slug,variant_group)")
+        .eq("status", "published")
+        .not("body", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(12),
+    )
+      .then(({ data, error }) => {
+        if (cancelled || error || !data) return;
+        setReviews(
+          data.map((r: any) => ({
+            id: String(r.id),
+            name: r.display_name || "Nakshra Devotee",
+            rating: Number(r.rating) || 0,
+            title: r.title || "",
+            body: r.body || "",
+            verified: !!r.verified_purchase,
+            createdAt: r.created_at,
+            // The listing name, so a review of "Silver, 3 g" reads as the product.
+            productName: r.products?.variant_group || r.products?.name || "",
+            productSlug: r.products?.slug || "",
+          })),
+        );
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const allReviews = [...customReviews, ...COMMENTS_DATA];
-
-  // 2-second smooth auto-slide
   useEffect(() => {
-    if (isPaused || showForm) return;
+    if (isPaused || reviews.length < 2) return;
     const interval = setInterval(() => {
       if (!scrollRef.current) return;
       const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
@@ -80,142 +75,55 @@ export function CommunityComments({ products = [] }: { products?: NakshraProduct
         scrollRef.current.scrollBy({ left: 350, behavior: "smooth" });
       }
     }, 4500);
-
     return () => clearInterval(interval);
-  }, [isPaused, showForm, allReviews.length]);
+  }, [isPaused, reviews.length]);
 
   const scrollByAmount = (direction: "left" | "right") => {
-    if (!scrollRef.current) return;
-    scrollRef.current.scrollBy({
-      left: direction === "left" ? -350 : 350,
-      behavior: "smooth"
-    });
+    scrollRef.current?.scrollBy({ left: direction === "left" ? -350 : 350, behavior: "smooth" });
   };
 
-  const handleSubmitReview = async () => {
-    if (!review.name.trim() || !review.text.trim()) {
-      alert("Please fill in your name and review text.");
-      return;
-    }
-    setIsSubmitting(true);
-    
-    const newRev = {
-      id: Date.now(),
-      name: review.name.trim(),
-      city: "Verified Buyer",
-      rating: review.rating,
-      text: review.text.trim(),
-      product: review.product || (products[0]?.name || "Sacred Product"),
-      likes: 0,
-      date: "Just now",
-      init: review.name.trim().split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2),
-      bg: "#5B1F24"
-    };
+  if (reviews.length === 0) return null;
 
-    try {
-      await Promise.resolve(
-        supabase.from("reviews").insert({
-          name: newRev.name,
-          rating: newRev.rating,
-          text: newRev.text,
-          product: newRev.product,
-          city: newRev.city || "Verified Buyer",
-          status: "Approved",
-          likes: 0
-        })
-      ).catch((err) => console.warn("Supabase review insert warning:", err));
-
-      // Add to local state and localStorage immediately
-      const updatedList = [newRev, ...customReviews];
-      setCustomReviews(updatedList);
-      localStorage.setItem("Nakshra_custom_reviews", JSON.stringify(updatedList));
-
-      setSubmitted(true);
-      setTimeout(() => {
-        if (scrollRef.current) {
-          scrollRef.current.scrollTo({ left: 0, behavior: "smooth" });
-        }
-      }, 150);
-    } catch (e: any) {
-      console.error("Error saving review: ", e);
-      const updatedList = [newRev, ...customReviews];
-      setCustomReviews(updatedList);
-      localStorage.setItem("Nakshra_custom_reviews", JSON.stringify(updatedList));
-      setSubmitted(true);
-      setTimeout(() => {
-        if (scrollRef.current) {
-          scrollRef.current.scrollTo({ left: 0, behavior: "smooth" });
-        }
-      }, 150);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const average =
+    Math.round((reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) * 10) / 10;
 
   return (
     <section className="pt-10 sm:pt-16 pb-4 sm:pb-6 px-4 sm:px-6 lg:px-10" style={{ background: "#FAF7F2" }}>
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-14">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 sm:mb-14">
           <div>
-            <span className="text-xs tracking-[0.2em] uppercase font-medium mb-3 block" style={{ color: GOLD, fontFamily: SANS }}>{t("community.badge", "Community")}</span>
-            <h2 style={{ fontFamily: SERIF, fontSize: "clamp(2rem,4vw,3rem)", fontWeight: 500, color: MAROON }}>{t("community.title", "What Our Community Says")}</h2>
-            <p className="text-sm mt-1" style={{ color: "#7A6A58" }}>{allReviews.length} {t("community.reviews_count", "verified reviews")} · 4.8 {t("community.avg_rating", "average rating")}</p>
+            <span className="text-xs tracking-[0.2em] uppercase font-medium mb-3 block" style={{ color: GOLD, fontFamily: SANS }}>
+              {t("community.badge", "Community")}
+            </span>
+            <h2 style={{ fontFamily: SERIF, fontSize: "clamp(2rem,4vw,3rem)", fontWeight: 500, color: MAROON }}>
+              {t("community.title", "What Our Community Says")}
+            </h2>
+            <p className="text-sm mt-1" style={{ color: "#7A6A58" }}>
+              {reviews.length} {reviews.length === 1 ? "review" : "reviews"} · {average.toFixed(1)}{" "}
+              {t("community.avg_rating", "average rating")}
+            </p>
           </div>
-          <div className="flex items-center gap-3 self-start">
-            <button onClick={() => {
-                setShowForm(s => !s);
-                if (submitted) {
-                  setSubmitted(false);
-                  setReview({ name: "", rating: 5, text: "", product: "" });
-                }
-              }}
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-semibold transition-all hover:opacity-80"
-              style={{ background: MAROON, color: IVORY }}>
-              ✍ {t("community.write_review", "Write a Review")}
-            </button>
-          </div>
+          {reviews.length > 1 && (
+            <div className="flex items-center gap-2 self-start">
+              <button
+                aria-label="Previous reviews"
+                onClick={() => scrollByAmount("left")}
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-colors hover:bg-black/5"
+                style={{ border: "1px solid rgba(91,31,36,0.15)", color: MAROON }}
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                aria-label="Next reviews"
+                onClick={() => scrollByAmount("right")}
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-colors hover:bg-black/5"
+                style={{ border: "1px solid rgba(91,31,36,0.15)", color: MAROON }}
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          )}
         </div>
-
-
-        {showForm && (
-          <div className="mb-10 rounded-3xl p-7" style={{ background: "#FFFFFF", border: "1px solid rgba(91,31,36,0.08)", boxShadow: "0 4px 30px rgba(91,31,36,0.07)" }}>
-            {submitted ? (
-              <div className="text-center py-6">
-                <div className="text-4xl mb-3">🙏</div>
-                <h3 className="text-lg font-semibold mb-1" style={{ fontFamily: SERIF, color: MAROON }}>Thank You for Your Review!</h3>
-                <p className="text-sm" style={{ color: "#7A6A58" }}>Your experience has been posted and will help others in their spiritual journey.</p>
-              </div>
-            ) : (
-              <>
-                <h3 className="text-lg font-semibold mb-6" style={{ fontFamily: SERIF, color: MAROON }}>Share Your Experience</h3>
-                <div className="grid md:grid-cols-2 gap-4 mb-4">
-                  <FloatingInput label="Your Name" value={review.name} onChange={v => setReview(r => ({ ...r, name: v }))} required />
-                  <FloatingSelect label="Product Purchased" options={products.length ? products.map(p => p.name) : ["Sacred Product", "Rudraksha", "Yantra", "Crystals"]} value={review.product} onChange={v => setReview(r => ({ ...r, product: v }))} />
-                </div>
-                <div className="mb-4">
-                  <div className="text-xs font-semibold mb-2" style={{ color: MAROON }}>Your Rating</div>
-                  <div className="flex gap-2">
-                    {[1, 2, 3, 4, 5].map(n => (
-                      <button key={n} onClick={() => setReview(r => ({ ...r, rating: n }))} className="transition-transform hover:scale-110">
-                        <Star size={24} fill={n <= review.rating ? GOLD : "none"} stroke={GOLD} strokeWidth={1.5} />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <textarea value={review.text} onChange={e => setReview(r => ({ ...r, text: e.target.value }))}
-                  placeholder="Share how this product has impacted your life…" rows={4}
-                  className="w-full px-4 py-3 rounded-2xl text-sm outline-none resize-none mb-4"
-                  style={{ border: "1.5px solid rgba(91,31,36,0.12)", background: "#FAF7F2", color: "#222222", fontFamily: SANS }}
-                  onFocus={e => { e.target.style.borderColor = GOLD; }} onBlur={e => { e.target.style.borderColor = "rgba(91,31,36,0.12)"; }} />
-                <button onClick={handleSubmitReview} disabled={isSubmitting}
-                  className="px-8 py-3 rounded-2xl text-sm font-semibold transition-all hover:opacity-80"
-                  style={{ background: `linear-gradient(135deg,${MAROON},#7A2A30)`, color: IVORY, opacity: isSubmitting ? 0.7 : 1 }}>
-                  {isSubmitting ? "Saving..." : "Submit Review"}
-                </button>
-              </>
-            )}
-          </div>
-        )}
 
         <div
           ref={scrollRef}
@@ -224,24 +132,55 @@ export function CommunityComments({ products = [] }: { products?: NakshraProduct
           className="flex gap-5 overflow-x-auto pb-3 -mx-6 lg:-mx-10 px-6 lg:px-10 scroll-pl-6 lg:scroll-pl-10"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none", scrollSnapType: "x mandatory" }}
         >
-          {allReviews.map((c, i) => (
-            <div key={c.id || i} className="p-6 rounded-2xl transition-all hover:-translate-y-1 hover:shadow-xl flex-shrink-0 flex flex-col justify-between"
-              style={{ background: "#FFFFFF", border: "1px solid rgba(91,31,36,0.07)", boxShadow: "0 2px 12px rgba(91,31,36,0.04)", width: "clamp(280px,80vw,340px)", scrollSnapAlign: "start" }}>
+          {reviews.map(r => (
+            <div
+              key={r.id}
+              className="p-6 rounded-2xl transition-all hover:-translate-y-1 hover:shadow-xl flex-shrink-0 flex flex-col justify-between"
+              style={{
+                background: "#FFFFFF",
+                border: "1px solid rgba(91,31,36,0.07)",
+                boxShadow: "0 2px 12px rgba(91,31,36,0.04)",
+                width: "clamp(280px,80vw,340px)",
+                scrollSnapAlign: "start",
+              }}
+            >
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex">{Array.from({ length: c.rating }).map((_, j) => <Star key={j} size={12} fill={GOLD} stroke={GOLD} strokeWidth={1.5} />)}</div>
-                  <span className="text-[10px]" style={{ color: "#9A8A78" }}>{c.date}</span>
+                <div className="flex gap-0.5 mb-3">
+                  {Array.from({ length: 5 }).map((_, j) => (
+                    <Star key={j} size={13} fill={j < Math.round(r.rating) ? GOLD : "none"} stroke={GOLD} strokeWidth={1.5} />
+                  ))}
                 </div>
-                <p className="text-sm leading-relaxed mb-3 italic" style={{ color: "#4A3A2A", wordBreak: "break-word" }}>"{c.text}"</p>
-                <div className="text-[10px] mb-4 px-2 py-1 rounded-lg inline-block self-start" style={{ background: "rgba(200,160,68,0.08)", color: "#8B6914" }}>📦 {c.product}</div>
+                {r.title && (
+                  <p className="text-sm font-semibold mb-1.5" style={{ fontFamily: SERIF, color: MAROON }}>{r.title}</p>
+                )}
+                <p className="text-sm leading-relaxed mb-4 line-clamp-6" style={{ color: "#5A4A3A" }}>{r.body}</p>
               </div>
-              <div className="flex items-center justify-between pt-3 mt-auto" style={{ borderTop: "1px solid rgba(91,31,36,0.07)" }}>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: c.bg || "#5B1F24", color: GOLD, fontFamily: SERIF }}>{c.init}</div>
-                  <div>
-                    <div className="text-xs font-semibold" style={{ fontFamily: SERIF, color: MAROON }}>{c.name}</div>
-                    <div className="text-[10px]" style={{ color: "#9A8A78" }}>{c.city || "Verified Buyer"} · ✓ Verified</div>
+              <div>
+                {r.productSlug && (
+                  <Link
+                    to={`/shop/${r.productSlug}`}
+                    className="text-[11px] font-semibold hover:underline block mb-2 truncate"
+                    style={{ color: GOLD }}
+                  >
+                    {r.productName}
+                  </Link>
+                )}
+                <div className="flex items-center justify-between gap-2 pt-3" style={{ borderTop: "1px solid rgba(91,31,36,0.06)" }}>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div
+                      className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold"
+                      style={{ background: MAROON, color: GOLD }}
+                    >
+                      {r.name.trim().charAt(0).toUpperCase() || "N"}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-semibold truncate" style={{ color: MAROON }}>{r.name}</div>
+                      {r.verified && (
+                        <div className="text-[10px]" style={{ color: "#4A8A4A" }}>✓ Verified Purchase</div>
+                      )}
+                    </div>
                   </div>
+                  <span className="text-[10px] flex-shrink-0" style={{ color: "#9A8A78" }}>{timeAgo(r.createdAt)}</span>
                 </div>
               </div>
             </div>

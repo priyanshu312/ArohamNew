@@ -7,16 +7,13 @@ import { useCart } from "@nakshra/shared-state";
 import { useAuth } from "@nakshra/shared-auth";
 import { useWishlist } from "@nakshra/shared-state";
 import { useProducts, variantOptions } from "@nakshra/shared-hooks/useProducts";
+import { useReviews } from "@nakshra/shared-hooks/useReviews";
+import { ProductReviews } from "@visual/components/product/ProductReviews";
 import { NakshraProduct } from "@nakshra/shared-types/product";
 import { DEFAULT_PRODUCTS } from "@nakshra/shared-config/products";
 import { getShiprocketDeliveryEstimate } from "@nakshra/shared-api/shipping";
 
 const PROD_TABS = ["Description", "Benefits", "How to Use", "Temple Ritual", "Reviews"];
-const REVIEWS_DATA = [
-  { name: "Sunita R.",  city: "Delhi",  rating: 5, text: "The quality is outstanding. I can feel the positive energy radiating from the yantra. Temple energization makes a real difference.", verified: true, date: "2 weeks ago" },
-  { name: "Rahul K.",   city: "Chennai",rating: 5, text: "Received beautifully packaged with the authenticity certificate. The craftsmanship is exceptional — worth every rupee.",             verified: true, date: "1 month ago" },
-  { name: "Meera P.",   city: "Pune",   rating: 4, text: "Very happy with my purchase. Delivery was prompt and the product matches the description perfectly. Highly recommend Nakshra.",    verified: true, date: "3 weeks ago" },
-];
 
 export function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -28,6 +25,10 @@ export function ProductDetailPage() {
   const [product, setProduct] = useState<NakshraProduct | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [recommendations, setRecommendations] = useState<any[]>([]);
+  // Held here, not inside the Reviews tab, so the stars in the header show the
+  // new average the moment a shopper posts — the products table only catches up
+  // on the next fetch.
+  const reviewState = useReviews(product, products, user?.id);
 
   useEffect(() => {
     if (product?.id) {
@@ -245,41 +246,7 @@ export function ProductDetailPage() {
         </div>
       ))}
     </div>,
-    <div className="space-y-4 max-w-4xl">
-      <div className="flex items-center gap-6 p-5 rounded-2xl" style={{ background: "rgba(200,160,68,0.06)", border: "1px solid rgba(200,160,68,0.15)" }}>
-        <div className="text-center">
-          <div className="text-4xl font-semibold" style={{ fontFamily: SERIF, color: MAROON }}>{product.rating}</div>
-          <div className="flex gap-0.5 mt-1">{Array.from({ length: 5 }).map((_, j) => <Star key={j} size={14} fill={j < Math.round(product.rating) ? GOLD : "none"} stroke={GOLD} />)}</div>
-          <div className="text-xs mt-1" style={{ color: "#7A6A58" }}>{product.reviews} reviews</div>
-        </div>
-        <div className="flex-1">
-          {[5, 4, 3, 2, 1].map(n => (
-            <div key={n} className="flex items-center gap-2 mb-1">
-              <span className="text-xs w-4" style={{ color: "#9A8A78" }}>{n}</span>
-              <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(91,31,36,0.08)" }}>
-                <div className="h-full rounded-full" style={{ width: `${n === 5 ? 75 : n === 4 ? 18 : n === 3 ? 5 : 1}%`, background: GOLD }} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      {REVIEWS_DATA.map((r, i) => (
-        <div key={i} className="p-5 rounded-2xl" style={{ background: "#FFFFFF", border: "1px solid rgba(91,31,36,0.07)" }}>
-          <div className="flex items-start justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: MAROON, color: GOLD }}>{r.name[0]}</div>
-              <div>
-                <div className="text-xs font-semibold" style={{ color: MAROON }}>{r.name} · {r.city}</div>
-                {r.verified && <div className="text-[10px]" style={{ color: "#4A8A4A" }}>✓ Verified Purchase</div>}
-              </div>
-            </div>
-            <span className="text-[10px]" style={{ color: "#9A8A78" }}>{r.date}</span>
-          </div>
-          <div className="flex mb-2">{Array.from({ length: r.rating }).map((_, j) => <Star key={j} size={11} fill={GOLD} stroke={GOLD} />)}</div>
-          <p className="text-sm leading-relaxed" style={{ color: "#5A4A3A" }}>{r.text}</p>
-        </div>
-      ))}
-    </div>,
+    <ProductReviews state={reviewState} />,
   ];
 
   return (
@@ -391,13 +358,37 @@ export function ProductDetailPage() {
             <h1 className="mb-1" style={{ fontFamily: SERIF, fontSize: "clamp(1.5rem,3vw,2.25rem)", fontWeight: 500, color: MAROON, lineHeight: 1.15 }}>{product.name}</h1>
             <p className="text-sm mb-3" style={{ color: GOLD, fontFamily: SANS, fontWeight: 600 }}>{product.subtitle}</p>
             <p className="text-sm leading-relaxed mb-4" style={{ color: "#5A4A3A" }}>{product.shortDesc}</p>
+            {/* Live from the reviews themselves, so it is right the instant one is
+                posted. An unrated product says so rather than showing 0.0 stars. */}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-5">
-              <div className="flex items-center gap-3">
-                <div className="flex">{Array.from({ length: 5 }).map((_, j) => <Star key={j} size={14} fill={j < Math.round(product.rating) ? GOLD : "none"} stroke={GOLD} strokeWidth={1.5} />)}</div>
-                <span className="text-sm font-medium" style={{ color: MAROON }}>{product.rating}</span>
-                <span className="text-xs whitespace-nowrap" style={{ color: "#9A8A78" }}>({product.reviews} reviews)</span>
-              </div>
-              <span className="text-xs whitespace-nowrap" style={{ color: "#4A8A4A" }}>· 120+ bought this month</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setTab(4);
+                  document.getElementById("product-tabs")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                className="flex items-center gap-3 transition-opacity hover:opacity-75"
+              >
+                <div className="flex">
+                  {Array.from({ length: 5 }).map((_, j) => (
+                    <Star
+                      key={j}
+                      size={14}
+                      fill={j < Math.round(reviewState.summary.average) ? GOLD : "none"}
+                      stroke={reviewState.summary.count ? GOLD : "#C9BCAA"}
+                      strokeWidth={1.5}
+                    />
+                  ))}
+                </div>
+                {reviewState.summary.count > 0 && (
+                  <span className="text-sm font-medium" style={{ color: MAROON }}>{reviewState.summary.average.toFixed(1)}</span>
+                )}
+                <span className="text-xs whitespace-nowrap underline underline-offset-2" style={{ color: "#9A8A78" }}>
+                  {reviewState.summary.count > 0
+                    ? `${reviewState.summary.count} ${reviewState.summary.count === 1 ? "review" : "reviews"}`
+                    : "Be the first to review"}
+                </span>
+              </button>
             </div>
             {/* Price & Quantity Row */}
             <div className="flex items-center justify-between gap-3 mb-2 flex-wrap sm:flex-nowrap">
@@ -590,7 +581,7 @@ export function ProductDetailPage() {
         </div>
       </div>
       {/* Info tabs */}
-      <div className="sticky top-16 z-30 border-b overflow-x-auto" style={{ background: "rgba(250,247,242,0.97)", backdropFilter: "blur(12px)", borderColor: "rgba(91,31,36,0.08)" }}>
+      <div id="product-tabs" className="sticky top-16 z-30 border-b overflow-x-auto" style={{ background: "rgba(250,247,242,0.97)", backdropFilter: "blur(12px)", borderColor: "rgba(91,31,36,0.08)" }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-10 flex gap-0">
           {PROD_TABS.map((t, i) => (
             <button key={t} onClick={() => setTab(i)}

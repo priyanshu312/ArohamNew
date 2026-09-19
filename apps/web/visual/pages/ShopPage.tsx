@@ -657,7 +657,7 @@ export function ShopPage() {
                               {p.rating && (
                                 <div className="flex items-center gap-0.5 sm:gap-1 sm:bg-amber-50 sm:px-2 sm:py-0.5 sm:rounded-full sm:border sm:border-amber-900/10">
                                   <Star size={10} className="sm:w-[11px] sm:h-[11px]" fill={GOLD} stroke={GOLD} />
-                                  <span className="text-[10px] sm:text-[11px] font-bold" style={{ color: MAROON }}>{p.rating}</span>
+                                  <span className="text-[10px] sm:text-[11px] font-bold" style={{ color: MAROON }}>{Number(p.rating).toFixed(1)}</span>
                                   {p.reviews && <span className="text-[8px] sm:text-[9px]" style={{ color: "#8A7A68" }}>({p.reviews})</span>}
                                 </div>
                               )}
@@ -829,8 +829,8 @@ export function ShopPage() {
                                   <Star key={j} size={11} fill={j < Math.round(p.rating!) ? GOLD : "none"} stroke={GOLD} strokeWidth={1.5} />
                                 ))}
                               </div>
-                              <span className="text-xs font-bold" style={{ color: MAROON }}>{p.rating}</span>
-                              {p.reviews && <span className="text-xs text-amber-900/60 font-medium">({p.reviews} verified reviews)</span>}
+                              <span className="text-xs font-bold" style={{ color: MAROON }}>{Number(p.rating).toFixed(1)}</span>
+                              {p.reviews && <span className="text-xs text-amber-900/60 font-medium">({p.reviews} {p.reviews === 1 ? "review" : "reviews"})</span>}
                             </div>
                           )}
                         </div>

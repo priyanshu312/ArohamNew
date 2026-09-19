@@ -38,7 +38,7 @@ export function HomePage() {
       <ProductsAndCombos products={groupVariants(products)} onProductClick={goToProduct} onAddToCart={p => addToCart(p)} onAddCombo={handleAddCombo} />
       {FEATURE_WHY_NAKSHRA && <WhyNakshra />}
       {FEATURE_CUSTOMER_STORIES && <VideoTestimonials />}
-      {FEATURE_REVIEWS && <CommunityComments products={products} />}
+      {FEATURE_REVIEWS && <CommunityComments />}
       <Newsletter />
       {FEATURE_CHAT && <AstroChatWidget />}
     </main>

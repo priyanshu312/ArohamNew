@@ -73,10 +73,17 @@ export function ProductCard({ product: p, onProductClick, onAddToCart, wishKey =
         <div className="p-3.5 pb-2">
           <h3 className="text-xs font-semibold leading-snug mb-1 line-clamp-2 min-h-[2rem]" style={{ fontFamily: SERIF, color: MAROON }}>{p.name}</h3>
           <p className="text-[10px] mb-2 truncate" style={{ color: "#7A6A58" }}>{p.subtitle}</p>
-          <div className="flex items-center gap-1">
-            {Array.from({ length: 5 }).map((_, j) => <Star key={j} size={10} fill={j < Math.round(p.rating) ? GOLD : "none"} stroke={GOLD} strokeWidth={1.5} />)}
-            <span className="text-[9px] ml-1 font-medium" style={{ color: "#9A8A78" }}>({p.reviews})</span>
-          </div>
+          {/* An unrated product says so. A row of five empty stars reads as a
+              bad score rather than as "nobody has reviewed this yet". */}
+          {(p.reviews || 0) > 0 ? (
+            <div className="flex items-center gap-1">
+              {Array.from({ length: 5 }).map((_, j) => <Star key={j} size={10} fill={j < Math.round(p.rating || 0) ? GOLD : "none"} stroke={GOLD} strokeWidth={1.5} />)}
+              <span className="text-[9px] ml-1 font-medium" style={{ color: "#9A8A78" }}>({p.reviews})</span>
+            </div>
+          ) : (
+            // Nothing to say yet — an empty row keeps the cards the same height.
+            <div className="h-[10px]" aria-hidden="true" />
+          )}
         </div>
       </div>
       <div className="p-3 pt-1 flex flex-col gap-2">

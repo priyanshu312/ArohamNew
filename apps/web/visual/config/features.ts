@@ -33,8 +33,10 @@ export const FEATURE_I18N = flag(import.meta.env.VITE_FEATURE_I18N, false);
 /** Home: "From Earth to Sacred Artifact" — the 5-step craftsmanship section. */
 export const FEATURE_CRAFTSMANSHIP = flag(import.meta.env.VITE_FEATURE_CRAFTSMANSHIP, false);
 
-/** Home: the community section where visitors post reviews/comments. */
-export const FEATURE_REVIEWS = flag(import.meta.env.VITE_FEATURE_REVIEWS, false);
+/** Home: the carousel of the newest customer reviews. On, because it now reads
+ *  real reviews from product_reviews and renders nothing until there are some —
+ *  the version that was off mixed in a hard-coded list of made-up testimonials. */
+export const FEATURE_REVIEWS = flag(import.meta.env.VITE_FEATURE_REVIEWS, true);
 
 /** Home: "Customer Stories" video testimonials. Off because the stories name test
  *  products no longer sold, and the thumbnails load from another brand's Shopify store. */
