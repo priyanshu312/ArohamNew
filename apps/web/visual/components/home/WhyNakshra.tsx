@@ -44,7 +44,7 @@ export function WhyNakshra() {
             </h2>
           </div>
           <p className="hidden lg:block text-sm leading-relaxed lg:max-w-xs" style={{ color: "rgba(250,247,242,0.45)", fontFamily: SANS }}>
-            {t("why.subheading", "12,000+ families trust Nakshra because we treat authenticity as a non-negotiable — not a marketing claim.")}
+            {t("why.subheading", "We treat authenticity as non-negotiable — every piece energised, certified and sent with its papers.")}
           </p>
         </div>
 
@@ -121,10 +121,14 @@ export function WhyNakshra() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-px mb-5" style={{ background: "rgba(250,247,242,0.06)", borderRadius: 20, overflow: "hidden" }}>
           {[
-            { n: "12,000+", l: t("why.stat_families", "Families Served"), sub: t("why.stat_states", "Across 18 states") },
-            { n: "100%",    l: t("why.temple_energized", "Temple Energized"), sub: "No exceptions" },
-            { n: "4.9 / 5", l: t("why.stat_rating", "Customer Rating"), sub: "3,200+ reviews" },
-            { n: "7 Days",  l: t("why.stat_window", "Return Window"), sub: "No questions asked" },
+            // Only things that are true of every order. The tiles that used to
+            // sit here — "12,000+ families served across 18 states" and
+            // "4.9/5 from 3,200+ reviews" — were invented, and the rating one
+            // would have contradicted the real review counts on the shop.
+            { n: "100%",      l: t("why.temple_energized", "Temple Energized"), sub: "Every order" },
+            { n: "Free",      l: t("why.stat_shipping", "Shipping"), sub: "On every order" },
+            { n: "7 Days",    l: t("why.stat_window", "Return Window"), sub: "No questions asked" },
+            { n: "Certified", l: t("why.stat_authenticity", "Authenticity"), sub: "With every product" },
           ].map(({ n, l, sub }) => (
             <div key={l} className="flex flex-col items-center justify-center py-6 lg:py-9 px-3 text-center transition-all duration-300 hover:bg-white/5" style={{ background: "rgba(250,247,242,0.02)" }}>
               <div style={{ fontFamily: SERIF, fontSize: "clamp(1.2rem,3.5vw,2.4rem)", fontWeight: 600, color: IVORY, letterSpacing: "-0.02em" }}>{n}</div>

@@ -30,18 +30,23 @@ export const FEATURE_KUNDLI = flag(import.meta.env.VITE_FEATURE_KUNDLI, false);
 /** Language translator dropdown (Nav + auth page). App stays in the default language. */
 export const FEATURE_I18N = flag(import.meta.env.VITE_FEATURE_I18N, false);
 
-/** Home: "From Earth to Sacred Artifact" — the 5-step craftsmanship section. */
-export const FEATURE_CRAFTSMANSHIP = flag(import.meta.env.VITE_FEATURE_CRAFTSMANSHIP, false);
+/** Home: "From Earth to Sacred Artifact" — the 5-step craftsmanship section.
+ *  On. Its photos are served from nakshra.in now, not another shop's store. */
+export const FEATURE_CRAFTSMANSHIP = flag(import.meta.env.VITE_FEATURE_CRAFTSMANSHIP, true);
 
 /** Home: the carousel of the newest customer reviews. On, because it now reads
  *  real reviews from product_reviews and renders nothing until there are some —
  *  the version that was off mixed in a hard-coded list of made-up testimonials. */
 export const FEATURE_REVIEWS = flag(import.meta.env.VITE_FEATURE_REVIEWS, true);
 
-/** Home: "Customer Stories" video testimonials. Off because the stories name test
- *  products no longer sold, and the thumbnails load from another brand's Shopify store. */
+/** Home: "Customer Stories" video testimonials. Still off — and this one cannot
+ *  be fixed by swapping photos. Every story in it is invented: eight named
+ *  people, their cities, their star ratings and their quotes, for products the
+ *  shop does not sell, with durations for videos that do not exist. Turn this on
+ *  when there are real customer videos to put in it; until then the real reviews
+ *  carousel (FEATURE_REVIEWS) is the honest version of the same idea. */
 export const FEATURE_CUSTOMER_STORIES = flag(import.meta.env.VITE_FEATURE_CUSTOMER_STORIES, false);
 
-/** Home: "Not just products. Sacred instruments." Off because its photos load from
- *  another brand's Shopify store. */
-export const FEATURE_WHY_NAKSHRA = flag(import.meta.env.VITE_FEATURE_WHY_NAKSHRA, false);
+/** Home: "Not just products. Sacred instruments."
+ *  On. Its photos are served from nakshra.in now, not another shop's store. */
+export const FEATURE_WHY_NAKSHRA = flag(import.meta.env.VITE_FEATURE_WHY_NAKSHRA, true);

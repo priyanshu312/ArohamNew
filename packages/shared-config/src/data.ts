@@ -1,12 +1,17 @@
 import { NakshraProduct } from "@nakshra/shared-types/product";
 import { GOLD, MAROON } from "./theme";
 
-const baglaImg       = "https://cdn.shopify.com/s/files/1/0878/4907/4985/files/1_a144e37f-680e-430f-80bd-e7c35b9d2ebb.webp?v=1759924225";
-const pendantSilImg  = "https://cdn.shopify.com/s/files/1/0878/4907/4985/files/Artboard1_19.webp?v=1782733204";
-const pyramidImg     = "https://cdn.shopify.com/s/files/1/0878/4907/4985/files/Artboard1_18.webp?v=1782199970";
-const yantraPlateImg = "https://cdn.shopify.com/s/files/1/0878/4907/4985/files/1_23.jpg?v=1782120393";
-const gemstonImg     = "https://cdn.shopify.com/s/files/1/0878/4907/4985/files/1-2026-06-19T175355.300.webp?v=1781871863";
-const navratnaImg    = "https://cdn.shopify.com/s/files/1/0878/4907/4985/files/1-1_f53e2d9e-40a0-4f0e-95a9-8d6a878b2f77.webp?v=1781163169";
+// Home-page imagery. These used to be hotlinked from another brand's Shopify
+// store (cdn.shopify.com/s/files/1/0878/4907/4985/...), which meant that shop
+// served our home page and could change or delete any of it without warning.
+// They now point at files on nakshra.in, from the catalogue's own photos.
+const CATALOG = "https://nakshra.in/images/products";
+const baglaImg       = `${CATALOG}/baglamukhi-yantra-copper-gold-plated-4-inch.jpg`;
+const pendantSilImg  = `${CATALOG}/baglamukhi-yantra-pendant-silver.jpg`;
+const pyramidImg     = `${CATALOG}/vastu-pyramid-crystal.jpg`;
+const yantraPlateImg = `${CATALOG}/shree-yantra-plate-copper-5-inch.jpg`;
+const gemstonImg     = `${CATALOG}/loose-stone-amethyst.jpg`;
+const navratnaImg    = `${CATALOG}/navratna-pendant-silver.jpg`;
 
 export { baglaImg, pendantSilImg, pyramidImg, yantraPlateImg, gemstonImg, navratnaImg };
 
