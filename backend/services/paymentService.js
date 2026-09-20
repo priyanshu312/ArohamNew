@@ -213,24 +213,42 @@ async function confirmOrder(orderId, paymentDetails) {
 
 // FAILURE path: payment FAILED → order PAYMENT_FAILED → release reserved stock
 async function failOrder(orderId, reason) {
-  // Never downgrade an order that has already been paid/confirmed — a stray or
-  // replayed verify/webhook call with missing fields must not flip it back.
-  const { data: existing } = await supabase.from("orders")
-    .select("status").eq("id", orderId).maybeSingle();
-  if (existing && (existing.status === "CONFIRMED" || existing.status === "SHIPPED" || existing.status === "DELIVERED")) {
-    console.warn(`[Payments] failOrder skipped for #${orderId} — already ${existing.status}.`);
+  // Claim the order exactly once, for the same reason confirmOrder does.
+  //
+  // The old guard only skipped CONFIRMED/SHIPPED/DELIVERED, so a second call on
+  // an order that was ALREADY PAYMENT_FAILED sailed through and released the
+  // stock again. That matters more here than it did on the confirm side:
+  // release_stock does `stock = stock + p_qty` with no upper clamp, so every
+  // repeat invents inventory that does not exist and the shop oversells.
+  //
+  // Two callers reach this for the same failure — /payments/verify when the
+  // signature check fails, and the payment.failed webhook — so the second call
+  // is the normal case, not an edge case.
+  const { data: claimed, error: claimErr } = await supabase.from("orders")
+    .update({ status: "PAYMENT_FAILED" })
+    .eq("id", orderId)
+    .eq("status", "PENDING")
+    .select("id");
+
+  if (claimErr) {
+    console.error(`[Payments] Could not claim order #${orderId} for failure: ${claimErr.message}`);
+    return;
+  }
+  if (!claimed || claimed.length === 0) {
+    console.warn(`[Payments] failOrder skipped for #${orderId} — not PENDING (already failed, confirmed, cancelled, or absent).`);
     return;
   }
 
   await supabase.from("payments")
     .update({ status: "FAILED", failure_reason: reason || "Payment failed" })
     .eq("order_id", orderId);
-  await supabase.from("orders").update({ status: "PAYMENT_FAILED" }).eq("id", orderId);
 
   const { data: items } = await supabase.from("order_items")
     .select("product_id, qty").eq("order_id", orderId);
-  for (const it of items || [])
-    await supabase.rpc("release_stock", { p_product_id: it.product_id, p_qty: it.qty });
+  for (const it of items || []) {
+    const { error } = await supabase.rpc("release_stock", { p_product_id: it.product_id, p_qty: it.qty });
+    if (error) console.error(`[Payments] release_stock failed for product ${it.product_id}: ${error.message}`);
+  }
 }
 
 module.exports = { verifyPaymentSignature, verifyWebhookSignature, confirmOrder, failOrder };

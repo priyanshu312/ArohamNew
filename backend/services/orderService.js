@@ -2,6 +2,9 @@
 // "3. ORDER PROCESSING": order (PENDING) → order items → reserve stock → payment record
 const supabase = require("../config/supabase");
 const { sendFeedback } = require("./gorseFeedback");
+// Safe as a top-level require: paymentService does not import this module, so
+// there is no cycle.
+const { failOrder } = require("./paymentService");
 
 const PROMO_CODES = [
   {
@@ -67,7 +70,41 @@ function activePromoCodes() {
   return testCouponEnabled() ? [...PROMO_CODES, TEST_PROMO] : PROMO_CODES;
 }
 
+// Abandoned checkouts hold stock forever otherwise.
+//
+// PaymentPage cancels the order when the Razorpay window is dismissed, but that
+// only helps if the browser is still there to do it — close the tab, lose the
+// connection, or kill the app and the reservation is never released. Eleven
+// such orders were sitting on ten units of stock, the oldest eleven days old.
+//
+// There is no scheduler on the free plan, so this runs opportunistically on
+// order creation: cheap (one indexed query that usually matches nothing) and it
+// cannot fall behind, because it only matters when someone is shopping.
+const ABANDON_AFTER_MINUTES = 60;
+
+async function sweepAbandonedOrders() {
+  const cutoff = new Date(Date.now() - ABANDON_AFTER_MINUTES * 60 * 1000).toISOString();
+  const { data: stale, error } = await supabase
+    .from("orders").select("id").eq("status", "PENDING").lt("created_at", cutoff).limit(25);
+  if (error) { console.error("[orders] abandoned sweep query failed:", error.message); return; }
+  if (!stale || !stale.length) return;
+
+  console.log(`[orders] releasing ${stale.length} abandoned checkout(s) older than ${ABANDON_AFTER_MINUTES}m.`);
+  for (const o of stale) {
+    // failOrder claims the row conditionally, so a concurrent sweep or a late
+    // webhook for the same order cannot release the same stock twice.
+    try {
+      await failOrder(o.id, `Checkout abandoned — no payment within ${ABANDON_AFTER_MINUTES} minutes`);
+    } catch (e) {
+      console.error(`[orders] could not release abandoned order #${o.id}:`, e.message);
+    }
+  }
+}
+
 async function createPendingOrder(userId, products, address, promoCode) {
+  // Best effort — a sweep failure must never stop someone checking out.
+  await sweepAbandonedOrders().catch((e) => console.error("[orders] abandoned sweep failed:", e.message));
+
   const subtotal = products.reduce((s, p) => s + p.subtotal, 0);
   let discount = 0;
   let promoApplied = false;
@@ -114,11 +151,26 @@ async function createPendingOrder(userId, products, address, promoCode) {
   sendFeedback("buy", userId, products.map((p) => p.id));
 
   // 3. Reserve stock → INVENTORY (products.stock / reserved)
+  //
+  // There is no transaction spanning these calls, so a failure partway through
+  // used to leave the earlier items reserved forever: the throw propagated to
+  // the route, which returned 500 without undoing anything, and the PENDING
+  // order sat there holding stock with no payment row to explain it. Two such
+  // orders exist in production. Unwind what we reserved before giving up.
+  const reserved = [];
   for (const p of products) {
     const { error } = await supabase.rpc("reserve_stock", {
       p_product_id: p.id, p_qty: p.qty,
     });
-    if (error) throw new Error(`Stock reserve failed for ${p.name}: ${error.message}`);
+    if (error) {
+      for (const done of reserved) {
+        const { error: relErr } = await supabase.rpc("release_stock", { p_product_id: done.id, p_qty: done.qty });
+        if (relErr) console.error(`[orders] rollback release_stock failed for product ${done.id}: ${relErr.message}`);
+      }
+      await supabase.from("orders").update({ status: "PAYMENT_FAILED" }).eq("id", order.id);
+      throw new Error(`Stock reserve failed for ${p.name}: ${error.message}`);
+    }
+    reserved.push(p);
   }
 
   // 4. Payment record (status: INITIATED) → PAYMENT TABLE
@@ -153,14 +205,25 @@ async function cancelOrder(orderId, userId) {
 
   await supabase.from("orders").update({ status: "CANCELLED" }).eq("id", orderId);
 
-  // PENDING → stock is reserved; CONFIRMED → stock was committed (sold).
-  // release_stock adds the units back in both cases. PAYMENT_FAILED already
-  // released on failure, so leave its stock alone.
+  // PENDING and CONFIRMED both put units back, but NOT the same way.
+  //
+  // release_stock does `stock +qty, reserved -qty`, which is right only while
+  // the units are still reserved — i.e. PENDING. A CONFIRMED order has already
+  // had commit_stock consume its reservation, so running release_stock here
+  // decrements `reserved` a second time and takes the reservation off somebody
+  // else's pending order. That is not theoretical: product 5 sits one short
+  // because of exactly this, and products 9 and 16 lost five more to the
+  // related double-confirm bug.
+  //
+  // PAYMENT_FAILED already released on failure, so leave its stock alone.
   if (order.status === "PENDING" || order.status === "CONFIRMED") {
+    const rpc = order.status === "CONFIRMED" ? "restock_sold" : "release_stock";
     const { data: items } = await supabase
       .from("order_items").select("product_id, qty").eq("order_id", orderId);
-    for (const it of items || [])
-      await supabase.rpc("release_stock", { p_product_id: it.product_id, p_qty: it.qty });
+    for (const it of items || []) {
+      const { error } = await supabase.rpc(rpc, { p_product_id: it.product_id, p_qty: it.qty });
+      if (error) console.error(`[orders/cancel] ${rpc} failed for product ${it.product_id}: ${error.message}`);
+    }
   }
 
   const { data: pay } = await supabase
@@ -200,4 +263,4 @@ async function getUserOrders(userId, phone) {
   return data;
 }
 
-module.exports = { createPendingOrder, cancelOrder, getUserOrders };
+module.exports = { createPendingOrder, cancelOrder, getUserOrders, sweepAbandonedOrders };
