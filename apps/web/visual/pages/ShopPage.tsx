@@ -32,7 +32,7 @@ export function ShopPage() {
   const [cols, setCols] = useState<string[]>(titleParam ? [titleParam] : []);
   const [maxPrice, setMaxPrice] = useState<number>(30000);
   // Must match one of the dropdown's values, or its trigger renders blank.
-  const [sort, setSort] = useState<string>("newest");
+  const [sort, setSort] = useState<string>("featured");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Reset the filter drawer's scroll when it OPENS, and only then. Doing it in
   // a ref callback instead re-ran on every render, so ticking a checkbox
@@ -136,9 +136,12 @@ export function ShopPage() {
   }).sort((a, b) => {
     if (sort === "price-asc") return a.price - b.price;
     if (sort === "price-desc") return b.price - a.price;
-    // Newest first. Sorting by rating or review count is meaningless while every
-    // product sits at zero of both, so those options are gone.
-    return b.id - a.id;
+    if (sort === "newest") return b.id - a.id;
+    // Featured, the default: the curated shop order — categories in the order
+    // the brand leads with, and the products people look for before the long
+    // tail. Ordering by id instead meant the sequence products happened to be
+    // added in was the sequence shoppers saw.
+    return (a.displayOrder ?? 1000) - (b.displayOrder ?? 1000) || a.id - b.id;
   });
 
   const toggleCat = (c: string) => setCats(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
@@ -527,6 +530,7 @@ export function ShopPage() {
                     >
                       <Select.Viewport className="space-y-1">
                         {[
+                          { v: "featured", l: "Featured" },
                           { v: "newest", l: "Newest First" },
                           { v: "price-asc", l: "Price: Low to High" },
                           { v: "price-desc", l: "Price: High to Low" }

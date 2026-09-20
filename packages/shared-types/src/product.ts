@@ -25,4 +25,6 @@ export interface NakshraProduct {
   variantLabel?: string;
   /** Set by groupVariants() on the one card a group shows in listings. */
   variantCount?: number;
+  /** Curated shop position. Lower comes first; every option of a listing shares it. */
+  displayOrder?: number;
 }

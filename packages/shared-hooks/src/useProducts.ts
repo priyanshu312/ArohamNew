@@ -6,12 +6,12 @@ import { safeLocalStorage } from "@nakshra/shared-utils/storage";
 
 // Bumped whenever cached products would show something wrong until the network
 // answers: v2 dropped the test products (17 Sep 2026), v3 added variant groups.
-const CACHE_KEY = "Nakshra_products_cache_v3";
-const OLD_CACHE_KEYS = ["Nakshra_products_cache", "Nakshra_products_cache_v2"];
+const CACHE_KEY = "Nakshra_products_cache_v4";
+const OLD_CACHE_KEYS = ["Nakshra_products_cache", "Nakshra_products_cache_v2", "Nakshra_products_cache_v3"];
 
 // Only what the storefront shows.
 const PRODUCT_COLUMNS =
-  "id,slug,name,subtitle,category,purpose,price,original_price,rating,reviews,img,badges,short_desc,description,benefits,use_for,size,material,stock,variant_group,variant_label";
+  "id,slug,name,subtitle,category,purpose,price,original_price,rating,reviews,img,badges,short_desc,description,benefits,use_for,size,material,stock,variant_group,variant_label,display_order";
 
 function formatImageUrl(url: any) {
   if (!url || typeof url !== "string") return url;
@@ -55,7 +55,8 @@ function mapSupaProducts(data: any[]): NakshraProduct[] {
       // 0 means sold out; `p.stock || 100` turned a sold-out item back into 100.
       stock: Number(p.stock) || 0,
       variantGroup: p.variant_group || undefined,
-      variantLabel: p.variant_label || undefined
+      variantLabel: p.variant_label || undefined,
+      displayOrder: Number(p.display_order ?? 1000)
     };
   });
 }
@@ -119,7 +120,8 @@ async function fetchProductsOnce(): Promise<NakshraProduct[]> {
         .from("products")
         .select(PRODUCT_COLUMNS)
         .eq("is_active", true)
-        .order("id", { ascending: false });
+        .order("display_order", { ascending: true })
+        .order("id", { ascending: true });
       if (!error && Array.isArray(supaData) && supaData.length > 0) {
         const mapped = mapSupaProducts(supaData);
         safeLocalStorage.setItem(CACHE_KEY, JSON.stringify(mapped));
