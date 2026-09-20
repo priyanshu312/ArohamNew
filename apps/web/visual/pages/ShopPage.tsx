@@ -137,6 +137,14 @@ export function ShopPage() {
     if (sort === "price-asc") return a.price - b.price;
     if (sort === "price-desc") return b.price - a.price;
     if (sort === "newest") return b.id - a.id;
+    if (sort === "rating") {
+      // A product nobody has rated ranks below every rated one, rather than
+      // mixing in at zero stars as though it had been rated badly.
+      const ar = (a.reviews || 0) > 0 ? (a.rating || 0) : -1;
+      const br = (b.reviews || 0) > 0 ? (b.rating || 0) : -1;
+      if (ar !== br) return br - ar;
+      return (a.displayOrder ?? 1000) - (b.displayOrder ?? 1000);
+    }
     // Featured, the default: the curated shop order — categories in the order
     // the brand leads with, and the products people look for before the long
     // tail. Ordering by id instead meant the sequence products happened to be
@@ -532,6 +540,7 @@ export function ShopPage() {
                         {[
                           { v: "featured", l: "Featured" },
                           { v: "newest", l: "Newest First" },
+                          { v: "rating", l: "Highest Rated" },
                           { v: "price-asc", l: "Price: Low to High" },
                           { v: "price-desc", l: "Price: High to Low" }
                         ].map(opt => (
