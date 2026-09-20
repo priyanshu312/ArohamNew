@@ -6,6 +6,45 @@ const {
   verifyPaymentSignature, verifyWebhookSignature, confirmOrder, failOrder,
 } = require("../services/paymentService");
 
+// GET /api/payments/config-check — is this deployment able to take a payment?
+//
+// Mirrors /api/shiprocket/status: booleans and a key-id prefix only, never the
+// secret. It exists because the failure it detects is invisible from outside —
+// a bad key pair surfaces as a generic 502 at checkout, and the one clue
+// (`orders.create failed: 401`) is buried in the server log. Read-only: lists
+// one order, creates nothing.
+router.get("/config-check", async (req, res) => {
+  const keyId = process.env.RAZORPAY_KEY_ID || "";
+  const out = {
+    keyIdConfigured: !!keyId,
+    // rzp_test_… / rzp_live_… is enough to spot a test/live mixup. The rest of
+    // the id stays masked, and the secret is never reported in any form.
+    keyIdPrefix: keyId ? `${keyId.slice(0, 12)}…` : null,
+    keySecretConfigured: !!process.env.RAZORPAY_KEY_SECRET,
+    webhookSecretConfigured: !!process.env.RAZORPAY_WEBHOOK_SECRET,
+    testCouponEnabled: String(process.env.TEST_COUPON_ENABLED).toLowerCase() === "true",
+  };
+
+  if (!out.keyIdConfigured || !out.keySecretConfigured) {
+    return res.json({
+      ...out, authenticates: false,
+      message: "RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET are not both set. Checkout will fail.",
+    });
+  }
+
+  try {
+    const razorpay = require("../config/razorpay");
+    await razorpay.orders.all({ count: 1 });
+    res.json({ ...out, authenticates: true, message: "Razorpay credentials are valid. Checkout can create orders." });
+  } catch (e) {
+    const detail = (e && e.error && (e.error.description || e.error.reason)) || (e && e.message) || String(e);
+    res.json({
+      ...out, authenticates: false, error: detail,
+      message: "Razorpay REJECTED these credentials. The key id and secret must be from the same account AND the same mode (both test, or both live).",
+    });
+  }
+});
+
 // A. REDIRECT PATH — frontend calls this right after Razorpay checkout closes
 // POST /api/payments/verify
 router.post("/verify", requireAuth, async (req, res) => {

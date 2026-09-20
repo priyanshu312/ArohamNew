@@ -462,7 +462,6 @@ export function ProfilePage() {
       const fetchOrders = async () => {
         let fetchedOrders: any[] = [];
         const userPhone = user?.user_metadata?.phone ? String(user.user_metadata.phone).replace(/\D/g, "").slice(-10) : "";
-        const userEmail = user?.email || "";
 
         // 1. Fetch orders from Supabase filtered by user_id OR phone
         try {
@@ -501,107 +500,31 @@ export function ProfilePage() {
           console.warn("Error fetching Supabase orders:", e);
         }
 
-        // 2. Fetch from user-specific local storage
-        if (user?.id) {
-          const userOrdersKey = `Nakshra_user_orders_${user.id}`;
-          const localUserOrdersStr = localStorage.getItem(userOrdersKey);
-          if (localUserOrdersStr) {
-            try {
-              const parsedLocal = JSON.parse(localUserOrdersStr);
-              parsedLocal.forEach((lo: any) => {
-                if (!fetchedOrders.some(o => String(o.id) === String(lo.id))) {
-                  fetchedOrders.push(lo);
-                }
-              });
-            } catch (e) {}
-          }
-        }
-
-        // 2b. Fetch from phone-keyed localStorage (survives user ID changes across sessions)
-        if (userPhone) {
-          const phoneOrdersStr = localStorage.getItem(`Nakshra_phone_orders_${userPhone}`);
-          if (phoneOrdersStr) {
-            try {
-              const parsedPhone = JSON.parse(phoneOrdersStr);
-              parsedPhone.forEach((po: any) => {
-                if (!fetchedOrders.some(o => String(o.id) === String(po.id))) {
-                  fetchedOrders.push(po);
-                }
-              });
-            } catch (e) {}
-          }
-        }
-
-        // 3. Fetch from guest local storage fallback
-        const guestOrdersStr = localStorage.getItem("Nakshra_guest_orders");
-        if (guestOrdersStr) {
-          try {
-            const parsedGuest = JSON.parse(guestOrdersStr);
-            parsedGuest.forEach((go: any) => {
-              const addr = go.shipping_address || go.address || {};
-              const orderPhone = String(addr.phone || go.phone || "").replace(/\D/g, "").slice(-10);
-              const orderEmail = String(addr.email || go.email || "").trim().toLowerCase();
-
-              const matchesPhone = userPhone && orderPhone && orderPhone === userPhone;
-              const matchesEmail = userEmail && orderEmail && orderEmail === userEmail.toLowerCase();
-
-              if (!fetchedOrders.some(o => String(o.id) === String(go.id))) {
-                if (!user?.id || matchesPhone || matchesEmail) {
-                  fetchedOrders.push({ ...go, user_id: user?.id || go.user_id });
-                }
-              }
-            });
-          } catch (e) {}
-        }
-
-        // 4. Fetch from recent session order fallback (guests only)
-        const localOrderId = sessionStorage.getItem("Nakshra_last_order_id");
-        const localItemsStr = sessionStorage.getItem("Nakshra_last_order_items");
-        const localTotalStr = sessionStorage.getItem("Nakshra_order_total");
-
-        if (!user?.id && localOrderId && localItemsStr && !fetchedOrders.some(o => String(o.id) === String(localOrderId))) {
-          try {
-            const parsedItems = JSON.parse(localItemsStr);
-            const savedStatus = localStorage.getItem(`Nakshra_order_status_${localOrderId}`) || "Processing";
-            
-            fetchedOrders.unshift({
-              id: localOrderId,
-              created_at: new Date().toISOString(),
-              status: savedStatus,
-              total_amount: parseFloat(localTotalStr || "0") * 100,
-              items: parsedItems.map((i: any) => ({
-                product_name: i.product?.name || "Sacred Item",
-                quantity: i.qty || 1,
-                unit_price: (i.product?.price || 0) * 100
-              }))
-            });
-          } catch (e) {
-            console.error("Failed to parse local order items", e);
-          }
-        }
-
-        // NOTE: status is shown exactly as the database reports it. There used
-        // to be a localStorage override here, which meant the badge could
-        // contradict reality — an order the server had marked PAYMENT_FAILED
-        // still displayed as PENDING because a stale browser entry won. The
-        // server is the only source of truth for order state.
+        // Local storage is deliberately NOT consulted for orders any more.
+        //
+        // It used to be merged in from four places (user-keyed, phone-keyed,
+        // guest, and a sessionStorage "last order"), each holding a copy that
+        // checkout wrote with a hand-made `status: "Processing"`. Those copies
+        // outlived the rows they mirrored and, when checkout fell back to a
+        // client-generated id, described orders the server had never heard of:
+        // the card rendered, the badge said Processing, and Cancel Order came
+        // back "Order not found" because there was nothing to cancel.
+        //
+        // The database is the only thing that knows whether an order exists,
+        // what it costs and where it is. If it is not in this response, it is
+        // not an order.
 
         // Sort by creation date descending
         fetchedOrders.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
 
-        // Cache merged orders into user's localStorage
-        if (user?.id && fetchedOrders.length > 0) {
-          try {
-            localStorage.setItem(`Nakshra_user_orders_${user.id}`, JSON.stringify(fetchedOrders));
-          } catch (e) {}
-        }
-
-        // Also cache into phone-keyed localStorage for cross-session persistence
-        if (userPhone && fetchedOrders.length > 0) {
-          try {
-            localStorage.setItem(`Nakshra_phone_orders_${userPhone}`, JSON.stringify(fetchedOrders));
-          } catch (e) {}
-        }
+        // Evict the old mirrors. Browsers that already went through the old
+        // checkout are carrying phantom orders in these keys; without this the
+        // ghosts would simply sit there unread forever.
+        try {
+          if (user?.id) localStorage.removeItem(`Nakshra_user_orders_${user.id}`);
+          if (userPhone) localStorage.removeItem(`Nakshra_phone_orders_${userPhone}`);
+          localStorage.removeItem("Nakshra_guest_orders");
+        } catch (e) {}
 
         setOrders(fetchedOrders);
         setLoadingOrders(false);

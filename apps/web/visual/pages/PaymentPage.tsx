@@ -2,11 +2,9 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Lock, ChevronLeft, ChevronRight, ShieldCheck, Tag, ChevronDown, CreditCard, EyeOff } from "lucide-react";
 import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@nakshra/shared-config/theme";
-import { generateUUID } from "@nakshra/shared-utils/uuid";
 import { useCart } from "@nakshra/shared-state";
 import { useAuth } from "@nakshra/shared-auth";
 import { api } from "@nakshra/shared-api";
-import { supabase } from "@nakshra/shared-services";
 import { EmptyCheckout } from "@visual/components/checkout/EmptyCheckout";
 
 declare global {
@@ -127,11 +125,17 @@ export function PaymentPage() {
 
       let rzpKey = RAZORPAY_KEY_ID;
       let rzpOrderId: string | undefined = undefined;
-      const orderUuid = generateUUID();
-      let internalOrderId = orderUuid;
+      let internalOrderId: string;
       let amountPaisa = Math.round(total * 100);
 
-      // Attempt backend order creation with graceful fallback
+      // The backend MUST create the order before a single rupee is collected.
+      // There used to be a "graceful fallback" here that swallowed the error and
+      // charged the customer against a client-generated UUID with no Razorpay
+      // order_id. The money left their account, but the server had no record to
+      // confirm: /payments/verify had nothing to check the signature against,
+      // the order never reached CONFIRMED, Shiprocket was never dispatched, and
+      // "Cancel Order" 404'd because that id existed only in the browser.
+      // A checkout we cannot record is a checkout we must not take.
       try {
         const orderData = await api("/orders", {
           method: "POST",
@@ -143,10 +147,14 @@ export function PaymentPage() {
           })
         });
 
-        if (orderData?.keyId) rzpKey = orderData.keyId;
-        if (orderData?.razorpayOrderId) rzpOrderId = orderData.razorpayOrderId;
-        if (orderData?.orderId) internalOrderId = orderData.orderId;
-        if (orderData?.amount) amountPaisa = orderData.amount;
+        if (!orderData?.orderId || !orderData?.razorpayOrderId) {
+          throw new Error("The server did not return a payable order.");
+        }
+
+        if (orderData.keyId) rzpKey = orderData.keyId;
+        rzpOrderId = orderData.razorpayOrderId;
+        internalOrderId = orderData.orderId;
+        if (orderData.amount) amountPaisa = orderData.amount;
 
         // The server recomputes pricing. If a coupon was shown but the server
         // didn't apply it, stop — don't charge the customer the discounted total
@@ -158,8 +166,15 @@ export function PaymentPage() {
           alert(`Coupon ${appliedCoupon.code} isn't valid for this order — the price has been updated. Please review and pay again.`);
           return;
         }
-      } catch (backendErr) {
-        console.warn("Backend order creation offline, proceeding with Razorpay direct checkout:", backendErr);
+      } catch (backendErr: any) {
+        console.error("Order creation failed — refusing to open checkout:", backendErr);
+        setPlacing(false);
+        alert(
+          `We couldn't start your order, so we have not charged you.\n\n` +
+          `${backendErr?.message || "The server is unreachable."}\n\n` +
+          `Please try again in a moment. If it keeps happening, contact us on WhatsApp and nothing will be lost.`
+        );
+        return;
       }
 
       // Format phone properly for Razorpay — ensure full 10-digit with +91
@@ -172,14 +187,12 @@ export function PaymentPage() {
       // `ondismiss` only reset the button. Those ghosts then showed up in the
       // customer's order history as things they had apparently bought.
       // /orders/:id/cancel already accepts PENDING orders (it also releases the
-      // reserved stock) — it was simply never called. Only meaningful when the
-      // BACKEND created the row; on the offline fallback path internalOrderId is
-      // a client-generated UUID the server knows nothing about.
+      // reserved stock) — it was simply never called. internalOrderId is always
+      // a backend-issued id now, so this always has a real row to cancel.
       let abandonHandled = false;
       const abandonOrder = async (why: string) => {
         if (abandonHandled) return;
         abandonHandled = true;
-        if (String(internalOrderId) === String(orderUuid)) return;
         try {
           await api(`/orders/${internalOrderId}/cancel`, { method: "POST" });
         } catch (err) {
@@ -198,6 +211,13 @@ export function PaymentPage() {
         image: "/favicon.ico",
         handler: async function (response: any) {
           try {
+            // The verify call is the moment the order becomes real: it checks
+            // the Razorpay signature, marks the order CONFIRMED, commits stock
+            // and hands the order to Shiprocket. Its failure used to be
+            // swallowed by `.catch(() => {})` while the UI cheerfully wrote a
+            // fake "Processing" order into localStorage — which is how an order
+            // Shiprocket had never seen appeared in My Orders and then 404'd on
+            // cancel. Let it throw so the customer is told the truth.
             await api("/payments/verify", {
               method: "POST",
               body: JSON.stringify({
@@ -206,84 +226,10 @@ export function PaymentPage() {
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature
               })
-            }).catch(() => {});
+            });
 
-            const saveOrderData = async (orderId: string | number) => {
-              const orderObj = {
-                id: orderId,
-                user_id: user?.id || null,
-                created_at: new Date().toISOString(),
-                status: "Processing",
-                total_amount: Math.round(total * 100),
-                items: items.map((i: any) => ({
-                  product_name: i.product?.name || "Sacred Item",
-                  quantity: i.qty || 1,
-                  unit_price: Math.round((i.product?.price || 0) * 100)
-                })),
-                shipping_address: shippingAddr || null
-              };
-
-              // 1. Supabase orders row.
-              // When the backend created the order (internalOrderId came from
-              // /api/orders), it already owns that row and /api/payments/verify +
-              // the webhook mark it CONFIRMED — a client insert here just PK-conflicts.
-              // Only write directly on the offline fallback path (client-generated id).
-              if (String(orderId) === String(orderUuid)) {
-                try {
-                  const userPhone = shippingAddr?.phone || user?.user_metadata?.phone || "";
-                  const sbPayload: any = {
-                    id: orderId,
-                    user_id: user?.id || null,
-                    user_phone: String(userPhone).replace(/\D/g, "").slice(-10),
-                    amount: Math.round(total * 100),
-                    total_amount: Math.round(total * 100),
-                    status: "CONFIRMED",
-                    payment_method: "Razorpay",
-                    payment_status: "PAID",
-                    address: `${shippingAddr?.line1 || shippingAddr?.address || ""}, ${shippingAddr?.city || ""}, ${shippingAddr?.state || ""} - ${shippingAddr?.pin || shippingAddr?.pincode || ""}`,
-                    shipping_address: shippingAddr || {}
-                  };
-                  const { error: sbError } = await supabase.from("orders").upsert(sbPayload);
-                  if (sbError) console.error("Supabase order upsert error:", sbError);
-                } catch (e) {
-                  console.error("Supabase order upsert exception:", e);
-                }
-              }
-
-              // 2. Save to user localStorage
-              if (user?.id) {
-                try {
-                  const uKey = `Nakshra_user_orders_${user.id}`;
-                  const uStr = localStorage.getItem(uKey);
-                  const uArr = uStr ? JSON.parse(uStr) : [];
-                  const uUpdated = [orderObj, ...uArr.filter((o: any) => String(o.id) !== String(orderId))];
-                  localStorage.setItem(uKey, JSON.stringify(uUpdated));
-                } catch (e) {}
-              }
-
-              // 3. Save to phone-keyed localStorage for cross-session persistence
-              try {
-                const phoneKey = String(shippingAddr?.phone || user?.user_metadata?.phone || "").replace(/\D/g, "").slice(-10);
-                if (phoneKey) {
-                  const pKey = `Nakshra_phone_orders_${phoneKey}`;
-                  const pStr = localStorage.getItem(pKey);
-                  const pArr = pStr ? JSON.parse(pStr) : [];
-                  const pUpdated = [orderObj, ...pArr.filter((o: any) => String(o.id) !== String(orderId))];
-                  localStorage.setItem(pKey, JSON.stringify(pUpdated));
-                }
-              } catch (e) {}
-
-              // 4. Always save to guest orders fallback as backup
-              try {
-                const gKey = "Nakshra_guest_orders";
-                const gStr = localStorage.getItem(gKey);
-                const gArr = gStr ? JSON.parse(gStr) : [];
-                const gUpdated = [orderObj, ...gArr.filter((o: any) => String(o.id) !== String(orderId))];
-                localStorage.setItem(gKey, JSON.stringify(gUpdated));
-              } catch (e) {}
-            };
-
-            await saveOrderData(internalOrderId);
+            // No localStorage order mirror. The server owns order state; a
+            // browser copy can only ever drift from it or outlive it.
 
             sessionStorage.setItem("Nakshra_last_order_items", JSON.stringify(items));
             sessionStorage.removeItem("Nakshra_shipping_addr");
@@ -296,10 +242,17 @@ export function PaymentPage() {
 
             navigate("/checkout/confirm");
           } catch (e: any) {
+            // The money was taken but we could not confirm the order. Showing
+            // the normal confirmation screen here was how a failed verify still
+            // looked like a successful purchase. Say what actually happened and
+            // keep the cart, so the customer has something to act on.
             console.error("Verification error:", e);
-            sessionStorage.setItem("Nakshra_last_order_items", JSON.stringify(items));
-            setTimeout(() => clearCart(), 500);
-            navigate("/checkout/confirm");
+            setPlacing(false);
+            alert(
+              `Your payment went through, but we could not confirm the order on our side.\n\n` +
+              `Payment ref: ${response?.razorpay_payment_id || "unknown"}\n\n` +
+              `Please send us that reference on WhatsApp (8306160032) and we will confirm or refund it right away. Do not pay again.`
+            );
           }
         },
         prefill: {
@@ -352,8 +305,10 @@ export function PaymentPage() {
         return;
       }
 
-      let internalOrderId = `ORD-COD-${Date.now()}`;
-
+      // Same rule as the online path: no server-side order, no order. A
+      // client-minted `ORD-COD-…` id is not something we can pick, pack or
+      // cancel — it only ever became a phantom row in the customer's history.
+      let internalOrderId: string;
       try {
         const orderData = await api("/orders", {
           method: "POST",
@@ -366,9 +321,16 @@ export function PaymentPage() {
           })
         });
 
-        if (orderData?.orderId) internalOrderId = orderData.orderId;
-      } catch (backendErr) {
-        console.warn("Backend order creation offline, proceeding with COD order fallback:", backendErr);
+        if (!orderData?.orderId) throw new Error("The server did not return an order.");
+        internalOrderId = orderData.orderId;
+      } catch (backendErr: any) {
+        console.error("COD order creation failed:", backendErr);
+        setPlacing(false);
+        alert(
+          `We couldn't place your order just now, and nothing has been confirmed.\n\n` +
+          `${backendErr?.message || "The server is unreachable."}\n\nPlease try again in a moment.`
+        );
+        return;
       }
 
       sessionStorage.setItem("Nakshra_last_order_items", JSON.stringify(items));

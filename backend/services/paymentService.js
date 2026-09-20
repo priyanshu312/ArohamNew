@@ -1,4 +1,4 @@
-﻿// services/paymentService.js
+// services/paymentService.js
 // "4. PAYMENT" + "5. ORDER CONFIRMATION": verify signature, update statuses, stock
 const crypto = require("crypto");
 const supabase = require("../config/supabase");
@@ -7,8 +7,16 @@ const { sendOrderConfirmation } = require("./notify");
 
 function verifyPaymentSignature({ razorpay_order_id, razorpay_payment_id, razorpay_signature }) {
   const secret = process.env.RAZORPAY_KEY_SECRET;
-  if (!secret || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-    console.error("[Payments] Cannot verify payment signature â€” missing RAZORPAY_KEY_SECRET or params.");
+  // Say WHICH piece is missing. Lumping the server's own misconfiguration in
+  // with a malformed request made a Razorpay auth failure look like a secret
+  // that was never set, and sent a debugging session down the wrong path.
+  const missing = [];
+  if (!secret) missing.push("RAZORPAY_KEY_SECRET (server env)");
+  if (!razorpay_order_id) missing.push("razorpay_order_id");
+  if (!razorpay_payment_id) missing.push("razorpay_payment_id");
+  if (!razorpay_signature) missing.push("razorpay_signature");
+  if (missing.length) {
+    console.error(`[Payments] Cannot verify payment signature — missing: ${missing.join(", ")}.`);
     return false;
   }
   const body = razorpay_order_id + "|" + razorpay_payment_id;
@@ -21,7 +29,7 @@ function verifyPaymentSignature({ razorpay_order_id, razorpay_payment_id, razorp
 function verifyWebhookSignature(rawBody, signature) {
   const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
   if (!secret || rawBody == null || !signature) {
-    console.error("[Payments] Cannot verify webhook signature â€” missing RAZORPAY_WEBHOOK_SECRET, body, or signature header.");
+    console.error("[Payments] Cannot verify webhook signature — missing RAZORPAY_WEBHOOK_SECRET, body, or signature header.");
     return false;
   }
   const expected = crypto
@@ -116,12 +124,22 @@ async function confirmOrder(orderId, paymentDetails) {
     // 6. Update order with shipping details
     if (result.success) {
       console.log(`[Shiprocket] Fulfillment SUCCESS for Order #${orderId}. Shipment: ${result.shipmentId}, AWB: ${result.awbData?.response?.data?.awb_code || "pending"}`);
-      await supabase.from("orders").update({
+      const { error: upErr } = await supabase.from("orders").update({
         status: "CONFIRMED",
         shipment_id: result.shipmentId,
         awb_code: result.awbData?.response?.data?.awb_code || null,
         label_url: result.labelUrl
       }).eq("id", orderId);
+      // The shipping columns are added by supabase-schema.sql, but that file
+      // uses `create table if not exists` — a database created before they were
+      // added never got them. PostgREST then rejects the WHOLE update, so the
+      // parcel ships while the order sits at PENDING forever. Retry with just
+      // the status so the customer's order is at least correct.
+      if (upErr) {
+        console.error(`[Shiprocket] Could not persist shipping details for #${orderId}: ${upErr.message}. Falling back to status-only update — check that orders has shipment_id / awb_code / label_url.`);
+        const { error: statusErr } = await supabase.from("orders").update({ status: "CONFIRMED" }).eq("id", orderId);
+        if (statusErr) console.error(`[Shiprocket] Status-only update ALSO failed for #${orderId}: ${statusErr.message}`);
+      }
     } else {
       console.error(`[Shiprocket] Fulfillment FAILED for Order #${orderId}:`, result.error);
       await supabase.from("orders").update({ status: "CONFIRMED" }).eq("id", orderId);
@@ -134,12 +152,12 @@ async function confirmOrder(orderId, paymentDetails) {
 
 // FAILURE path: payment FAILED â†’ order PAYMENT_FAILED â†’ release reserved stock
 async function failOrder(orderId, reason) {
-  // Never downgrade an order that has already been paid/confirmed â€” a stray or
+  // Never downgrade an order that has already been paid/confirmed — a stray or
   // replayed verify/webhook call with missing fields must not flip it back.
   const { data: existing } = await supabase.from("orders")
     .select("status").eq("id", orderId).maybeSingle();
   if (existing && (existing.status === "CONFIRMED" || existing.status === "SHIPPED" || existing.status === "DELIVERED")) {
-    console.warn(`[Payments] failOrder skipped for #${orderId} â€” already ${existing.status}.`);
+    console.warn(`[Payments] failOrder skipped for #${orderId} — already ${existing.status}.`);
     return;
   }
 
