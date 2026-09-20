@@ -204,3 +204,59 @@ export function useReviews(
 
   return { reviews, summary, myReview, loading, saving, error, submit, remove, reload: load };
 }
+
+export interface LatestReview extends ProductReview {
+  /** The listing the review belongs to, for the card's label and link. */
+  productName: string;
+  productSlug: string;
+  productImg: string;
+}
+
+/**
+ * The newest published reviews across the whole shop, for the home page.
+ * Only reviews that were actually written out are returned — a bare star
+ * rating with no words makes a poor card.
+ *
+ * Returns an empty list until somebody reviews something. Every section built
+ * on this renders nothing rather than filling the gap with invented stories.
+ */
+export function useLatestReviews(limit = 12) {
+  const [reviews, setReviews] = useState<LatestReview[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.resolve(
+      supabase
+        .from("product_reviews")
+        .select(`${ROW},products(name,slug,variant_group,img)`)
+        .eq("status", "published")
+        .not("body", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(limit),
+    )
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (!error && data) {
+          setReviews(
+            data.map((r: any) => ({
+              ...mapRow(r),
+              // The listing name, so a review of "Silver, 3 g" reads as the product.
+              productName: r.products?.variant_group || r.products?.name || "",
+              productSlug: r.products?.slug || "",
+              productImg: r.products?.img || "",
+            })),
+          );
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [limit]);
+
+  return { reviews, loading };
+}

@@ -34,18 +34,19 @@ export const FEATURE_I18N = flag(import.meta.env.VITE_FEATURE_I18N, false);
  *  On. Its photos are served from nakshra.in now, not another shop's store. */
 export const FEATURE_CRAFTSMANSHIP = flag(import.meta.env.VITE_FEATURE_CRAFTSMANSHIP, true);
 
-/** Home: the carousel of the newest customer reviews. On, because it now reads
- *  real reviews from product_reviews and renders nothing until there are some —
- *  the version that was off mixed in a hard-coded list of made-up testimonials. */
-export const FEATURE_REVIEWS = flag(import.meta.env.VITE_FEATURE_REVIEWS, true);
+/** Home: "What Our Community Says" — the plain horizontal strip of reviews.
+ *  Off, because Customer Stories above now shows the same product_reviews rows
+ *  in the swipe carousel, and two lists of identical reviews on one page is one
+ *  too many. Both read the same data, so this is purely which layout wins. */
+export const FEATURE_REVIEWS = flag(import.meta.env.VITE_FEATURE_REVIEWS, false);
 
-/** Home: "Customer Stories" video testimonials. Still off — and this one cannot
- *  be fixed by swapping photos. Every story in it is invented: eight named
- *  people, their cities, their star ratings and their quotes, for products the
- *  shop does not sell, with durations for videos that do not exist. Turn this on
- *  when there are real customer videos to put in it; until then the real reviews
- *  carousel (FEATURE_REVIEWS) is the honest version of the same idea. */
-export const FEATURE_CUSTOMER_STORIES = flag(import.meta.env.VITE_FEATURE_CUSTOMER_STORIES, false);
+/** Home: "Customer Stories" — the swipeable card carousel. On. It used to carry
+ *  eight invented stories (names, cities, ratings, quotes, and running times for
+ *  videos that never existed — the section has no video player in it at all).
+ *  The swipe, the arrows and the dots are unchanged; the cards now come from
+ *  real product_reviews rows, so the section shows nothing until a customer
+ *  writes one. */
+export const FEATURE_CUSTOMER_STORIES = flag(import.meta.env.VITE_FEATURE_CUSTOMER_STORIES, true);
 
 /** Home: "Not just products. Sacred instruments."
  *  On. Its photos are served from nakshra.in now, not another shop's store. */

@@ -93,11 +93,9 @@ export const FEAT_CATS = [
   { name: "Vastu Kits", desc: "Complete remedies for home & office harmony",  img: pyramidImg,  count: 19 },
 ];
 
-export const VIDEO_REVIEWS = [
-  { name: "Sunita Rao",   city: "Hyderabad",         product: "Citrine Sun Ring",      rating: 5, thumb: navratnaImg,   init: "SR", bg: "#2D4A8B", duration: "1:24", review: "The ring arrived beautifully packaged. I wore it during my important business meeting and things turned around completely." },
-  { name: "Rahul Verma",  city: "Pune",              product: "Nepal Origin 1 Mukhi Rudraksha",  rating: 5, thumb: pyramidImg,    init: "RV", bg: "#5B1F24", duration: "2:08", review: "Wore it exactly as instructed. The energy in my office changed noticeably within two weeks. Absolutely worth it." },
-  { name: "Meera Iyer",   city: "Chennai",           product: "Bagla Mukhi Yantra",    rating: 5, thumb: baglaImg,      init: "MI", bg: "#4A3728", duration: "0:58", review: "My court case was pending for years. After installing this yantra, it resolved in 3 months. I am a believer now." },
-];
+// VIDEO_REVIEWS lived here: three invented customer stories (names, cities,
+// star ratings, quotes and the running times of videos that never existed).
+// The Customer Stories carousel now reads real rows from product_reviews.
 
 export const COMMENTS_DATA = [
   { name: "Arjun Mehta",   city: "Bangalore", rating: 5, text: "The Nepal Origin 1 Mukhi Rudraksha is museum-quality. The energization certificate and the care in packaging shows Nakshra treats each product as sacred — not just a commodity.", product: "Nepal Origin 1 Mukhi Rudraksha", init: "AM", bg: "#8B4513", likes: 24, date: "2 weeks ago" },
