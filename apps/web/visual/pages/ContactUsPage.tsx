@@ -1,7 +1,7 @@
 import { MAROON, GOLD, SERIF, SANS, IVORY } from "@nakshra/shared-config/theme";
 import { FloatingInput } from "@visual/components/auth/FloatingInput";
 import { useState } from "react";
-import { Mail, MapPin, Phone, Loader2 } from "lucide-react";
+import { Mail, MapPin, Phone, Loader2, CheckCircle2 } from "lucide-react";
 import { supabase } from "@nakshra/shared-services";
 import { useTranslation } from "react-i18next";
 
@@ -92,7 +92,7 @@ export function ContactUsPage() {
             <div className="relative z-10">
               {submitted ? (
                 <div className="text-center py-12">
-                  <div className="text-5xl mb-4">✨</div>
+                  <CheckCircle2 size={40} strokeWidth={1.2} className="mx-auto mb-4" style={{ color: "#4A8A4A" }} />
                   <h3 style={{ fontFamily: SERIF, color: MAROON }} className="text-2xl font-semibold mb-2">Message Sent</h3>
                   <button onClick={() => { setSubmitted(false); setForm({name: "", email: "", message: ""}); }} className="mt-8 px-6 py-2 rounded-full border text-sm font-medium" style={{ borderColor: GOLD, color: MAROON }}>
                     Send Another Message

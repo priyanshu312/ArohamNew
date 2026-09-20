@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Star, ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { Link } from "react-router";
 import { MAROON, GOLD, SANS, SERIF } from "@nakshra/shared-config/theme";
 import { supabase } from "@nakshra/shared-services";
@@ -176,7 +176,7 @@ export function CommunityComments() {
                     <div className="min-w-0">
                       <div className="text-xs font-semibold truncate" style={{ color: MAROON }}>{r.name}</div>
                       {r.verified && (
-                        <div className="text-[10px]" style={{ color: "#4A8A4A" }}>✓ Verified Purchase</div>
+                        <div className="text-[10px] flex items-center gap-0.5" style={{ color: "#4A8A4A" }}><Check size={10} /> Verified Purchase</div>
                       )}
                     </div>
                   </div>

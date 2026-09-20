@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { 
   Star, Heart, Eye, Filter, X, ChevronRight, ChevronDown, 
-  ShoppingCart, LayoutGrid, List, Sparkles, Check, Plus, Minus, RotateCcw
+  ShoppingCart, LayoutGrid, List, Sparkles, Check, Plus, Minus, RotateCcw, Loader2, SearchX
 } from "lucide-react";
 import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@nakshra/shared-config/theme";
 import * as Select from "@radix-ui/react-select";
@@ -565,11 +565,11 @@ export function ShopPage() {
               productsLoading && products.length === 0 ? (
                 /* Still loading the catalogue — don't imply "no results" yet */
                 <div className="bg-white rounded-3xl p-12 text-center border border-amber-900/10 shadow-xs my-6">
-                  <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-4 text-3xl animate-pulse">
-                    🕉️
+                  <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-4 animate-pulse">
+                    <Loader2 size={26} strokeWidth={1.5} style={{ color: GOLD }} />
                   </div>
                   <h3 className="text-xl font-bold mb-2" style={{ fontFamily: SERIF, color: MAROON }}>
-                    Loading sacred products…
+                    Loading products…
                   </h3>
                   <p className="text-sm max-w-md mx-auto text-amber-900/70 font-medium">
                     Fetching our temple-energized collection for you.
@@ -577,11 +577,11 @@ export function ShopPage() {
                 </div>
               ) : (
               <div className="bg-white rounded-3xl p-12 text-center border border-amber-900/10 shadow-xs my-6">
-                <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-4 text-3xl">
-                  🔍
+                <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-4">
+                  <SearchX size={26} strokeWidth={1.5} style={{ color: GOLD }} />
                 </div>
                 <h3 className="text-xl font-bold mb-2" style={{ fontFamily: SERIF, color: MAROON }}>
-                  No sacred products match your criteria
+                  No products match these filters
                 </h3>
                 <p className="text-sm max-w-md mx-auto mb-6 text-amber-900/70 font-medium">
                   Try adjusting your price range, clearing specific category filters, or resetting your filter choices.

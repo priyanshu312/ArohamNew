@@ -392,7 +392,7 @@ export const AstrologerOnboardingWizard: React.FC<AstrologerOnboardingWizardProp
                       onClick={handleVerifyOtp}
                       className="px-6 py-2.5 bg-[#5B1F24] text-white font-bold text-xs rounded-full shadow-xs cursor-pointer"
                     >
-                      {formData.otpVerified ? "Verified ✓" : "Verify Code"}
+                      {formData.otpVerified ? "Verified" : "Verify Code"}
                     </button>
                   </div>
                 </div>
@@ -555,7 +555,7 @@ export const AstrologerOnboardingWizard: React.FC<AstrologerOnboardingWizardProp
                             : "bg-[#FAF6F0] text-amber-950/70 hover:bg-amber-100 border border-[#5B1F24]/10"
                         }`}
                       >
-                        {isSelected ? "✓ " : "+ "} {exp}
+                        {isSelected ? "− " : "+ "} {exp}
                       </button>
                     );
                   })}
@@ -580,7 +580,7 @@ export const AstrologerOnboardingWizard: React.FC<AstrologerOnboardingWizardProp
                             : "bg-[#FAF6F0] text-amber-950/70 hover:bg-amber-100 border border-[#5B1F24]/10"
                         }`}
                       >
-                        {isSelected ? "✓ " : "+ "} {lang}
+                        {isSelected ? "− " : "+ "} {lang}
                       </button>
                     );
                   })}
@@ -785,7 +785,7 @@ export const AstrologerOnboardingWizard: React.FC<AstrologerOnboardingWizardProp
               disabled={loading}
               className="px-8 py-3 bg-[#5B1F24] hover:bg-[#7A2A30] text-white font-bold text-xs rounded-full shadow-md transition-all cursor-pointer flex items-center gap-1.5 ml-auto"
             >
-              <span>{currentStep === 5 ? (loading ? "Submitting Application..." : "Submit Application ✓") : "Next Step"}</span>
+              <span>{currentStep === 5 ? (loading ? "Submitting Application..." : "Submit Application") : "Next Step"}</span>
               {currentStep < 5 && <ChevronRight className="w-4 h-4" />}
             </button>
           </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Lock, ChevronLeft, ChevronRight, ShieldCheck, Tag, ChevronDown } from "lucide-react";
+import { Lock, ChevronLeft, ChevronRight, ShieldCheck, Tag, ChevronDown, CreditCard, EyeOff } from "lucide-react";
 import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@nakshra/shared-config/theme";
 import { generateUUID } from "@nakshra/shared-utils/uuid";
 import { useCart } from "@nakshra/shared-state";
@@ -413,7 +413,7 @@ export function PaymentPage() {
         <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-20 pointer-events-none">
           <div className="px-6 py-4 rounded-2xl shadow-2xl pointer-events-auto" style={{ background: "linear-gradient(135deg,#2E8B57,#4ACA6A)", color: "#FFFFFF", animation: "slideDown 0.4s ease" }}>
             <style>{`@keyframes slideDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}`}</style>
-            <p className="text-lg font-bold text-center">🎉 Yay! Coupon Applied!</p>
+            <p className="text-lg font-bold text-center">Coupon applied</p>
             <p className="text-sm text-center mt-1">You saved ₹{discount.toLocaleString("en-IN")} on this order!</p>
           </div>
         </div>
@@ -446,7 +446,7 @@ export function PaymentPage() {
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     <span className="text-xs font-bold px-2.5 py-1.5 rounded-lg flex-shrink-0" style={{ background: "rgba(74,138,74,0.18)", color: "#1B5E20" }}>{appliedCoupon.code}</span>
                     <div className="flex flex-col min-w-0 justify-center">
-                      <span className="text-xs font-bold text-emerald-800 whitespace-nowrap">🎉 You're saving ₹{discount.toLocaleString("en-IN")}!</span>
+                      <span className="text-xs font-bold text-emerald-800 whitespace-nowrap">You save ₹{discount.toLocaleString("en-IN")}!</span>
                       <span className="text-[11px] font-medium text-emerald-700 truncate">{appliedCoupon.label}</span>
                     </div>
                   </div>
@@ -478,7 +478,7 @@ export function PaymentPage() {
                   </div>
                   {couponMsg && (
                     <p className={`text-[11px] font-medium mt-1.5 ${couponMsg.success ? "text-emerald-600" : "text-red-500"}`}>
-                      {couponMsg.success ? "✓ " : "✕ "}{couponMsg.message}
+                      {couponMsg.message}
                     </p>
                   )}
                 </>
@@ -585,9 +585,9 @@ export function PaymentPage() {
             <div className="mt-6 rounded-3xl p-6" style={{ background: "linear-gradient(135deg,#FAF0D8,#FAF7F2)", border: "1px solid rgba(200,160,68,0.22)" }}>
               <div className="flex items-center gap-2 mb-4"><ShieldCheck size={14} style={{ color: GOLD }} /><span className="text-sm font-semibold" style={{ fontFamily: SERIF, color: MAROON }}>100% Secure Checkout</span></div>
               <div className="grid grid-cols-2 sm:grid-cols-2 gap-2.5 sm:gap-3">
-                {[{ i: "🔒", l: "SSL Encrypted", s: "256-bit" }, { i: "🛡", l: "PCI DSS", s: "Compliant" }, { i: "💳", l: "Razorpay", s: "Secured" }, { i: "🚫", l: "No Data", s: "Stored" }].map(({ i, l, s }) => (
+                {[{ I: Lock, l: "SSL Encrypted", s: "256-bit" }, { I: ShieldCheck, l: "PCI DSS", s: "Compliant" }, { I: CreditCard, l: "Razorpay", s: "Secured" }, { I: EyeOff, l: "No Data", s: "Stored" }].map(({ I, l, s }) => (
                   <div key={l} className="flex flex-col items-center text-center gap-1 p-3 rounded-2xl" style={{ background: "rgba(255,255,255,0.7)" }}>
-                    <span className="text-xl">{i}</span>
+                    <I size={18} strokeWidth={1.5} style={{ color: GOLD }} />
                     <span className="text-[10px] font-semibold" style={{ color: MAROON }}>{l}</span>
                     <span className="text-[9px]" style={{ color: "#9A8A78" }}>{s}</span>
                   </div>

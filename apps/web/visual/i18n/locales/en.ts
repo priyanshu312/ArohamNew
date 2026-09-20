@@ -212,7 +212,7 @@ export const en: Record<string, string> = {
   "auth.astrologer_btn_signin": "Sign In to Astrologer Portal",
   "auth.astrologer_btn_signup": "Create Astrologer Account",
   "auth.astro_switch_customer": "← Looking for Customer Login? Click here",
-  "auth.customer_switch_astro": "🔮 Are you a Certified Astrologer? Click here to Login / Join",
+  "auth.customer_switch_astro": "Are you a certified astrologer? Sign in or join",
   "auth.verify_otp": "Verify OTP Code",
   "auth.enter_otp_sent": "Enter 6-digit OTP sent to",
   "auth.verify_button": "Verify & Continue",

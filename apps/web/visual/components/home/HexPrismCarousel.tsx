@@ -119,7 +119,7 @@ export function HexPrismCarousel({ products, onProductClick }: { products: Naksh
                   </div>
                   {isActive && (
                     <div style={{ padding: "8px 12px", textAlign: "center", background: `linear-gradient(90deg,${GOLD} 0%,#E8B84B 100%)`, color: "#1A0D0E", fontSize: 8, fontWeight: 800, letterSpacing: "0.1em", flexShrink: 0 }}>
-                      {expanded ? "TAP TO CLOSE ✕" : "TAP TO EXPAND ↓"}
+                      {expanded ? "Tap to close" : "Tap to expand"}
                     </div>
                   )}
                 </div>

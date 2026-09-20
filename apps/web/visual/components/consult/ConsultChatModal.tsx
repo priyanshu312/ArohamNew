@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { ChevronLeft, Send, Sparkles, ShoppingBag, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, Send, Sparkles, ShoppingBag, CheckCircle2, Check } from "lucide-react";
 import { MAROON, SERIF, SANS } from "@nakshra/shared-config/theme";
 import { useTranslation } from "react-i18next";
 
@@ -214,7 +214,7 @@ export function ConsultChatModal({
       {localCartToast && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[10001] pointer-events-none">
           <div className="flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-[#5B1F24]/95 text-amber-100 shadow-xl font-bold text-xs sm:text-sm">
-            <span className="text-emerald-400 text-lg">✓</span>
+            <Check size={17} className="text-emerald-400" />
             <span>{localCartToast} added to cart!</span>
           </div>
         </div>

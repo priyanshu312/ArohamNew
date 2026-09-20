@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router";
-import { X, Star, CheckCircle, Shield, ArrowRight, User as UserIcon, Calendar, ChevronDown, Sparkles, Lock, Verified } from "lucide-react";
+import { X, Star, CheckCircle, Shield, ArrowRight, User as UserIcon, Calendar, ChevronDown, Sparkles, Lock, Verified, AlertCircle } from "lucide-react";
 import { MAROON, GOLD, SAFFRON, IVORY, SANS, SERIF } from "@nakshra/shared-config/theme";
 import { AuthInput } from "./AuthInput";
 import { OtpBoxes } from "./OtpBoxes";
@@ -840,7 +840,7 @@ export function AuthPage() {
         <div className="p-4 rounded-2xl flex items-start gap-3 animate-in slide-in-from-top duration-300"
           style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
           <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: "rgba(239,68,68,0.15)" }}>
-            <span className="text-xs">⚠️</span>
+            <AlertCircle size={12} className="flex-shrink-0" />
           </div>
           <p className="text-sm font-medium flex-1" style={{ color: "#991b1b" }}>{errorMsg}</p>
         </div>
@@ -952,7 +952,7 @@ export function AuthPage() {
             onClick={() => setIsAstrologerMode(true)}
             className="text-xs font-bold text-amber-900 hover:underline inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-amber-900/5 hover:bg-amber-900/10 border border-amber-900/15 transition-all active:scale-95"
           >
-            <span>{t("auth.customer_switch_astro", "🔮 Are you a Certified Astrologer? Click here to Login / Join")}</span>
+            <span>{t("auth.customer_switch_astro", "Are you a certified astrologer? Sign in or join")}</span>
           </button>
         )}
       </div>
@@ -990,7 +990,7 @@ export function AuthPage() {
         <div className="p-4 rounded-2xl flex items-start gap-3 animate-in slide-in-from-top duration-300"
           style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
           <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: "rgba(239,68,68,0.15)" }}>
-            <span className="text-xs">⚠️</span>
+            <AlertCircle size={12} className="flex-shrink-0" />
           </div>
           <p className="text-sm font-medium flex-1" style={{ color: "#991b1b" }}>{errorMsg}</p>
         </div>
@@ -1068,7 +1068,7 @@ export function AuthPage() {
         <div className="p-4 rounded-2xl flex items-start gap-3 animate-in slide-in-from-top duration-300"
           style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
           <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: "rgba(239,68,68,0.15)" }}>
-            <span className="text-xs">⚠️</span>
+            <AlertCircle size={12} className="flex-shrink-0" />
           </div>
           <p className="text-sm font-medium flex-1" style={{ color: "#991b1b" }}>{errorMsg}</p>
         </div>

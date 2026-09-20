@@ -212,7 +212,7 @@ export const kn: Record<string, string> = {
   "auth.astrologer_btn_signin": "ಜ್ಯೋತಿಷಿ ಪೋರ್ಟಲ್‌ಗೆ ಸೈನ್ ಇನ್ ಮಾಡಿ",
   "auth.astrologer_btn_signup": "ಜ್ಯೋತಿಷಿ ಖಾತೆ ರಚಿಸಿ",
   "auth.astro_switch_customer": "← ಗ್ರಾಹಕರ ಲಾಗಿನ್ ಬೇಕೇ? ಇಲ್ಲಿ ಕ್ಲಿಕ್ ಮಾಡಿ",
-  "auth.customer_switch_astro": "🔮 ನೀವು ಪ್ರಮಾಣೀಕೃತ ಜ್ಯೋತಿಷಿಯೇ? ಲಾಗಿನ್ / ಸೇರಲು ಇಲ್ಲಿ ಕ್ಲಿಕ್ ಮಾಡಿ",
+  "auth.customer_switch_astro": "ನೀವು ಪ್ರಮಾಣೀಕೃತ ಜ್ಯೋತಿಷಿಯೇ? ಲಾಗಿನ್ / ಸೇರಲು ಇಲ್ಲಿ ಕ್ಲಿಕ್ ಮಾಡಿ",
   "auth.verify_otp": "OTP ಕೋಡ್ ಪರಿಶೀಲಿಸಿ",
   "auth.enter_otp_sent": "ಗೆ ಕಳುಹಿಸಲಾದ 6-ಅಂಕೆಗಳ OTP ನಮೂದಿಸಿ",
   "auth.verify_button": "ಪರಿಶೀಲಿಸಿ ಮತ್ತು ಮುಂದುವರಿಯಿರಿ",

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useRef } from "react";
+import { Check } from "lucide-react";
 import { NakshraProduct } from "@nakshra/shared-types/product";
 import { CartItem } from "@nakshra/shared-types/cart";
 import { useAuth } from "@nakshra/shared-auth";
@@ -318,7 +319,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
               maxWidth: "90vw",
             }}
           >
-            <span style={{ fontSize: 18 }}>✓</span>
+            <Check size={16} strokeWidth={2.5} />
             <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
               {toast} added to cart
             </span>

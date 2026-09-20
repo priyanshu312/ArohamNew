@@ -1746,7 +1746,7 @@ export function AstrologerDashboard() {
                 </div>
                 <div className="flex items-center gap-2 bg-[#5B1F24] px-4 py-2 rounded-2xl text-amber-200 font-bold text-sm shadow-md">
                   <Star size={18} fill="#C8A044" stroke="none" />
-                  <span>{financialStats.averageRating} ★ Rating ({dbReviews.length} Reviews)</span>
+                  <span>{financialStats.averageRating} Rating ({dbReviews.length} Reviews)</span>
                 </div>
               </div>
 
@@ -1763,8 +1763,10 @@ export function AstrologerDashboard() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-sm text-[#5B1F24]">{r.user_name || "Seeker"}</span>
-                          <span className="flex text-amber-500 text-xs">
-                            {"★".repeat(r.rating || 5)}
+                          <span className="flex gap-0.5">
+                            {Array.from({ length: Number(r.rating) || 0 }).map((_, i) => (
+                              <Star key={i} size={11} className="text-amber-500" fill="currentColor" stroke="none" />
+                            ))}
                           </span>
                         </div>
                         <span className="text-xs text-amber-900/50">{new Date(r.created_at || Date.now()).toLocaleDateString()}</span>

@@ -68,22 +68,22 @@ export const GRAHAS: Graha[] = [
 ];
 
 export const CRAFT_STEPS = [
-  { icon: "⛏", title: "Sacred Material Sourcing", desc: "We source only auspicious metals — copper, brass, and silver — from trusted artisan cooperatives, chosen on Vedic-auspicious dates.", color: "#8B4513" },
-  { icon: "🔨", title: "Master Artisan Crafting", desc: "Skilled craftspeople with decades of experience shape each piece by hand using traditional tools, preserving centuries-old techniques.", color: MAROON },
-  { icon: "✍", title: "Sanskrit Inscription", desc: "Vedic pandits inscribe sacred mantras and geometric yantras with millimeter precision, each stroke charged with spiritual intent.", color: "#2D4A8B" },
-  { icon: "🪔", title: "Temple Energization (Pran Pratishtha)", desc: "Every product undergoes a full Pran Pratishtha ritual at a certified temple. Mantras are chanted for 108 rounds, activating divine energy.", color: "#8B6914" },
-  { icon: "📜", title: "Certification & Dispatch", desc: "A Vedic quality inspector certifies the product. It is then wrapped in premium packaging and dispatched with a certificate of authenticity.", color: "#2D5A2D" },
+  { title: "Sacred Material Sourcing", desc: "We source only auspicious metals — copper, brass, and silver — from trusted artisan cooperatives, chosen on Vedic-auspicious dates.", color: "#8B4513" },
+  { title: "Master Artisan Crafting", desc: "Skilled craftspeople with decades of experience shape each piece by hand using traditional tools, preserving centuries-old techniques.", color: MAROON },
+  { title: "Sanskrit Inscription", desc: "Vedic pandits inscribe sacred mantras and geometric yantras with millimeter precision, each stroke charged with spiritual intent.", color: "#2D4A8B" },
+  { title: "Temple Energization (Pran Pratishtha)", desc: "Every product undergoes a full Pran Pratishtha ritual at a certified temple. Mantras are chanted for 108 rounds, activating divine energy.", color: "#8B6914" },
+  { title: "Certification & Dispatch", desc: "A Vedic quality inspector certifies the product. It is then wrapped in premium packaging and dispatched with a certificate of authenticity.", color: "#2D5A2D" },
 ];
 
 export const CRAFT_IMAGES = [baglaImg, yantraPlateImg, navratnaImg, pyramidImg, navratnaImg];
 
 export const PROBLEMS_DATA = [
-  { emoji: "💰", label: "Wealth & Money",      desc: "Attract financial abundance",  bg: "linear-gradient(135deg,#2D1B00,#5B3800)", img: baglaImg },
-  { emoji: "❤️", label: "Love & Relationships", desc: "Strengthen bonds",             bg: "linear-gradient(135deg,#3A0D1A,#6B1A30)", img: navratnaImg },
-  { emoji: "🛡",  label: "Protection",          desc: "Shield from negativity",       bg: "linear-gradient(135deg,#0D1A2D,#1A3050)", img: pendantSilImg },
-  { emoji: "🏡",  label: "Home Harmony",        desc: "Balance Vastu energies",       bg: "linear-gradient(135deg,#0D2D15,#1A5025)", img: pyramidImg },
-  { emoji: "💼",  label: "Career Growth",       desc: "Success & recognition",        bg: "linear-gradient(135deg,#1A0D2D,#351A55)", img: yantraPlateImg },
-  { emoji: "🧘",  label: "Peace of Mind",       desc: "Clarity & inner calm",         bg: "linear-gradient(135deg,#0D2020,#1A4040)", img: gemstonImg },
+  { label: "Wealth & Money",      desc: "Attract financial abundance",  bg: "linear-gradient(135deg,#2D1B00,#5B3800)", img: baglaImg },
+  { label: "Love & Relationships", desc: "Strengthen bonds",             bg: "linear-gradient(135deg,#3A0D1A,#6B1A30)", img: navratnaImg },
+  { label: "Protection",          desc: "Shield from negativity",       bg: "linear-gradient(135deg,#0D1A2D,#1A3050)", img: pendantSilImg },
+  { label: "Home Harmony",        desc: "Balance Vastu energies",       bg: "linear-gradient(135deg,#0D2D15,#1A5025)", img: pyramidImg },
+  { label: "Career Growth",       desc: "Success & recognition",        bg: "linear-gradient(135deg,#1A0D2D,#351A55)", img: yantraPlateImg },
+  { label: "Peace of Mind",       desc: "Clarity & inner calm",         bg: "linear-gradient(135deg,#0D2020,#1A4040)", img: gemstonImg },
 ];
 
 export const FEAT_CATS = [

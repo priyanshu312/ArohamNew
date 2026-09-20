@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { BookOpen } from "lucide-react";
 import { BlogHero } from "@visual/components/blog/BlogHero";
 import { BlogSidebar } from "@visual/components/blog/BlogSidebar";
 import { BlogCard } from "@visual/components/blog/BlogCard";
@@ -64,7 +65,7 @@ export function BlogPage() {
               </div>
             ) : (
               <div className="text-center py-16 bg-white rounded-3xl border border-stone-200">
-                <div className="text-4xl mb-3">🕉️</div>
+                <BookOpen size={32} strokeWidth={1.2} className="mx-auto mb-3" style={{ color: "#C9BCAA" }} />
                 <h3 style={{ fontFamily: SERIF, color: MAROON }} className="text-xl font-semibold mb-2">No Articles Found</h3>
                 <p className="text-stone-500 text-sm">Try searching for different keywords or select another category.</p>
               </div>

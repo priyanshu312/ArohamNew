@@ -43,10 +43,11 @@ export function ShopConsultCards({ products, onShop, onProductClick }: { product
               ))}
             </div>
             <div className="relative z-10 flex items-center gap-2 text-xs sm:text-sm min-w-0" style={{ color: "rgba(217,195,171,0.8)" }}>
-              <span style={{ color: GOLD, letterSpacing: 2, flexShrink: 0 }}>★★★★★</span>
-              <strong style={{ color: IVORY, flexShrink: 0 }}>4.8</strong>
+              {/* Was "★★★★★ 4.8 · 12,000+ devotees served" — a rating and a
+                  customer count nobody had counted. These two are true. */}
+              <strong style={{ color: IVORY, flexShrink: 0 }}>Temple energized</strong>
               <span className="w-1 h-1 rounded-full inline-block flex-shrink-0" style={{ background: "rgba(217,195,171,0.5)" }} />
-              <span className="truncate flex-1 min-w-0">12,000+ devotees served</span>
+              <span className="truncate flex-1 min-w-0">certificate with every order</span>
             </div>
             <div className="flex-1 relative z-10" />
             <button onClick={onShop}

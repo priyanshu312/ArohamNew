@@ -195,7 +195,7 @@ export function AstroChatWidget() {
         <div className="absolute bottom-16 right-0 mb-2 w-52 bg-white rounded-2xl p-3 shadow-xl border border-amber-900/10 animate-in fade-in slide-in-from-bottom-2">
           <button onClick={dismissProactive} className="absolute top-1.5 right-1.5 text-amber-900/40 hover:text-amber-900"><X className="w-3 h-3" /></button>
           <div className="flex items-start gap-2">
-            <span className="text-lg">✨</span>
+            <Sparkles size={17} />
             <p className="text-[11px] font-semibold text-[#3C3024] leading-tight pr-2">
               Looking for personalized Vedic remedies or astrological guidance?
             </p>
@@ -318,7 +318,7 @@ export function AstroChatWidget() {
                 {m.products && m.products.length > 0 && (
                   <div className="mt-3 w-full space-y-2">
                     <span className="text-[10px] font-bold tracking-widest text-amber-900/60 uppercase block px-1">
-                      ✨ Recommended Sacred Remedies
+                      Recommended remedies
                     </span>
                     <div className="space-y-2">
                       {m.products.map((prod) => (
@@ -434,10 +434,10 @@ export function AstroChatWidget() {
           {messages.length <= 2 && !loading && (
             <div className="px-4 py-2 bg-[#FCFAF7] border-t border-amber-900/5 flex items-center gap-1.5 overflow-x-auto shrink-0 no-scrollbar">
               {[
-                { label: "💼 Career & Business", prefix: "Recommend a remedy for " },
-                { label: "💖 Love & Harmony", prefix: "Recommend a remedy for " },
-                { label: "🛡️ Rahu/Ketu Protection", prefix: "What is a good protection from " },
-                { label: "🪔 Puja & Yantras", prefix: "Tell me about " }
+                { label: "Career & Business", prefix: "Recommend a remedy for " },
+                { label: "Love & Harmony", prefix: "Recommend a remedy for " },
+                { label: "Rahu / Ketu Protection", prefix: "What is a good protection from " },
+                { label: "Puja & Yantras", prefix: "Tell me about " }
               ].map((chip) => (
                 <button
                   key={chip.label}

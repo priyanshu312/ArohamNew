@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { ChevronLeft, User, Package, Truck, CheckCircle, Edit2, Save, X, Calendar, ChevronDown, MapPin, Trash2, Plus, LogOut } from "lucide-react";
+import { ChevronLeft, User, Package, Truck, CheckCircle, Edit2, Save, X, Calendar, ChevronDown, MapPin, Trash2, Plus, LogOut, Check, Flame, Home, ShoppingBag } from "lucide-react";
 import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@nakshra/shared-config/theme";
 import { useAuth } from "@nakshra/shared-auth";
 import { api } from "@nakshra/shared-api";
@@ -15,10 +15,10 @@ import { INDIA_STATES } from "@nakshra/shared-config/data";
 import { useProducts } from "@nakshra/shared-hooks/useProducts";
 
 const ORDER_STEPS = [
-  { label: "Ordered", icon: "✓" },
-  { label: "Processing", icon: "🪔" },
-  { label: "Shipped", icon: "🚚" },
-  { label: "Delivered", icon: "🏠" },
+  { label: "Ordered", Icon: Check },
+  { label: "Processing", Icon: Flame },
+  { label: "Shipped", Icon: Truck },
+  { label: "Delivered", Icon: Home },
 ];
 
 // `amount` (paise) is the figure the backend actually computes and is correct
@@ -1035,7 +1035,7 @@ export function ProfilePage() {
                             border: `1.5px solid ${addrForm.addressType === type ? MAROON : "rgba(91,31,36,0.15)"}`
                           }}
                         >
-                          {type === "Home" ? "🏠 Home" : type === "Office" ? "🏢 Office" : "📍 Other"}
+                          {type}
                         </button>
                       ))}
                     </div>
@@ -1063,9 +1063,9 @@ export function ProfilePage() {
             )}
             {!loadingOrders && orders.length === 0 && (
               <div className="text-center py-12 rounded-2xl" style={{ background: "#fff", border: "1px solid rgba(91,31,36,0.08)" }}>
-                <p className="text-2xl mb-2">📦</p>
+                <ShoppingBag size={28} strokeWidth={1.2} className="mx-auto mb-2" style={{ color: "#C9BCAA" }} />
                 <p className="text-sm font-semibold mb-1" style={{ fontFamily: SERIF, color: MAROON }}>No orders yet</p>
-                <p className="text-xs" style={{ color: "#7A6A58" }}>Your purchased sacred items will appear here</p>
+                <p className="text-xs" style={{ color: "#7A6A58" }}>Orders you place will appear here.</p>
               </div>
             )}
             {orders.map(order => {
@@ -1085,7 +1085,7 @@ export function ProfilePage() {
                         {orderThumb(order) ? (
                           <img src={orderThumb(order)} alt="" className="w-full h-full object-cover" loading="lazy" />
                         ) : (
-                          <span className="text-xl">{itemsList[0]?.emoji || "🪔"}</span>
+                          <Package size={20} strokeWidth={1.4} style={{ color: "#C9BCAA" }} />
                         )}
                       </div>
                       <div className="min-w-0">
@@ -1120,7 +1120,7 @@ export function ProfilePage() {
                               <div key={s.label} className="text-center flex-1 flex flex-col items-center">
                                 <div className="w-6 h-6 rounded-full flex items-center justify-center mb-1 text-[10px] transition-colors"
                                   style={{ background: idx <= stepIdx ? MAROON : "#eee", color: idx <= stepIdx ? IVORY : "#999" }}>
-                                  {s.icon}
+                                  <s.Icon size={13} strokeWidth={1.6} />
                                 </div>
                                 <span style={{ fontSize: 9, color: idx <= stepIdx ? MAROON : "#999", fontWeight: idx <= stepIdx ? 600 : 400 }}>{s.label}</span>
                               </div>

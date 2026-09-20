@@ -212,7 +212,7 @@ export const hi: Record<string, string> = {
   "auth.astrologer_btn_signin": "ज्योतिषी पोर्टल में साइन इन करें",
   "auth.astrologer_btn_signup": "ज्योतिषी खाता बनाएं",
   "auth.astro_switch_customer": "← ग्राहक लॉगिन की तलाश में हैं? यहां क्लिक करें",
-  "auth.customer_switch_astro": "🔮 क्या आप प्रमाणित ज्योतिषी हैं? लॉगिन / जुड़ने के लिए यहां क्लिक करें",
+  "auth.customer_switch_astro": "क्या आप प्रमाणित ज्योतिषी हैं? लॉगिन / जुड़ने के लिए यहां क्लिक करें",
   "auth.verify_otp": "ओटीपी कोड सत्यापित करें",
   "auth.enter_otp_sent": "पर भेजा गया 6-अंकों का ओटीपी दर्ज करें",
   "auth.verify_button": "सत्यापित करें और आगे बढ़ें",

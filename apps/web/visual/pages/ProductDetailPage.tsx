@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
-import { Star, ShoppingCart, Share2, Heart, ChevronLeft, ChevronRight, Sparkles, Flame, Gem, Award, Shield, Package, Truck, CheckCircle, Mail, Phone, ChevronDown } from "lucide-react";
+import { Star, ShoppingCart, Share2, Heart, ChevronLeft, ChevronRight, Sparkles, Flame, Gem, Award, Shield, Package, Truck, CheckCircle, Mail, Phone, ChevronDown, ScrollText, Hand, RotateCcw, MessageCircle, Check, X } from "lucide-react";
 import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@nakshra/shared-config/theme";
 import { CONTACT_INFO } from "@nakshra/shared-config/contact";
 import { useCart } from "@nakshra/shared-state";
@@ -190,6 +190,8 @@ export function ProductDetailPage() {
     );
   }
 
+  const stockLeft = Number(product.stock ?? 0);
+
   // Other options of the same listing (e.g. copper / silver yantra), cheapest first.
   const options = variantOptions(products, product);
 
@@ -331,7 +333,7 @@ export function ProductDetailPage() {
 
             {copied && (
               <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-semibold text-white animate-bounce" style={{ background: MAROON }}>
-                <span>✨ Link copied to clipboard!</span>
+                <span>Link copied to clipboard</span>
               </div>
             )}
             
@@ -413,9 +415,19 @@ export function ProductDetailPage() {
                 <div className="flex items-center rounded-2xl overflow-hidden bg-white border border-amber-900/20 shadow-2xs">
                   <button aria-label="Decrease quantity" onClick={() => setQty(q => Math.max(1, q - 1))} className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center hover:bg-black/5 font-bold transition-all text-amber-900">−</button>
                   <span className="w-8 sm:w-10 text-center font-bold text-sm text-[#5B1F24]" style={{ fontFamily: SANS }}>{qty}</span>
-                  <button aria-label="Increase quantity" onClick={() => setQty(q => q + 1)} className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center hover:bg-black/5 font-bold transition-all text-amber-900">+</button>
+                  {/* Capped at what is actually in stock. Without this a shopper
+                      could add nine of an item with five left and only find out
+                      when the server refused the order, after paying. */}
+                  <button aria-label="Increase quantity" disabled={qty >= stockLeft}
+                    onClick={() => setQty(q => Math.min(stockLeft, q + 1))}
+                    className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center hover:bg-black/5 font-bold transition-all text-amber-900 disabled:opacity-30 disabled:hover:bg-transparent">+</button>
                 </div>
-                <span className="text-xs font-semibold text-emerald-600 hidden sm:inline">✓ In Stock</span>
+                {stockLeft > 0
+                  ? <span className="text-xs font-semibold text-emerald-600 hidden sm:inline">In stock</span>
+                  : <span className="text-xs font-semibold text-red-600 hidden sm:inline">Out of stock</span>}
+                {stockLeft > 0 && qty >= stockLeft && (
+                  <span className="text-[11px]" style={{ color: "#9A8A78" }}>{stockLeft} available</span>
+                )}
               </div>
             </div>
 
@@ -485,7 +497,7 @@ export function ProductDetailPage() {
                 className="w-full py-3 sm:py-3.5 rounded-2xl text-xs sm:text-sm font-bold tracking-wide border transition-all hover:bg-amber-50/80 active:scale-98 flex items-center justify-center gap-2 bg-white"
                 style={{ borderColor: GOLD, color: MAROON }}
               >
-                <span>⚡ BUY NOW</span>
+                <span>Buy Now</span>
               </button>
             </div>
 
@@ -517,11 +529,11 @@ export function ProductDetailPage() {
               {deliveryResult && (
                 <div className="mt-3 space-y-2 text-xs transition-opacity duration-300">
                   {deliveryResult.error ? (
-                    <p className="text-red-500 font-semibold">✕ {deliveryResult.error}</p>
+                    <p className="text-red-500 font-semibold flex items-center gap-1"><X size={13} /> {deliveryResult.error}</p>
                   ) : (
                     <>
                       <p className="font-semibold text-emerald-600 flex items-center gap-1.5">
-                        <span>✓</span> Estimated delivery: {deliveryResult.date}
+                        <Check size={13} /> Estimated delivery: {deliveryResult.date}
                       </p>
                       {deliveryResult.city && (
                         <p style={{ color: "#7A6A58" }}>
@@ -550,9 +562,9 @@ export function ProductDetailPage() {
                 <p className="text-xs font-semibold" style={{ color: GOLD }}>Why Buy from Nakshra?</p>
               </div>
               <div className="p-4 space-y-3">
-                {[{ icon: "🪔", t: "Temple Energized", d: "Pran Pratishtha by certified pandits" }, { icon: "📜", t: "Authenticity Certificate", d: "Included with every product" }, { icon: "✋", t: "Handcrafted Quality", d: "By master artisans" }, { icon: "⭐", t: "Expert Recommended", d: "By Jyotish scholars" }, { icon: "📦", t: "Premium Packaging", d: "Luxury gift box" }, { icon: "↩️", t: "Easy Returns", d: "7-day hassle-free returns" }].map(({ icon, t, d }) => (
+                {[{ Icon: Flame, t: "Temple Energized", d: "Pran Pratishtha by certified pandits" }, { Icon: ScrollText, t: "Authenticity Certificate", d: "Included with every product" }, { Icon: Hand, t: "Handcrafted Quality", d: "By master artisans" }, { Icon: Award, t: "Expert Recommended", d: "By Jyotish scholars" }, { Icon: Package, t: "Premium Packaging", d: "Luxury gift box" }, { Icon: RotateCcw, t: "Easy Returns", d: "7-day hassle-free returns" }].map(({ Icon, t, d }) => (
                   <div key={t} className="flex items-start gap-2.5">
-                    <span className="text-base flex-shrink-0">{icon}</span>
+                    <Icon size={15} strokeWidth={1.5} className="flex-shrink-0 mt-0.5" style={{ color: GOLD }} />
                     <div>
                       <div className="text-xs font-semibold" style={{ color: MAROON }}>{t}</div>
                       <div className="text-[10px]" style={{ color: "#9A8A78" }}>{d}</div>
@@ -565,8 +577,8 @@ export function ProductDetailPage() {
               <p className="text-xs font-semibold mb-1" style={{ fontFamily: SERIF, color: MAROON }}>Need Guidance?</p>
               <p className="text-[10px] mb-3" style={{ color: "#7A6A58" }}>Talk to our Vastu Expert to confirm this is the right remedy for you.</p>
               <div className="flex gap-2">
-                <a href={CONTACT_INFO.whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex-1 py-2 rounded-xl text-[10px] font-semibold flex items-center justify-center gap-1 transition-opacity hover:opacity-90" style={{ background: "#25D366", color: "white" }}>💬 WhatsApp</a>
-                <a href={CONTACT_INFO.phoneTel} className="flex-1 py-2 rounded-xl text-[10px] font-semibold border flex items-center justify-center gap-1 transition-colors hover:bg-amber-50" style={{ borderColor: "rgba(91,31,36,0.2)", color: MAROON }}>📞 Call</a>
+                <a href={CONTACT_INFO.whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex-1 py-2 rounded-xl text-[10px] font-semibold flex items-center justify-center gap-1 transition-opacity hover:opacity-90" style={{ background: "#25D366", color: "white" }} ><MessageCircle size={12} /> WhatsApp</a>
+                <a href={CONTACT_INFO.phoneTel} className="flex-1 py-2 rounded-xl text-[10px] font-semibold border flex items-center justify-center gap-1 transition-colors hover:bg-amber-50" style={{ borderColor: "rgba(91,31,36,0.2)", color: MAROON }} ><Phone size={12} /> Call</a>
               </div>
             </div>
           </div>
@@ -668,7 +680,7 @@ export function ProductDetailPage() {
                   <Phone size={20} style={{ color: GOLD }} /><div><div className="text-sm font-semibold" style={{ color: IVORY }}>Call Us</div><div className="text-[11px]" style={{ color: "rgba(250,247,242,0.6)" }}>{CONTACT_INFO.phoneDisplay}</div></div>
                 </a>
                 <a href={CONTACT_INFO.whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-4 rounded-2xl transition-all hover:scale-105" style={{ background: "#25D366", border: "1px solid rgba(255,255,255,0.15)" }}>
-                  <span className="text-xl">💬</span><div><div className="text-sm font-semibold" style={{ color: "white" }}>WhatsApp</div><div className="text-[11px]" style={{ color: "rgba(255,255,255,0.8)" }}>Chat instantly</div></div>
+                  <MessageCircle size={20} style={{ color: "white" }} /><div><div className="text-sm font-semibold" style={{ color: "white" }}>WhatsApp</div><div className="text-[11px]" style={{ color: "rgba(255,255,255,0.8)" }}>Chat instantly</div></div>
                 </a>
               </div>
             </div>

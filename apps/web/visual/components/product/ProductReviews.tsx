@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Star, Trash2, Pencil, CheckCircle } from "lucide-react";
+import { Star, Trash2, Pencil, CheckCircle, Check } from "lucide-react";
 import { MAROON, GOLD, SERIF } from "@nakshra/shared-config/theme";
 import { useAuth } from "@nakshra/shared-auth";
 import { useReviews, timeAgo } from "@nakshra/shared-hooks/useReviews";
@@ -316,7 +316,7 @@ export function ProductReviews({ state }: { state: ReturnType<typeof useReviews>
                   {myReview?.id === r.id && <span style={{ color: "#9A8A78" }}> · your review</span>}
                 </div>
                 {r.verified && (
-                  <div className="text-[10px]" style={{ color: "#4A8A4A" }}>✓ Verified Purchase</div>
+                  <div className="text-[10px] flex items-center gap-0.5" style={{ color: "#4A8A4A" }}><Check size={10} /> Verified Purchase</div>
                 )}
               </div>
             </div>

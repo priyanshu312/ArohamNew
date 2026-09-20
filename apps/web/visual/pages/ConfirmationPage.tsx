@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Lock, CheckCircle, Package, Mail, ArrowRight, Truck } from "lucide-react";
+import { Lock, CheckCircle, Package, Mail, ArrowRight, Truck, Check, Flame, SearchCheck, Home } from "lucide-react";
 import { MAROON, GOLD, SAFFRON, IVORY, SANS, SERIF, PRICE_FONT } from "@nakshra/shared-config/theme";
 import { useCart } from "@nakshra/shared-state";
 import { api } from "@nakshra/shared-api";
@@ -24,12 +24,12 @@ function CheckoutHeader() {
 }
 
 const TIMELINE_STEPS = [
-  { icon: "✓",  label: "Order Confirmed",    desc: "Your order has been received.",          done: true  },
-  { icon: "🪔", label: "Temple Preparation",  desc: "Products enter Pran Pratishtha ritual.", done: false },
-  { icon: "🔍", label: "Quality Inspection",  desc: "Every item checked by our team.",        done: false },
-  { icon: "📦", label: "Premium Packaging",   desc: "Wrapped in our signature packaging.",    done: false },
-  { icon: "🚚", label: "Dispatched",           desc: "On its way with real-time tracking.",   done: false },
-  { icon: "🏠", label: "Delivered",            desc: "Arrives at your doorstep.",             done: false },
+  { Icon: Check,       label: "Order Confirmed",   desc: "Your order has been received.",          done: true  },
+  { Icon: Flame,       label: "Temple Preparation", desc: "Products enter Pran Pratishtha ritual.", done: false },
+  { Icon: SearchCheck, label: "Quality Inspection", desc: "Every item checked by our team.",        done: false },
+  { Icon: Package,     label: "Premium Packaging",  desc: "Wrapped in our signature packaging.",    done: false },
+  { Icon: Truck,       label: "Dispatched",         desc: "On its way with real-time tracking.",    done: false },
+  { Icon: Home,        label: "Delivered",          desc: "Arrives at your doorstep.",              done: false },
 ];
 
 function Confetti() {
@@ -83,7 +83,7 @@ export function ConfirmationPage() {
             const mappedItems = parsed.map((item: any) => ({
               id: item.product?.id || Date.now(),
               name: item.product?.name || "Sacred Item",
-              img: item.product?.img || "📿",
+              img: item.product?.img || "",
               price: item.product?.price || 0,
               qty: item.qty || 1
             }));
@@ -180,7 +180,7 @@ export function ConfirmationPage() {
                     <div className="flex flex-col items-center">
                       <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm flex-shrink-0 transition-all duration-500"
                         style={{ background: reached ? (active ? `linear-gradient(135deg,${GOLD},${SAFFRON})` : "rgba(200,160,68,0.15)") : "rgba(91,31,36,0.06)", border: reached ? `2px solid ${GOLD}` : "2px solid rgba(91,31,36,0.1)", boxShadow: active ? `0 0 16px rgba(200,160,68,0.45)` : "none", transform: active ? "scale(1.1)" : "scale(1)", color: reached ? (active ? "white" : GOLD) : "#9A8A78" }}>
-                        {step.icon}
+                        <step.Icon size={15} strokeWidth={1.6} />
                       </div>
                       {i < TIMELINE_STEPS.length - 1 && <div className="w-0.5 flex-1 mt-1 mb-1 rounded-full" style={{ background: i < timelineReached - 1 ? GOLD : "rgba(91,31,36,0.08)", minHeight: 24 }} />}
                     </div>

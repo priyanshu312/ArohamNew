@@ -267,7 +267,7 @@ export const AstrologerOnboardingStatus: React.FC<AstrologerOnboardingStatusProp
                 </div>
                 <div>
                   <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                    ✔ Round 1 Cleared
+                    Round 1 cleared
                   </span>
                   <h2 className="text-xl font-bold font-serif text-[#4A151B] mt-0.5">
                     Round 2: Practical Astrological Reading Evaluation
@@ -346,7 +346,7 @@ export const AstrologerOnboardingStatus: React.FC<AstrologerOnboardingStatusProp
 
               <div>
                 <span className="px-3.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold">
-                  🎉 Final Approval Granted
+                  Final approval granted
                 </span>
                 <h2 className="text-3xl font-bold font-serif text-[#4A151B] mt-3">
                   Congratulations!

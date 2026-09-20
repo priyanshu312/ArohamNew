@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router";
-import { X, ChevronLeft, ChevronRight, Minus, Plus, Trash2, Lock } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Minus, Plus, Trash2, Lock, ShoppingBag } from "lucide-react";
 import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@nakshra/shared-config/theme";
 import { useCart } from "@nakshra/shared-state";
 import { useAuth } from "@nakshra/shared-auth";
@@ -51,9 +51,9 @@ export function CartSidebar() {
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3.5">
           {items.length === 0 ? (
             <div className="text-center py-16">
-              <div className="text-5xl mb-4">🪷</div>
-              <p className="text-sm font-semibold mb-1" style={{ fontFamily: SERIF, color: MAROON }}>Your cart is peaceful</p>
-              <p className="text-xs" style={{ color: "#7A6A58" }}>Add sacred products to begin your journey</p>
+              <ShoppingBag size={40} strokeWidth={1.2} className="mx-auto mb-4" style={{ color: "#C9BCAA" }} />
+              <p className="text-sm font-semibold mb-1" style={{ fontFamily: SERIF, color: MAROON }}>Your cart is empty</p>
+              <p className="text-xs" style={{ color: "#7A6A58" }}>Nothing here yet.</p>
               <button onClick={() => { handleClose(); navigate("/shop"); }} className="mt-4 px-6 py-2.5 rounded-full text-sm font-medium" style={{ background: MAROON, color: IVORY }}>Explore Products</button>
             </div>
           ) : items.map(({ product: p, qty }) => (
@@ -99,7 +99,7 @@ export function CartSidebar() {
           <div className="p-5 border-t border-gray-100 bg-white space-y-3">
             {/* Coupon hint */}
             <div className="mb-2 px-3 py-2 rounded-xl text-center" style={{ background: "rgba(200,160,68,0.06)", border: "1px dashed rgba(200,160,68,0.25)" }}>
-              <p className="text-[11px] font-medium" style={{ color: "#8B6914" }}>🏷️ Have a coupon? Apply at checkout ✨</p>
+              <p className="text-[11px] font-medium" style={{ color: "#8B6914" }}>Have a coupon? Apply it at checkout</p>
             </div>
 
             {/* Total Price & You Save Row */}

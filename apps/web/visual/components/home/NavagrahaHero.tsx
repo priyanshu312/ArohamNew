@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Package, Flame, Truck, RotateCcw } from "lucide-react";
 import { MAROON, GOLD, SAFFRON, IVORY, SANS, SERIF } from "@nakshra/shared-config/theme";
 import { GRAHAS } from "@nakshra/shared-config/data";
 import { useTranslation } from "react-i18next";
@@ -69,14 +70,14 @@ export function NavagrahaHero({ onShop, onConsult }: { onShop: () => void; onCon
 
           <div className="grid grid-cols-2 gap-2.5">
             {[
-              ["12,000+", t("hero.stat_happy_customers", "Happy Customers"), "🙏"], 
-              ["500+", t("hero.stat_products_count", "Products"), "🛍"], 
-              ["98%", t("hero.stat_satisfaction", "Satisfaction"), "⭐"], 
-              [t("why.temple_energized", "Temple"), t("hero.stat_temple_energized", "Energized"), "🪔"]
-            ].map(([n, l, icon]) => (
+              ["120+", t("hero.stat_products_count", "Products"), Package],
+              ["Temple", "Energized", Flame],
+              ["Free", t("hero.stat_shipping", "Shipping"), Truck],
+              ["7 Days", t("hero.stat_returns", "Returns"), RotateCcw]
+            ].map(([n, l, Icon]: any) => (
               <div key={l} className="py-2.5 rounded-xl flex items-center gap-3 px-[12px] py-[15px]"
                 style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(8px)" }}>
-                <span className="text-lg">{icon}</span>
+                <Icon size={18} strokeWidth={1.5} style={{ color: GOLD, flexShrink: 0 }} />
                 <div className="text-left">
                   <div className="text-sm font-bold leading-tight" style={{ fontFamily: "'Space Grotesk',sans-serif", color: GOLD }}>{n}</div>
                   <div className="text-[10px] leading-tight" style={{ color: "rgba(250,247,242,0.5)", fontFamily: "'Space Grotesk',sans-serif" }}>{l}</div>
@@ -98,13 +99,12 @@ export function NavagrahaHero({ onShop, onConsult }: { onShop: () => void; onCon
               style={{ width: Math.round(GRAHAS[0].size * S * 1.4), height: Math.round(GRAHAS[0].size * S * 1.4),
                 background: "radial-gradient(circle,#FFF8E1,#FFD700,#FF8C00)", animation: "pulseSun 3s ease-in-out infinite",
                 top: "50%", left: "30%", transform: "translate(-50%,-50%)" }}>
-              <span style={{ fontSize: 14 }}>☀️</span>
-              <span className="text-[7px] font-bold" style={{ color: "#5B3000" }}>Surya</span>
+                            <span className="text-[7px] font-bold" style={{ color: "#5B3000" }}>Surya</span>
               <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-40 p-3 rounded-2xl opacity-0 group-hover:opacity-100 pointer-events-none z-50"
                 style={{ background: "rgba(10,5,8,0.95)", border: `1px solid rgba(200,160,68,0.3)`, backdropFilter: "blur(12px)", transition: "opacity 0.2s ease" }}>
                 <div className="text-sm font-semibold mb-0.5" style={{ color: GOLD, fontFamily: SERIF }}>Surya — Sun</div>
                 <div className="text-[10px] mb-1" style={{ color: "rgba(250,247,242,0.6)" }}>Soul, authority, vitality</div>
-                <div className="text-[9px]" style={{ color: "rgba(200,160,68,0.7)" }}>💎 Ruby</div>
+                <div className="text-[9px]" style={{ color: "rgba(200,160,68,0.7)" }}>Ruby</div>
               </div>
             </div>
             {/* Orbiting planets */}
@@ -140,7 +140,7 @@ export function NavagrahaHero({ onShop, onConsult }: { onShop: () => void; onCon
                         </div>
                         {g.en && <div className="text-[10px] mb-1" style={{ color: "rgba(250,247,242,0.5)" }}>{g.en}</div>}
                         <div className="text-[11px] leading-relaxed mb-1.5" style={{ color: "rgba(250,247,242,0.75)" }}>{g.desc}</div>
-                        <div className="text-[10px]" style={{ color: "rgba(200,160,68,0.8)" }}>💎 {g.gem}</div>
+                        <div className="text-[10px]" style={{ color: "rgba(200,160,68,0.8)" }}>{g.gem}</div>
                       </div>
                     )}
                   </div>

@@ -21,30 +21,36 @@ export function ProductsAndCombos({ products, onProductClick, onAddCombo: _onAdd
 
   if (!products || products.length === 0) return null;
 
+  // Four shelves of what the shop actually sells, each filtered by its own
+  // category so "View all" lands somewhere real. What was here before was five
+  // shelves of the same products under invented labels — "Bestselling", "Fav
+  // Items", "Mega Sale" — whose View all links opened an empty shop page.
   const shelves: [string, string, string, NakshraProduct[], string][] = [
-    [t("products.bestselling", "Bestselling Products"), t("products.top_picks", "Top Picks"), "🔥 " + t("products.trending", "Trending"), products.slice(0, 6), SAFFRON],
-    [t("products.fav_items", "Fav Items"), t("products.fan_favourites", "Fan Favourites"), "❤️ " + t("products.loved", "Loved"), [...products].reverse().slice(0, 6), "#E74C3C"],
-    [t("products.combo_deals", "Combo Deals"), t("products.bundle_save", "Bundle & Save"), "🎁 " + t("products.kits", "Kits"), products.slice(0, 6), GOLD],
-    [t("products.mega_sale", "Mega Sale"), t("products.limited_time", "Limited Time"), "⚡ " + t("products.hot", "Hot"), [...products].sort((a, b) => (b.original - b.price) - (a.original - a.price)).slice(0, 6), SAFFRON],
-    [t("products.discount_zone", "Discount Zone"), t("products.best_savings", "Best Savings"), "🏷️ " + t("products.off", "Off"), [...products].sort((a, b) => (1 - b.price / b.original) - (1 - a.price / a.original)).slice(0, 6), "#4A8A4A"],
-  ];
+    ["Yantras", t("products.shelf_yantra", "Sacred geometry"), "Yantra",
+      products.filter(p => p.category === "Yantra"), MAROON],
+    ["Rudraksha", t("products.shelf_rudraksha", "One to fourteen mukhi"), "Rudraksha",
+      products.filter(p => p.category === "Rudraksha"), SAFFRON],
+    ["Pendants", t("products.shelf_pendant", "Set in silver and gold"), "Pendant",
+      products.filter(p => p.category === "Pendant"), GOLD],
+    ["Vastu", t("products.shelf_vastu", "For the home and the office"), "Vastu",
+      products.filter(p => p.category === "Vastu"), "#4A8A4A"],
+  ].filter(sh => (sh[3] as NakshraProduct[]).length > 0) as [string, string, string, NakshraProduct[], string][];
 
 
   return (
     <section className="py-10 lg:py-20 px-4 sm:px-6 lg:px-10" style={{ background: "#FAF7F2" }}>
       <div className="max-w-7xl mx-auto space-y-8 lg:space-y-12">
-        {shelves.map(([title, eyebrow, badge, products, eyebrowColor], si) => (
+        {shelves.map(([title, eyebrow, category, products, eyebrowColor], si) => (
           <div key={title}>
             {si > 0 && <div className="h-px mb-6 lg:mb-10" style={{ background: "linear-gradient(90deg,transparent,rgba(91,31,36,0.1),transparent)" }} />}
             <div className="flex items-end justify-between gap-4 mb-4 lg:mb-8">
               <div>
-                <div className="flex items-center gap-2 mb-1.5">
+                <div className="mb-1.5">
                   <span className="text-xs tracking-[0.18em] uppercase font-medium" style={{ color: eyebrowColor, fontFamily: SANS }}>{eyebrow}</span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: `${eyebrowColor}18`, color: eyebrowColor }}>{badge}</span>
                 </div>
                 <h2 style={{ fontFamily: SERIF, fontSize: "clamp(1.6rem,3.5vw,2.5rem)", fontWeight: 500, color: MAROON, lineHeight: 1.15 }}>{title}</h2>
               </div>
-              <button onClick={() => navigate(`/shop?title=${encodeURIComponent(title as string)}`)} className="flex items-center gap-1 text-sm font-medium whitespace-nowrap transition-opacity hover:opacity-60" style={{ color: MAROON }}>
+              <button onClick={() => navigate(`/shop?category=${encodeURIComponent(category as string)}`)} className="flex items-center gap-1 text-sm font-medium whitespace-nowrap transition-opacity hover:opacity-60" style={{ color: MAROON }}>
                 {t("common.view_all", "View all")} <ChevronRight size={14} />
               </button>
             </div>

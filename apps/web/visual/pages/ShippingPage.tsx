@@ -808,7 +808,7 @@ export function ShippingPage() {
                               border: `1.5px solid ${form.addressType === type ? MAROON : "rgba(91,31,36,0.15)"}`
                             }}
                           >
-                            {type === "Home" ? "🏠 Home" : type === "Office" ? "🏢 Office" : "📍 Other"}
+                            {type}
                           </button>
                         ))}
                       </div>

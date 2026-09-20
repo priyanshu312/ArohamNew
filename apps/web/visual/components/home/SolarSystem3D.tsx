@@ -645,7 +645,7 @@ export function SolarSystem3D({ className }: { className?: string }) {
               {hovered.en && <span className="text-[10px]" style={{ color: "rgba(250,247,242,0.45)" }}>— {hovered.en}</span>}
             </div>
             <p className="text-[11px] leading-relaxed mb-1.5" style={{ color: "rgba(250,247,242,0.72)" }}>{hovered.desc}</p>
-            <p className="text-[10px]" style={{ color: "rgba(200,160,68,0.8)" }}>💎 {hovered.gem}</p>
+            <p className="text-[10px]" style={{ color: "rgba(200,160,68,0.8)" }}>{hovered.gem}</p>
           </div>
         </div>
       )}

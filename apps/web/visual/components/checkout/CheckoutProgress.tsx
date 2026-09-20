@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import { MAROON, GOLD } from "@nakshra/shared-config/theme";
 
 const STEPS = ["Cart", "Shipping", "Payment", "Confirmation"];
@@ -13,7 +14,7 @@ export function CheckoutProgress({ step }: { step: number }) {
                 style={{ background: i < step ? "rgba(200,160,68,0.15)" : i === step ? GOLD : "rgba(91,31,36,0.07)",
                   color: i < step ? GOLD : i === step ? "#1A0D0E" : "#9A8A78",
                   border: i === step ? `2px solid ${GOLD}` : "none" }}>
-                {i < step ? "✓" : i + 1}
+                {i < step ? <Check size={13} strokeWidth={2.5} /> : i + 1}
               </div>
               <span className="text-[9px] text-center leading-none" style={{ color: i === step ? MAROON : "#9A8A78", fontWeight: i === step ? 600 : 400 }}>{s}</span>
             </div>

@@ -47,7 +47,7 @@ export function Nav() {
     [t("nav.home", "Home"), () => { navigate("/"); setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 50); }],
     [t("nav.shop", "Shop"), () => navigate("/shop")],
     [t("nav.consult", "Consult"), () => navigate("/consult")],
-    ...(FEATURE_KUNDLI ? [["📜 Make My Kundli", () => setIsKundliOpen(true)] as [string, () => void]] : []),
+    ...(FEATURE_KUNDLI ? [["Make My Kundli", () => setIsKundliOpen(true)] as [string, () => void]] : []),
     ...(isLoggedIn ? [[t("nav.my_orders", "My Orders"), () => navigate("/profile?tab=orders")] as [string, () => void]] : []),
   ];
 

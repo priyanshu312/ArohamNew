@@ -152,7 +152,7 @@ export function VideoTestimonials() {
                 {/* Top badges */}
                 <div className="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between">
                   {v.verified
-                    ? <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold" style={{ background: "rgba(200,160,68,0.95)", color: "#1A0D0E" }}>✓ Verified Purchase</span>
+                    ? <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold" style={{ background: "rgba(200,160,68,0.95)", color: "#1A0D0E" }}>Verified Purchase</span>
                     : <span />}
                   <div className="flex gap-0.5">{Array.from({ length: v.rating }).map((_, j) => <Star key={j} size={10} fill={GOLD} stroke="none" />)}</div>
                 </div>
@@ -169,7 +169,7 @@ export function VideoTestimonials() {
                       <div className="text-[10px]" style={{ color: "rgba(250,247,242,0.55)" }}>{timeAgo(v.createdAt)}</div>
                     </div>
                   </div>
-                  <div className="mt-2 text-[9px] px-2.5 py-1 rounded-full inline-block" style={{ background: "rgba(200,160,68,0.15)", border: "1px solid rgba(200,160,68,0.25)", color: GOLD }}>📦 {v.productName}</div>
+                  <div className="mt-2 text-[9px] px-2.5 py-1 rounded-full inline-block" style={{ background: "rgba(200,160,68,0.15)", border: "1px solid rgba(200,160,68,0.25)", color: GOLD }}>{v.productName}</div>
                 </div>
               </div>
             );

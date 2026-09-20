@@ -55,7 +55,7 @@ export function Newsletter() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: email.trim(),
-            subject: "🎉 New Nakshra Community Signup!",
+            subject: "New Nakshra community signup",
             message: `User with email ${email.trim()} has just joined India's Spiritual Community.`
           })
         }).catch(() => {});

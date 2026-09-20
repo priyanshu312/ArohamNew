@@ -48,7 +48,7 @@ export function OrderSummaryCard({ cartItems, onBack, onNext, nextLabel, step }:
                 <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ background: "rgba(74,138,74,0.1)", color: "#4A8A4A" }}>{appliedCoupon.code}</span>
                 <p className="text-[10px] mt-0.5" style={{ color: "#7A6A58" }}>{appliedCoupon.label}</p>
               </div>
-              <button onClick={() => { removeCoupon(); setMsg(null); }} className="text-xs font-semibold px-2 py-1 hover:bg-red-50 rounded" style={{ color: "#C04040" }}>✕ Remove</button>
+              <button onClick={() => { removeCoupon(); setMsg(null); }} className="text-xs font-semibold px-2 py-1 hover:bg-red-50 rounded" style={{ color: "#C04040" }}>Remove</button>
             </div>
           ) : (
             <div>
@@ -76,7 +76,7 @@ export function OrderSummaryCard({ cartItems, onBack, onNext, nextLabel, step }:
               </div>
               {msg && (
                 <p className={`text-[10px] font-medium mt-1.5 ${msg.success ? "text-emerald-600" : "text-red-500"}`}>
-                  {msg.success ? "✓ " : "✕ "}{msg.message}
+                  {msg.message}
                 </p>
               )}
             </div>
