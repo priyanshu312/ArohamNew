@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { ChevronLeft, User, Package, Truck, CheckCircle, Edit2, Save, X, Calendar, ChevronDown, MapPin, Trash2, Plus, LogOut, Check, Flame, Home, ShoppingBag } from "lucide-react";
+import { ChevronLeft, User, Package, Truck, CheckCircle, Edit2, Save, X, Calendar, ChevronDown, MapPin, Trash2, Plus, LogOut, Check, Flame, Home, ShoppingBag, AlertTriangle } from "lucide-react";
 import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@nakshra/shared-config/theme";
 import { useAuth } from "@nakshra/shared-auth";
 import { api } from "@nakshra/shared-api";
@@ -90,6 +90,12 @@ export function ProfilePage() {
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({});
+
+  // Order-cancellation dialog. `cancelTarget` is the order itself, not just its
+  // id, so the dialog can show the customer what they are about to cancel.
+  const [cancelTarget, setCancelTarget] = useState<any | null>(null);
+  const [cancelState, setCancelState] = useState<"idle" | "working" | "done" | "error">("idle");
+  const [cancelError, setCancelError] = useState("");
 
   // Edit Profile Form state
   const [isEditing, setIsEditing] = useState(false);
@@ -395,9 +401,28 @@ export function ProfilePage() {
     setExpandedOrders(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleCancelOrder = async (orderId: string | number) => {
-    if (!confirm(`Are you sure you want to cancel Order #${orderId}?`)) return;
+  // Cancelling runs through an in-page dialog rather than window.confirm().
+  // The browser dialog was chrome, not the site: it could not show which order
+  // was being cancelled (only the raw UUID), it blocked the whole tab, and the
+  // alert() that followed gave no way to show a failure in context.
+  const openCancelDialog = (order: any) => {
+    setCancelTarget(order);
+    setCancelState("idle");
+    setCancelError("");
+  };
 
+  const closeCancelDialog = () => {
+    // Never yank the dialog away mid-request — the user would not know whether
+    // the cancellation went through.
+    if (cancelState === "working") return;
+    setCancelTarget(null);
+  };
+
+  const confirmCancelOrder = async () => {
+    if (!cancelTarget) return;
+    const orderId = cancelTarget.id;
+    setCancelState("working");
+    setCancelError("");
     try {
       // Backend owns cancellation: it checks ownership + status and releases
       // the reserved/sold stock. Let a real failure surface instead of faking success.
@@ -408,12 +433,37 @@ export function ProfilePage() {
       // from the database rather than from a browser entry that could later
       // contradict it.
       setOrders(prev => prev.map(o => String(o.id) === String(orderId) ? { ...o, status: "CANCELLED" } : o));
-      alert("Your order has been cancelled.");
+      setCancelState("done");
     } catch (err: any) {
       console.error("Order cancellation error:", err);
-      alert(err?.message || `Could not cancel Order #${orderId}. Please contact support.`);
+      // The server explains itself ("Order can't be cancelled once it is
+      // SHIPPED.", "Not your order"), and those messages are worth showing.
+      // A dropped connection is not: fetch throws "Failed to fetch", which
+      // tells a customer nothing and looks like a crash. Translate those.
+      const raw = String(err?.message || "");
+      const isNetwork = /failed to fetch|networkerror|load failed|network request failed/i.test(raw);
+      setCancelError(
+        !raw || isNetwork
+          ? "We couldn't reach our server, so nothing has changed. Check your connection and try again."
+          : raw
+      );
+      setCancelState("error");
     }
   };
+
+  // Escape closes the dialog and the page behind it stops scrolling, both of
+  // which window.confirm() gave us for free and a div does not.
+  useEffect(() => {
+    if (!cancelTarget) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") closeCancelDialog(); };
+    window.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [cancelTarget, cancelState]);
 
   // Fetch real profile from DB
   useEffect(() => {
@@ -1066,7 +1116,7 @@ export function ProfilePage() {
                       {!isCancelled && stepIdx <= 1 && (
                         <div className="pt-4 flex justify-end items-center mt-2">
                           <button 
-                            onClick={(e) => { e.stopPropagation(); handleCancelOrder(order.id); }}
+                            onClick={(e) => { e.stopPropagation(); openCancelDialog(order); }}
                             className="text-xs font-semibold px-5 py-2 rounded-full transition-colors border hover:bg-red-100 active:scale-95 transition-all"
                             style={{ borderColor: "rgba(220,38,38,0.3)", color: "#DC2626", background: "rgba(220,38,38,0.05)" }}>
                             Cancel Order
@@ -1081,6 +1131,121 @@ export function ProfilePage() {
           </div>
         )}
       </div>
+
+      {/* Cancel-order confirmation. Replaces window.confirm() + alert(), which
+          rendered as browser chrome outside the site and could only show the
+          order's raw UUID. */}
+      {cancelTarget && (
+        <div
+          className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4"
+          style={{ background: "rgba(28,6,8,0.55)", backdropFilter: "blur(3px)" }}
+          onClick={closeCancelDialog}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cancel-order-title"
+            onClick={(e) => e.stopPropagation()}
+            className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl overflow-hidden animate-fade-in"
+            style={{ background: "#fff", boxShadow: "0 20px 60px rgba(91,31,36,0.28)" }}
+          >
+            {cancelState === "done" ? (
+              <div className="p-6 text-center">
+                <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ background: "rgba(74,138,74,0.12)" }}>
+                  <Check size={22} strokeWidth={2} style={{ color: "#2E6B2E" }} />
+                </div>
+                <h3 id="cancel-order-title" className="text-base font-semibold mb-1" style={{ fontFamily: SERIF, color: MAROON }}>
+                  Order cancelled
+                </h3>
+                <p className="text-xs leading-relaxed mb-5" style={{ color: "#7A6A58" }}>
+                  We've cancelled it and put the items back in stock. If you had already paid, your refund is being processed and will reach you in 5–7 working days.
+                </p>
+                <button
+                  onClick={() => setCancelTarget(null)}
+                  className="w-full py-3 rounded-xl text-sm font-semibold"
+                  style={{ background: MAROON, color: IVORY }}
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="p-5 pb-4 flex items-start gap-3" style={{ borderBottom: "1px solid rgba(91,31,36,0.08)" }}>
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(220,38,38,0.10)" }}>
+                    <AlertTriangle size={18} strokeWidth={1.8} style={{ color: "#DC2626" }} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 id="cancel-order-title" className="text-base font-semibold" style={{ fontFamily: SERIF, color: MAROON }}>
+                      Cancel this order?
+                    </h3>
+                    <p className="text-xs mt-0.5" style={{ color: "#9A8A78" }}>This can't be undone.</p>
+                  </div>
+                  <button
+                    onClick={closeCancelDialog}
+                    disabled={cancelState === "working"}
+                    aria-label="Close"
+                    className="p-1 rounded-full hover:bg-black/5 disabled:opacity-40 flex-shrink-0"
+                    style={{ color: MAROON }}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                {/* Show WHAT is being cancelled. The browser dialog could only
+                    name the order by its UUID, which means nothing to a customer. */}
+                <div className="px-5 py-4 flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden"
+                    style={{ background: "rgba(200,160,68,0.10)", border: "1px solid rgba(91,31,36,0.08)" }}>
+                    {orderThumb(cancelTarget) ? (
+                      <img src={orderThumb(cancelTarget)!} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <Package size={20} strokeWidth={1.4} style={{ color: "#C9BCAA" }} />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold truncate" style={{ color: MAROON }}>{orderTitle(cancelTarget)}</p>
+                    <p className="text-[10px]" style={{ color: "#9A8A78" }}>
+                      {new Date(cancelTarget.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                    </p>
+                  </div>
+                  <p className="text-sm font-semibold flex-shrink-0" style={{ fontFamily: PRICE_FONT, color: MAROON }}>
+                    ₹{orderRupees(cancelTarget).toLocaleString("en-IN")}
+                  </p>
+                </div>
+
+                {cancelState === "error" && (
+                  <div className="mx-5 mb-4 p-3 rounded-xl text-xs leading-relaxed"
+                    style={{ background: "rgba(220,38,38,0.07)", border: "1px solid rgba(220,38,38,0.2)", color: "#B02020" }}>
+                    {cancelError}
+                  </div>
+                )}
+
+                <div className="px-5 pb-5 flex gap-2.5">
+                  <button
+                    onClick={closeCancelDialog}
+                    disabled={cancelState === "working"}
+                    className="flex-1 py-3 rounded-xl text-sm font-semibold disabled:opacity-40"
+                    style={{ border: "1px solid rgba(91,31,36,0.18)", color: MAROON, background: "#fff" }}
+                  >
+                    Keep my order
+                  </button>
+                  <button
+                    onClick={confirmCancelOrder}
+                    disabled={cancelState === "working"}
+                    className="flex-1 py-3 rounded-xl text-sm font-semibold disabled:opacity-60 flex items-center justify-center gap-2"
+                    style={{ background: "#DC2626", color: "#fff" }}
+                  >
+                    {cancelState === "working" && (
+                      <span className="w-3.5 h-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                    )}
+                    {cancelState === "working" ? "Cancelling…" : cancelState === "error" ? "Try again" : "Yes, cancel"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
