@@ -44,11 +44,13 @@ async function confirmOrder(orderId, paymentDetails) {
   //
   // Two callers land here for the same payment: Razorpay's webhook and the
   // frontend's /payments/verify. The webhook usually wins by a few seconds and
-  // the verify call used to run the WHOLE sequence again — which re-committed
-  // stock (deducting every item twice), sent a second confirmation email, and
-  // re-ran the Shiprocket pipeline. The second AWB request returns nothing
-  // because the shipment already has one, so the real AWB was overwritten with
-  // null and the order looked unshipped.
+  // the verify call used to run the WHOLE sequence again — sending a second
+  // confirmation email and re-running the Shiprocket pipeline. The second AWB
+  // request returns nothing because the shipment already has one, so the real
+  // AWB was overwritten with null and the order read as unshipped.
+  //
+  // Stock survived this by luck, not design: commit_stock only does
+  // `reserved = greatest(reserved - qty, 0)`, so the second pass was a no-op.
   //
   // A conditional UPDATE is the lock: Postgres lets exactly one of the two
   // callers match a row, whoever gets there first. The loser sees zero rows
