@@ -44,6 +44,109 @@ function itemPaise(it: any): number {
   return Number(it?.price ?? it?.unit_price ?? 0) || 0;
 }
 
+/**
+ * In-page replacement for window.confirm(). The browser dialog renders as
+ * chrome outside the site, takes a plain string (so it can only ever name a
+ * thing by its id), blocks the tab synchronously while an async request runs,
+ * and gives no way to show a failure or offer a retry.
+ *
+ * `body` is whatever the caller wants the customer to actually look at before
+ * they commit — the product they are cancelling, the address they are deleting.
+ */
+type ConfirmState = "idle" | "working" | "error";
+
+function ConfirmDialog({
+  open, title, subtitle, body, confirmLabel, workingLabel, state, error, onConfirm, onClose,
+}: {
+  open: boolean;
+  title: string;
+  subtitle?: string;
+  body?: React.ReactNode;
+  confirmLabel: string;
+  workingLabel: string;
+  state: ConfirmState;
+  error?: string;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  // Escape-to-close and a scroll lock on the page behind: both things
+  // window.confirm() gave us for free and a div does not.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && state !== "working") onClose(); };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
+  }, [open, state, onClose]);
+
+  if (!open) return null;
+  const busy = state === "working";
+
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4"
+      style={{ background: "rgba(28,6,8,0.55)", backdropFilter: "blur(3px)" }}
+      onClick={() => { if (!busy) onClose(); }}
+    >
+      <div
+        role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title"
+        onClick={(e) => e.stopPropagation()}
+        className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl overflow-hidden animate-fade-in"
+        style={{ background: "#fff", boxShadow: "0 20px 60px rgba(91,31,36,0.28)" }}
+      >
+        <div className="p-5 pb-4 flex items-start gap-3" style={{ borderBottom: "1px solid rgba(91,31,36,0.08)" }}>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(220,38,38,0.10)" }}>
+            <AlertTriangle size={18} strokeWidth={1.8} style={{ color: "#DC2626" }} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h3 id="confirm-dialog-title" className="text-base font-semibold" style={{ fontFamily: SERIF, color: MAROON }}>{title}</h3>
+            {subtitle && <p className="text-xs mt-0.5" style={{ color: "#9A8A78" }}>{subtitle}</p>}
+          </div>
+          <button onClick={onClose} disabled={busy} aria-label="Close"
+            className="p-1 rounded-full hover:bg-black/5 disabled:opacity-40 flex-shrink-0" style={{ color: MAROON }}>
+            <X size={18} />
+          </button>
+        </div>
+
+        {body && <div className="px-5 py-4">{body}</div>}
+
+        {state === "error" && error && (
+          <div className="mx-5 mb-4 p-3 rounded-xl text-xs leading-relaxed"
+            style={{ background: "rgba(220,38,38,0.07)", border: "1px solid rgba(220,38,38,0.2)", color: "#B02020" }}>
+            {error}
+          </div>
+        )}
+
+        <div className="px-5 pb-5 flex gap-2.5">
+          <button onClick={onClose} disabled={busy}
+            className="flex-1 py-3 rounded-xl text-sm font-semibold disabled:opacity-40"
+            style={{ border: "1px solid rgba(91,31,36,0.18)", color: MAROON, background: "#fff" }}>
+            Keep it
+          </button>
+          <button onClick={onConfirm} disabled={busy}
+            className="flex-1 py-3 rounded-xl text-sm font-semibold disabled:opacity-60 flex items-center justify-center gap-2"
+            style={{ background: "#DC2626", color: "#fff" }}>
+            {busy && <span className="w-3.5 h-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />}
+            {busy ? workingLabel : state === "error" ? "Try again" : confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// fetch() rejects with "Failed to fetch" when the network drops, which reads
+// like a crash to a customer. Server-sent messages ("Order can't be cancelled
+// once it is SHIPPED.") are worth showing verbatim; transport noise is not.
+function humanError(err: any, fallback: string): string {
+  const raw = String(err?.message || "");
+  if (!raw || /failed to fetch|networkerror|load failed|network request failed/i.test(raw)) {
+    return "We couldn't reach our server, so nothing has changed. Check your connection and try again.";
+  }
+  return raw || fallback;
+}
+
 function getOrderStep(status: string, awbCode?: string) {
   if (status === "CANCELLED" || status === "Cancelled") return -1;
   if (status === "Delivered" || status === "DELIVERED") return 3;
@@ -97,10 +200,17 @@ export function ProfilePage() {
   const [cancelState, setCancelState] = useState<"idle" | "working" | "done" | "error">("idle");
   const [cancelError, setCancelError] = useState("");
 
+  // Address-deletion dialog, same shape.
+  const [deleteAddrTarget, setDeleteAddrTarget] = useState<any | null>(null);
+  const [deleteAddrState, setDeleteAddrState] = useState<ConfirmState>("idle");
+  const [deleteAddrError, setDeleteAddrError] = useState("");
+
   // Edit Profile Form state
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [saveError, setSaveError] = useState("");
   const [editForm, setEditForm] = useState({
     fullName: "",
     email: "",
@@ -257,6 +367,21 @@ export function ProfilePage() {
   }, [user?.id, user?.email, user?.user_metadata?.phone, activeTab]);
 
   const [pincodeLoading, setPincodeLoading] = useState(false);
+  const [addrErrors, setAddrErrors] = useState<Record<string, string>>({});
+  const [addrSaveWarning, setAddrSaveWarning] = useState("");
+
+  // Clear a field's error the moment it is filled in, rather than making the
+  // customer press Save again to find out they fixed it.
+  useEffect(() => {
+    setAddrErrors(prev => {
+      if (!Object.keys(prev).length) return prev;
+      const next = { ...prev };
+      for (const k of Object.keys(next)) {
+        if (String((addrForm as any)[k] ?? "").trim()) delete next[k];
+      }
+      return Object.keys(next).length === Object.keys(prev).length ? prev : next;
+    });
+  }, [addrForm]);
 
   const handleProfilePinChange = async (val: string) => {
     const cleanVal = val.replace(/\D/g, "").slice(0, 6);
@@ -265,7 +390,11 @@ export function ProfilePage() {
     if (cleanVal.length === 6) {
       setPincodeLoading(true);
       try {
-        const res = await fetch(`https://api.postalpincode.in/pincode/${cleanVal}`);
+        // Without a timeout a hung request leaves "Auto-filling..." spinning
+        // forever, because setPincodeLoading(false) lives in the finally of a
+        // promise that never settles.
+        const res = await fetch(`https://api.postalpincode.in/pincode/${cleanVal}`,
+          { signal: AbortSignal.timeout(6000) });
         const data = await res.json();
         if (data && data[0] && data[0].Status === "Success") {
           const postOffice = data[0].PostOffice[0];
@@ -286,18 +415,25 @@ export function ProfilePage() {
   };
 
   const handleSaveProfileAddress = async () => {
-    const missing: string[] = [];
-    if (!addrForm.name.trim()) missing.push("Name");
-    if (!addrForm.phone.trim()) missing.push("Phone Number");
-    if (!addrForm.pin.trim()) missing.push("PIN Code");
-    if (!addrForm.house.trim()) missing.push("House / Flat No.");
-    if (!addrForm.street.trim()) missing.push("Street Address");
-    if (!addrForm.city.trim()) missing.push("City");
+    // Errors land on the field that is wrong. The alert() this replaces listed
+    // every missing field in one string and then disappeared.
+    const errs: Record<string, string> = {};
+    if (!addrForm.name.trim()) errs.name = "Required";
+    if (!addrForm.phone.trim()) errs.phone = "Required";
+    else if (addrForm.phone.replace(/\D/g, "").length !== 10) errs.phone = "Enter a 10-digit mobile number";
+    if (!addrForm.pin.trim()) errs.pin = "Required";
+    else if (!/^\d{6}$/.test(addrForm.pin.trim())) errs.pin = "Enter a 6-digit PIN code";
+    if (!addrForm.house.trim()) errs.house = "Required";
+    if (!addrForm.street.trim()) errs.street = "Required";
+    if (!addrForm.city.trim()) errs.city = "Required";
+    // State is required because Shiprocket needs billing_state. Leaving it
+    // blank did not fail here — it failed later, where confirmOrder falls back
+    // to `addr.state || addr.city || "Unknown"` and ships a parcel labelled
+    // with the city (or literally "Unknown") as its state.
+    if (!addrForm.state.trim()) errs.state = "Required — needed for shipping";
 
-    if (missing.length > 0) {
-      alert(`Please fill in: ${missing.join(", ")}`);
-      return;
-    }
+    setAddrErrors(errs);
+    if (Object.keys(errs).length) return;
 
     const newAddrObj = {
       id: editingAddrId || Date.now(),
@@ -346,8 +482,18 @@ export function ProfilePage() {
       if (typeof editingAddrId === 'number') {
         dbPayload.id = editingAddrId;
       }
-      Promise.resolve(supabase.from("addresses").upsert(dbPayload))
-        .catch(err => console.warn("Supabase address save warning:", err));
+      // supabase-js resolves with {data, error} and does not reject, so the
+      // .catch() that used to be here never fired — an RLS refusal left the
+      // address in localStorage only, and it silently disappeared on any other
+      // device. Surface it instead.
+      supabase.from("addresses").upsert(dbPayload).then(({ error }) => {
+        if (error) {
+          console.error("Address save failed:", error.message);
+          setAddrSaveWarning("Saved on this device, but we couldn't sync it to your account. It may not appear on other devices.");
+        } else {
+          setAddrSaveWarning("");
+        }
+      });
     }
   };
 
@@ -385,15 +531,45 @@ export function ProfilePage() {
     setShowAddrForm(true);
   };
 
-  const handleDeleteProfileAddress = (id: string | number) => {
-    if (!confirm("Remove this address?")) return;
-    const newList = profileAddresses.filter(a => String(a.id) !== String(id));
-    setProfileAddresses(newList);
-    if (user?.id) {
-      try { localStorage.setItem(`Nakshra_user_addresses_${user.id}`, JSON.stringify(newList)); } catch (e) {}
-      Promise.resolve(supabase.from("addresses").delete().eq("id", id)).catch(() => {});
-    } else {
-      try { localStorage.setItem("Nakshra_saved_addresses_list", JSON.stringify(newList)); } catch (e) {}
+  const openDeleteAddrDialog = (addr: any) => {
+    setDeleteAddrTarget(addr);
+    setDeleteAddrState("idle");
+    setDeleteAddrError("");
+  };
+
+  const closeDeleteAddrDialog = () => {
+    if (deleteAddrState === "working") return;
+    setDeleteAddrTarget(null);
+  };
+
+  const confirmDeleteAddress = async () => {
+    if (!deleteAddrTarget) return;
+    const id = deleteAddrTarget.id;
+    setDeleteAddrState("working");
+    setDeleteAddrError("");
+    try {
+      // The row only leaves the screen once the database agrees. This used to
+      // remove it optimistically and fire the delete with `.catch(() => {})` —
+      // which never ran, because supabase-js reports failures as `result.error`
+      // rather than a rejection. An RLS refusal was therefore invisible: the
+      // address vanished, then reappeared on the next load.
+      if (user?.id) {
+        const { error } = await supabase.from("addresses").delete().eq("id", id);
+        if (error) throw new Error(error.message);
+      }
+      const newList = profileAddresses.filter(a => String(a.id) !== String(id));
+      setProfileAddresses(newList);
+      try {
+        localStorage.setItem(
+          user?.id ? `Nakshra_user_addresses_${user.id}` : "Nakshra_saved_addresses_list",
+          JSON.stringify(newList)
+        );
+      } catch (e) {}
+      setDeleteAddrTarget(null);
+    } catch (err: any) {
+      console.error("Address delete error:", err);
+      setDeleteAddrError(humanError(err, "We couldn't remove this address. Please try again."));
+      setDeleteAddrState("error");
     }
   };
 
@@ -450,20 +626,6 @@ export function ProfilePage() {
       setCancelState("error");
     }
   };
-
-  // Escape closes the dialog and the page behind it stops scrolling, both of
-  // which window.confirm() gave us for free and a div does not.
-  useEffect(() => {
-    if (!cancelTarget) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") closeCancelDialog(); };
-    window.addEventListener("keydown", onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
-    };
-  }, [cancelTarget, cancelState]);
 
   // Fetch real profile from DB
   useEffect(() => {
@@ -590,25 +752,18 @@ export function ProfilePage() {
     // Phone is optional — email is the account identifier. Requiring it here
     // locked every email-only account out of editing its own profile (including
     // out of correcting a wrong date of birth). Validate only what was entered.
+    // Validation errors attach to the field that is wrong, rather than firing a
+    // browser alert() that names the problem and then vanishes, leaving the
+    // customer to work out which of five inputs it meant.
+    const errs: Record<string, string> = {};
     const phoneDigits = editForm.phone.replace(/\D/g, "");
-    if (phoneDigits.length > 0 && phoneDigits.length !== 10) {
-      alert("Please enter a valid 10-digit mobile number, or leave it blank.");
-      return;
-    }
-
-    if (editForm.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editForm.email.trim())) {
-      alert("Please enter a valid email address.");
-      return;
-    }
-
-    if (editForm.dob) {
-      const selectedDate = new Date(editForm.dob);
-      const today = new Date();
-      if (selectedDate > today) {
-        alert("Date of birth cannot be in the future. Please select a valid date.");
-        return;
-      }
-    }
+    if (phoneDigits.length > 0 && phoneDigits.length !== 10)
+      errs.phone = "Enter a 10-digit mobile number, or leave this blank.";
+    if (editForm.dob && new Date(editForm.dob) > new Date())
+      errs.dob = "Date of birth can't be in the future.";
+    setFieldErrors(errs);
+    if (Object.keys(errs).length) return;
+    setSaveError("");
 
     setSaving(true);
     setSaveSuccess(false);
@@ -674,7 +829,7 @@ export function ProfilePage() {
     } catch (e: any) {
       setSaving(false);
       setSaveSuccess(false);
-      alert("Failed to save profile: " + (e.message || "Please try again."));
+      setSaveError(humanError(e, "We couldn't save your profile. Please try again."));
     }
   };
 
@@ -755,8 +910,14 @@ export function ProfilePage() {
               <div className="rounded-2xl p-6 mb-4 space-y-4" style={{ background: "#fff", border: "1px solid rgba(91,31,36,0.12)", boxShadow: "0 4px 20px rgba(91,31,36,0.05)" }}>
                 <div className="flex items-center justify-between pb-3" style={{ borderBottom: "1px solid rgba(91,31,36,0.08)" }}>
                   <h3 className="text-base font-semibold" style={{ fontFamily: SERIF, color: MAROON }}>Edit Your Profile</h3>
-                  <button onClick={() => setIsEditing(false)} className="p-1 rounded-full hover:bg-black/5" style={{ color: MAROON }}><X size={18} /></button>
+                  <button onClick={() => { setIsEditing(false); setFieldErrors({}); setSaveError(""); }} className="p-1 rounded-full hover:bg-black/5" style={{ color: MAROON }}><X size={18} /></button>
                 </div>
+                {saveError && (
+                  <div className="p-3 rounded-xl text-xs leading-relaxed"
+                    style={{ background: "rgba(220,38,38,0.07)", border: "1px solid rgba(220,38,38,0.2)", color: "#B02020" }}>
+                    {saveError}
+                  </div>
+                )}
                 <div>
                   <label htmlFor="profile-full-name" className="block text-xs font-semibold mb-1" style={{ color: "#7A6A58" }}>Full Name</label>
                   <input id="profile-full-name" name="name" autoComplete="name" type="text" value={editForm.fullName} onChange={e => setEditForm(p => ({ ...p, fullName: e.target.value }))}
@@ -764,8 +925,19 @@ export function ProfilePage() {
                 </div>
                 <div>
                   <label htmlFor="profile-email" className="block text-xs font-semibold mb-1" style={{ color: "#7A6A58" }}>Email Address</label>
-                  <input id="profile-email" name="email" autoComplete="email" type="email" value={editForm.email} onChange={e => setEditForm(p => ({ ...p, email: e.target.value }))}
-                    className="w-full px-4 py-2.5 rounded-xl text-sm outline-none" style={{ border: "1px solid rgba(91,31,36,0.15)", background: "#FAF7F2", color: MAROON }} />
+                  {/* Read-only on purpose. This was an editable input, but
+                      /api/auth/profile accepts no email field and never has, so
+                      a change was written to local state and localStorage only —
+                      it looked saved, then reverted on the next load when the
+                      users row was re-read. Email is also the Supabase Auth
+                      identifier, so changing it needs a verification flow rather
+                      than a text box. */}
+                  <input id="profile-email" name="email" autoComplete="email" type="email" value={editForm.email} readOnly disabled
+                    className="w-full px-4 py-2.5 rounded-xl text-sm outline-none cursor-not-allowed"
+                    style={{ border: "1px solid rgba(91,31,36,0.10)", background: "#F1ECE4", color: "#9A8A78" }} />
+                  <p className="text-[10px] mt-1" style={{ color: "#9A8A78" }}>
+                    Your email is your login. To change it, message us on WhatsApp.
+                  </p>
                 </div>
                 <div>
                   <label htmlFor="profile-phone" className="block text-xs font-semibold mb-1" style={{ color: "#7A6A58" }}>Mobile Phone Number</label>
@@ -776,6 +948,7 @@ export function ProfilePage() {
                     <input id="profile-phone" name="tel" autoComplete="tel" type="tel" placeholder="10-digit mobile number" maxLength={10} value={editForm.phone} onChange={e => setEditForm(p => ({ ...p, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))}
                       className="flex-1 px-3 py-2.5 text-sm outline-none bg-transparent" style={{ color: MAROON }} />
                   </div>
+                  {fieldErrors.phone && <p className="text-[11px] mt-1" style={{ color: "#DC2626" }}>{fieldErrors.phone}</p>}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -833,10 +1006,11 @@ export function ProfilePage() {
                             selected={editForm.dob ? (() => { const [y, m, d] = editForm.dob.split("-").map(Number); return new Date(y, m - 1, d); })() : undefined}
                             onSelect={(date) => { 
                               if (date) {
-                                if (date > new Date()) {
-                                  alert("Date of birth cannot be in the future.");
-                                  return;
-                                }
+                                // Belt and braces: `disabled={{ after: new Date() }}`
+                                // already stops the picker offering a future day,
+                                // so this cannot fire. Ignore rather than alert —
+                                // an alert for an unreachable state is noise.
+                                if (date > new Date()) return;
                                 const y = date.getFullYear();
                                 const m = String(date.getMonth() + 1).padStart(2, '0');
                                 const d = String(date.getDate()).padStart(2, '0');
@@ -900,6 +1074,14 @@ export function ProfilePage() {
                   </button>
                 </div>
 
+                {addrSaveWarning && (
+                  <div className="mb-3 p-3 rounded-xl text-xs leading-relaxed flex items-start gap-2"
+                    style={{ background: "rgba(200,160,68,0.10)", border: "1px solid rgba(200,160,68,0.35)", color: "#8B6914" }}>
+                    <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
+                    <span>{addrSaveWarning}</span>
+                  </div>
+                )}
+
                 {profileAddresses.length === 0 ? (
                   <div className="text-center py-12 rounded-2xl" style={{ background: "#fff", border: "1px solid rgba(91,31,36,0.08)" }}>
                     <MapPin size={32} className="mx-auto mb-2 opacity-40" style={{ color: MAROON }} />
@@ -930,7 +1112,7 @@ export function ProfilePage() {
                             <button onClick={() => handleEditProfileAddress(addr)} className="p-2 rounded-lg hover:bg-amber-50" style={{ color: MAROON, border: "1px solid rgba(91,31,36,0.12)" }}>
                               <Edit2 size={13} />
                             </button>
-                            <button onClick={() => handleDeleteProfileAddress(addr.id)} className="p-2 rounded-lg hover:bg-red-50" style={{ color: "#C04040", border: "1px solid rgba(192,64,64,0.15)" }}>
+                            <button onClick={() => openDeleteAddrDialog(addr)} className="p-2 rounded-lg hover:bg-red-50" style={{ color: "#C04040", border: "1px solid rgba(192,64,64,0.15)" }}>
                               <Trash2 size={13} />
                             </button>
                           </div>
@@ -950,11 +1132,13 @@ export function ProfilePage() {
                   <label className="block text-xs font-semibold mb-1 text-gray-600">Full Name *</label>
                   <input type="text" value={addrForm.name} onChange={e => setAddrForm(p => ({ ...p, name: e.target.value }))}
                     className="w-full px-4 py-2.5 rounded-xl text-sm outline-none border border-black/15 bg-[#FAF7F2]" />
+                  {addrErrors.name && <p className="text-[11px] mt-1" style={{ color: "#DC2626" }}>{addrErrors.name}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-1 text-gray-600">Phone Number *</label>
                   <input type="tel" value={addrForm.phone} onChange={e => setAddrForm(p => ({ ...p, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))}
                     className="w-full px-4 py-2.5 rounded-xl text-sm outline-none border border-black/15 bg-[#FAF7F2]" />
+                  {addrErrors.phone && <p className="text-[11px] mt-1" style={{ color: "#DC2626" }}>{addrErrors.phone}</p>}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -962,6 +1146,7 @@ export function ProfilePage() {
                     <div className="relative">
                       <input type="text" maxLength={6} placeholder="6-digit PIN" value={addrForm.pin} onChange={e => handleProfilePinChange(e.target.value)}
                         className="w-full px-4 py-2.5 rounded-xl text-sm outline-none border border-black/15 bg-[#FAF7F2]" />
+                  {addrErrors.pin && <p className="text-[11px] mt-1" style={{ color: "#DC2626" }}>{addrErrors.pin}</p>}
                       {pincodeLoading && (
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-amber-700 animate-pulse">Auto-filling...</span>
                       )}
@@ -971,23 +1156,27 @@ export function ProfilePage() {
                     <label className="block text-xs font-semibold mb-1 text-gray-600">House / Flat No. *</label>
                     <input type="text" placeholder="e.g. 01A, B-402" value={addrForm.house} onChange={e => setAddrForm(p => ({ ...p, house: e.target.value }))}
                       className="w-full px-4 py-2.5 rounded-xl text-sm outline-none border border-black/15 bg-[#FAF7F2]" />
+                  {addrErrors.house && <p className="text-[11px] mt-1" style={{ color: "#DC2626" }}>{addrErrors.house}</p>}
                   </div>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-1 text-gray-600">Street Address *</label>
                   <input type="text" value={addrForm.street} onChange={e => setAddrForm(p => ({ ...p, street: e.target.value }))}
                     className="w-full px-4 py-2.5 rounded-xl text-sm outline-none border border-black/15 bg-[#FAF7F2]" />
+                  {addrErrors.street && <p className="text-[11px] mt-1" style={{ color: "#DC2626" }}>{addrErrors.street}</p>}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold mb-1 text-gray-600">City *</label>
                     <input type="text" value={addrForm.city} onChange={e => setAddrForm(p => ({ ...p, city: e.target.value }))}
                       className="w-full px-4 py-2.5 rounded-xl text-sm outline-none border border-black/15 bg-[#FAF7F2]" />
+                  {addrErrors.city && <p className="text-[11px] mt-1" style={{ color: "#DC2626" }}>{addrErrors.city}</p>}
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold mb-1 text-gray-600">State</label>
+                    <label className="block text-xs font-semibold mb-1 text-gray-600">State *</label>
                     <input type="text" value={addrForm.state} onChange={e => setAddrForm(p => ({ ...p, state: e.target.value }))}
                       className="w-full px-4 py-2.5 rounded-xl text-sm outline-none border border-black/15 bg-[#FAF7F2]" />
+                  {addrErrors.state && <p className="text-[11px] mt-1" style={{ color: "#DC2626" }}>{addrErrors.state}</p>}
                   </div>
                 </div>
 
@@ -1135,117 +1324,89 @@ export function ProfilePage() {
       {/* Cancel-order confirmation. Replaces window.confirm() + alert(), which
           rendered as browser chrome outside the site and could only show the
           order's raw UUID. */}
-      {cancelTarget && (
-        <div
-          className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4"
+      {cancelTarget && cancelState === "done" ? (
+        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4"
           style={{ background: "rgba(28,6,8,0.55)", backdropFilter: "blur(3px)" }}
-          onClick={closeCancelDialog}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="cancel-order-title"
-            onClick={(e) => e.stopPropagation()}
-            className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl overflow-hidden animate-fade-in"
-            style={{ background: "#fff", boxShadow: "0 20px 60px rgba(91,31,36,0.28)" }}
-          >
-            {cancelState === "done" ? (
-              <div className="p-6 text-center">
-                <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ background: "rgba(74,138,74,0.12)" }}>
-                  <Check size={22} strokeWidth={2} style={{ color: "#2E6B2E" }} />
-                </div>
-                <h3 id="cancel-order-title" className="text-base font-semibold mb-1" style={{ fontFamily: SERIF, color: MAROON }}>
-                  Order cancelled
-                </h3>
-                <p className="text-xs leading-relaxed mb-5" style={{ color: "#7A6A58" }}>
-                  We've cancelled it and put the items back in stock. If you had already paid, your refund is being processed and will reach you in 5–7 working days.
-                </p>
-                <button
-                  onClick={() => setCancelTarget(null)}
-                  className="w-full py-3 rounded-xl text-sm font-semibold"
-                  style={{ background: MAROON, color: IVORY }}
-                >
-                  Done
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="p-5 pb-4 flex items-start gap-3" style={{ borderBottom: "1px solid rgba(91,31,36,0.08)" }}>
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(220,38,38,0.10)" }}>
-                    <AlertTriangle size={18} strokeWidth={1.8} style={{ color: "#DC2626" }} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 id="cancel-order-title" className="text-base font-semibold" style={{ fontFamily: SERIF, color: MAROON }}>
-                      Cancel this order?
-                    </h3>
-                    <p className="text-xs mt-0.5" style={{ color: "#9A8A78" }}>This can't be undone.</p>
-                  </div>
-                  <button
-                    onClick={closeCancelDialog}
-                    disabled={cancelState === "working"}
-                    aria-label="Close"
-                    className="p-1 rounded-full hover:bg-black/5 disabled:opacity-40 flex-shrink-0"
-                    style={{ color: MAROON }}
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-
-                {/* Show WHAT is being cancelled. The browser dialog could only
-                    name the order by its UUID, which means nothing to a customer. */}
-                <div className="px-5 py-4 flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden"
-                    style={{ background: "rgba(200,160,68,0.10)", border: "1px solid rgba(91,31,36,0.08)" }}>
-                    {orderThumb(cancelTarget) ? (
-                      <img src={orderThumb(cancelTarget)!} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <Package size={20} strokeWidth={1.4} style={{ color: "#C9BCAA" }} />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold truncate" style={{ color: MAROON }}>{orderTitle(cancelTarget)}</p>
-                    <p className="text-[10px]" style={{ color: "#9A8A78" }}>
-                      {new Date(cancelTarget.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
-                    </p>
-                  </div>
-                  <p className="text-sm font-semibold flex-shrink-0" style={{ fontFamily: PRICE_FONT, color: MAROON }}>
-                    ₹{orderRupees(cancelTarget).toLocaleString("en-IN")}
-                  </p>
-                </div>
-
-                {cancelState === "error" && (
-                  <div className="mx-5 mb-4 p-3 rounded-xl text-xs leading-relaxed"
-                    style={{ background: "rgba(220,38,38,0.07)", border: "1px solid rgba(220,38,38,0.2)", color: "#B02020" }}>
-                    {cancelError}
-                  </div>
-                )}
-
-                <div className="px-5 pb-5 flex gap-2.5">
-                  <button
-                    onClick={closeCancelDialog}
-                    disabled={cancelState === "working"}
-                    className="flex-1 py-3 rounded-xl text-sm font-semibold disabled:opacity-40"
-                    style={{ border: "1px solid rgba(91,31,36,0.18)", color: MAROON, background: "#fff" }}
-                  >
-                    Keep my order
-                  </button>
-                  <button
-                    onClick={confirmCancelOrder}
-                    disabled={cancelState === "working"}
-                    className="flex-1 py-3 rounded-xl text-sm font-semibold disabled:opacity-60 flex items-center justify-center gap-2"
-                    style={{ background: "#DC2626", color: "#fff" }}
-                  >
-                    {cancelState === "working" && (
-                      <span className="w-3.5 h-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-                    )}
-                    {cancelState === "working" ? "Cancelling…" : cancelState === "error" ? "Try again" : "Yes, cancel"}
-                  </button>
-                </div>
-              </>
-            )}
+          onClick={() => setCancelTarget(null)}>
+          <div role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}
+            className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl overflow-hidden animate-fade-in p-6 text-center"
+            style={{ background: "#fff", boxShadow: "0 20px 60px rgba(91,31,36,0.28)" }}>
+            <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ background: "rgba(74,138,74,0.12)" }}>
+              <Check size={22} strokeWidth={2} style={{ color: "#2E6B2E" }} />
+            </div>
+            <h3 className="text-base font-semibold mb-1" style={{ fontFamily: SERIF, color: MAROON }}>Order cancelled</h3>
+            <p className="text-xs leading-relaxed mb-5" style={{ color: "#7A6A58" }}>
+              We've cancelled it and put the items back in stock. If you had already paid, your refund is being processed and will reach you in 5–7 working days.
+            </p>
+            <button onClick={() => setCancelTarget(null)} className="w-full py-3 rounded-xl text-sm font-semibold"
+              style={{ background: MAROON, color: IVORY }}>Done</button>
           </div>
         </div>
+      ) : (
+        <ConfirmDialog
+          open={!!cancelTarget}
+          title="Cancel this order?"
+          subtitle="This can't be undone."
+          confirmLabel="Yes, cancel"
+          workingLabel="Cancelling…"
+          state={cancelState === "done" ? "idle" : cancelState}
+          error={cancelError}
+          onConfirm={confirmCancelOrder}
+          onClose={closeCancelDialog}
+          body={cancelTarget && (
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden"
+                style={{ background: "rgba(200,160,68,0.10)", border: "1px solid rgba(91,31,36,0.08)" }}>
+                {orderThumb(cancelTarget) ? (
+                  <img src={orderThumb(cancelTarget)!} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <Package size={20} strokeWidth={1.4} style={{ color: "#C9BCAA" }} />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold truncate" style={{ color: MAROON }}>{orderTitle(cancelTarget)}</p>
+                <p className="text-[10px]" style={{ color: "#9A8A78" }}>
+                  {new Date(cancelTarget.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                </p>
+              </div>
+              <p className="text-sm font-semibold flex-shrink-0" style={{ fontFamily: PRICE_FONT, color: MAROON }}>
+                ₹{orderRupees(cancelTarget).toLocaleString("en-IN")}
+              </p>
+            </div>
+          )}
+        />
       )}
+
+      {/* Address deletion — same dialog, so both destructive actions on this
+          page behave identically instead of one being browser chrome. */}
+      <ConfirmDialog
+        open={!!deleteAddrTarget}
+        title="Remove this address?"
+        subtitle="You can add it again later."
+        confirmLabel="Remove"
+        workingLabel="Removing…"
+        state={deleteAddrState}
+        error={deleteAddrError}
+        onConfirm={confirmDeleteAddress}
+        onClose={closeDeleteAddrDialog}
+        body={deleteAddrTarget && (
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl mt-0.5 flex-shrink-0" style={{ background: "rgba(200,160,68,0.1)", color: MAROON }}>
+              <MapPin size={16} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold" style={{ color: "#3A2A1A" }}>
+                {deleteAddrTarget.full_name || deleteAddrTarget.name} · {deleteAddrTarget.phone}
+              </p>
+              <p className="text-xs leading-relaxed text-gray-600 mt-1">
+                {[deleteAddrTarget.line1 || deleteAddrTarget.address_line1 || deleteAddrTarget.address,
+                  deleteAddrTarget.city, deleteAddrTarget.state].filter(Boolean).join(", ")}
+                {" – "}{deleteAddrTarget.pincode || deleteAddrTarget.pin}
+              </p>
+            </div>
+          </div>
+        )}
+      />
     </div>
   );
 }
