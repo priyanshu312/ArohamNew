@@ -35,6 +35,137 @@ router.get("/status", (req, res) => {
   });
 });
 
+// ─── POST /api/shiprocket/webhook ─── Shiprocket pushes tracking updates here ───
+//
+// Shiprocket fires this on every scan event, which is the only way a change made
+// in THEIR dashboard (a cancellation, a delivery) reaches our database. Without
+// it an order cancelled at Shiprocket stays CONFIRMED here forever, and no order
+// ever reaches SHIPPED or DELIVERED — the customer's timeline never moves past
+// "Processing".
+//
+// Configure it in Shiprocket: Settings → API → Webhooks. Set the URL to
+//   https://nakshra.onrender.com/api/shiprocket/webhook
+// and the token to whatever you put in SHIPROCKET_WEBHOOK_TOKEN.
+//
+// Shiprocket's payload shape is not publicly documented, so the field readers
+// below accept the spellings seen in the wild and the raw body is logged on
+// every call. Read one real delivery in the logs, then tighten this.
+
+// Order matters: "RTO DELIVERED" contains "delivered", and a cancelled RTO is
+// still a cancellation. Most specific first.
+function mapShiprocketStatus(raw) {
+  const s = String(raw || "").toLowerCase().trim();
+  if (!s) return null;
+  // Negations first. "UNDELIVERED" and "NOT DELIVERED" both contain
+  // "delivered", and a substring check alone marks a failed delivery as
+  // delivered — the single worst thing this function could get wrong.
+  if (s.includes("undeliver") || s.includes("not delivered")) return null;
+  if (s.includes("cancel")) return "CANCELLED";
+  if (s.includes("rto") || s.includes("return")) {
+    // Only a completed return puts the goods back in our hands. "RTO INITIATED"
+    // is still in transit, so it is recorded but does not change the order.
+    return s.includes("delivered") ? "CANCELLED" : null;
+  }
+  if (s.includes("delivered")) return "DELIVERED";
+  if (["picked up", "in transit", "out for delivery", "shipped", "dispatched"].some((h) => s.includes(h)))
+    return "SHIPPED";
+  return null; // NEW / AWB ASSIGNED / PICKUP SCHEDULED etc. — nothing to change
+}
+
+// Never walk an order backwards. A late "in transit" scan must not undo a
+// delivery, and nothing un-cancels an order.
+const TERMINAL = new Set(["DELIVERED", "CANCELLED"]);
+
+router.post("/webhook", async (req, res) => {
+  const body = req.body || {};
+  console.log("[Shiprocket webhook] raw payload:", JSON.stringify(body).slice(0, 1500));
+
+  // Shared-secret check. Fail closed: this endpoint moves money-adjacent state
+  // (it releases stock), so an unset token means nobody gets in rather than
+  // everybody. Shiprocket sends the token you configure as x-api-key.
+  const expected = process.env.SHIPROCKET_WEBHOOK_TOKEN;
+  const got = req.headers["x-api-key"] || req.headers["x-webhook-token"];
+  if (!expected) {
+    console.error("[Shiprocket webhook] SHIPROCKET_WEBHOOK_TOKEN is not set — rejecting.");
+    return res.status(503).json({ error: "Webhook not configured" });
+  }
+  if (got !== expected) {
+    console.warn("[Shiprocket webhook] rejected: bad or missing x-api-key.");
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  try {
+    const awb = body.awb || body.awb_code || body.shipment_awb || null;
+    const shipmentId = body.shipment_id || body.shipmentId || null;
+    // We create Shiprocket orders with order_id = our own UUID, so this echoes
+    // straight back. channel_order_id is the spelling on some payload versions.
+    const ourOrderId = body.order_id || body.channel_order_id || body.client_order_id || null;
+    const rawStatus = body.current_status || body.status || body.shipment_status || body.current_status_body || null;
+
+    const next = mapShiprocketStatus(rawStatus);
+    console.log(`[Shiprocket webhook] order=${ourOrderId} awb=${awb} shipment=${shipmentId} status="${rawStatus}" → ${next || "(no change)"}`);
+
+    // Always 200 once authenticated, even when we do nothing — a non-2xx makes
+    // Shiprocket retry a payload we have already understood and rejected.
+    if (!next) return res.json({ received: true, applied: false, reason: "status not actionable" });
+
+    // Find the order. Prefer our own id; fall back to the shipping identifiers
+    // for payload versions that omit it.
+    let query = supabase.from("orders").select("id, status");
+    if (ourOrderId && /^[0-9a-f-]{36}$/i.test(String(ourOrderId))) query = query.eq("id", ourOrderId);
+    else if (awb) query = query.eq("awb_code", String(awb));
+    else if (shipmentId) query = query.eq("shipment_id", shipmentId);
+    else return res.json({ received: true, applied: false, reason: "no usable identifier" });
+
+    const { data: order, error: findErr } = await query.maybeSingle();
+    if (findErr) {
+      console.error("[Shiprocket webhook] lookup failed:", findErr.message);
+      return res.json({ received: true, applied: false, reason: "lookup failed" });
+    }
+    if (!order) {
+      console.warn(`[Shiprocket webhook] no order matched (order_id=${ourOrderId} awb=${awb} shipment=${shipmentId}).`);
+      return res.json({ received: true, applied: false, reason: "order not found" });
+    }
+    if (order.status === next) return res.json({ received: true, applied: false, reason: "already in that state" });
+    if (TERMINAL.has(order.status)) {
+      console.log(`[Shiprocket webhook] #${order.id} is already ${order.status} — refusing to move it to ${next}.`);
+      return res.json({ received: true, applied: false, reason: `already ${order.status}` });
+    }
+
+    const patch = { status: next };
+    if (awb) patch.awb_code = String(awb);
+    const { error: upErr } = await supabase.from("orders").update(patch).eq("id", order.id);
+    if (upErr) {
+      console.error(`[Shiprocket webhook] update failed for #${order.id}:`, upErr.message);
+      return res.json({ received: true, applied: false, reason: "update failed" });
+    }
+
+    // A cancellation means the goods never left us, so put the units back. The
+    // guard above makes this run at most once per order.
+    if (next === "CANCELLED") {
+      const { data: items } = await supabase
+        .from("order_items").select("product_id, qty").eq("order_id", order.id);
+      for (const it of items || [])
+        await supabase.rpc("release_stock", { p_product_id: it.product_id, p_qty: it.qty });
+
+      // Money is not refunded automatically — flag it for a human.
+      const { data: pay } = await supabase
+        .from("payments").select("status").eq("order_id", order.id).maybeSingle();
+      if (pay && pay.status === "SUCCESS") {
+        await supabase.from("payments").update({ status: "REFUND_PENDING" }).eq("order_id", order.id);
+        console.warn(`[Shiprocket webhook] #${order.id} cancelled at Shiprocket but was PAID — marked REFUND_PENDING.`);
+      }
+    }
+
+    console.log(`[Shiprocket webhook] #${order.id}: ${order.status} → ${next}.`);
+    res.json({ received: true, applied: true, orderId: order.id, status: next });
+  } catch (e) {
+    console.error("[Shiprocket webhook] handler error:", e.message);
+    // 500 so Shiprocket retries — this one really was our fault.
+    res.status(500).json({ error: "Webhook processing failed" });
+  }
+});
+
 // ─── POST /api/shiprocket/test-auth ─── Test credential authentication ───
 router.post("/test-auth", diagnosticGuard, async (req, res) => {
   try {

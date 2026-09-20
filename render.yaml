@@ -49,6 +49,11 @@ services:
         sync: false
       - key: SHIPROCKET_PICKUP_PINCODE
         sync: false
+      # Shared secret for POST /api/shiprocket/webhook. Set the same value as
+      # the token in Shiprocket -> Settings -> API -> Webhooks. Unset means the
+      # endpoint refuses every call.
+      - key: SHIPROCKET_WEBHOOK_TOKEN
+        sync: false
       # --- Chat / recommendations (optional) ---
       - key: GROQ_API_KEY
         sync: false
