@@ -123,22 +123,52 @@ async function confirmOrder(orderId, paymentDetails) {
     const shiprocket = new ShiprocketService(process.env.SHIPROCKET_EMAIL, process.env.SHIPROCKET_PASSWORD);
     await shiprocket.initialize();
 
-    const addr = order.address || {};
+    // orders.address is jsonb and is NOT always an object: the old offline
+    // checkout path wrote it as a formatted string ("line1, city, state - pin").
+    // Eight rows in production are still like that. Treating a string as an
+    // object gives undefined for every field, which used to be invisible.
+    const addr = (order.address && typeof order.address === "object" && !Array.isArray(order.address))
+      ? order.address
+      : {};
+
     // Normalize address field: checkout may send address_line1 or line1
     const addressLine = addr.address || addr.address_line1 || addr.line1 || "";
     // Normalize pincode: may come as pin or pincode
-    const pincode = addr.pincode || addr.pin || "";
+    const pincode = String(addr.pincode || addr.pin || "").trim();
     // Normalize name
     const customerName = addr.name || addr.full_name || "Customer";
+
+    // Refuse to dispatch an order we cannot actually deliver.
+    //
+    // These fields used to fall back to "No address provided" / "Unknown" /
+    // "000000" / "0000000000". Every one of those passes the Shiprocket
+    // validator — "000000" is numeric, "0000000000" is ten digits — so the
+    // order was accepted, an AWB was bought and a label was printed for a
+    // parcel addressed to nobody. Failing here is strictly better: the order
+    // stays CONFIRMED, the customer keeps their money's worth, and someone can
+    // fix the address and dispatch it by hand.
+    const missing = [];
+    if (!addressLine) missing.push("address");
+    if (!addr.city) missing.push("city");
+    if (!/^\d{6}$/.test(pincode)) missing.push("pincode");
+    if (!addr.state) missing.push("state");
+    if (String(addr.phone || "").replace(/\D/g, "").length < 10) missing.push("phone");
+    if (missing.length) {
+      console.error(
+        `[Shiprocket] NOT dispatching Order #${orderId} — delivery address is incomplete ` +
+        `(missing: ${missing.join(", ")}). The order stays CONFIRMED; fix the address and ship it manually.`
+      );
+      return;
+    }
 
     const orderData = {
       order_id: order.id,
       customer_name: customerName,
-      address: addressLine || "No address provided",
-      city: addr.city || "Unknown",
-      pincode: pincode || "000000",
-      state: addr.state || addr.city || "Unknown",
-      phone: addr.phone || "0000000000",
+      address: addressLine,
+      city: addr.city,
+      pincode,
+      state: addr.state,
+      phone: addr.phone,
       email: addr.email || "noemail@example.com",
       pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || "warehouse",
       sub_total: order.amount / 100, // paise to INR

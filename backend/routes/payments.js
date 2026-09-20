@@ -89,6 +89,22 @@ router.post("/webhook", async (req, res) => {
     const { data: pay } = await supabase.from("payments")
       .select("order_id, status").eq("razorpay_order_id", rzpOrderId).single();
 
+    // A refund arrives on an already-SUCCESS payment, so it has to be handled
+    // before the "skip if already done" guard below. Without this, refunding in
+    // the Razorpay dashboard changed nothing here: the payment sat at SUCCESS
+    // (or REFUND_PENDING) for good, and the order still read as a live sale.
+    if (pay && event.event === "refund.processed") {
+      const refund = event.payload?.refund?.entity;
+      // A partial refund is not a cancelled order — flag it for a human rather
+      // than guessing. `amount` is in paise, as everywhere else here.
+      const fullyRefunded = !refund || Number(refund.amount) >= Number(payment.amount);
+      await supabase.from("payments")
+        .update({ status: fullyRefunded ? "REFUNDED" : "PARTIALLY_REFUNDED" })
+        .eq("order_id", pay.order_id);
+      console.log(`[Payments] Refund processed for order #${pay.order_id} (${fullyRefunded ? "full" : "partial"}).`);
+      return res.json({ received: true });
+    }
+
     if (pay && pay.status !== "SUCCESS") {           // idempotent: skip if already done
       if (event.event === "payment.captured")
         await confirmOrder(pay.order_id, { razorpay_payment_id: payment.id, method: payment.method });

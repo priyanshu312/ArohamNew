@@ -247,6 +247,11 @@ export function ShippingPage() {
     if (!form.pin.trim() || form.pin.replace(/\D/g, "").length !== 6) { errors.pin = true; missing.push("6-Digit PIN Code"); }
     if (!form.house.trim()) { errors.house = true; missing.push("House / Flat No."); }
     if (!form.city.trim()) { errors.city = true; missing.push("City"); }
+    // State is shipping-critical: Shiprocket needs billing_state, and
+    // confirmOrder now refuses to dispatch an order without one. It is usually
+    // auto-filled from the PIN code, but that lookup can fail — and when it
+    // did, checkout happily took the money for a parcel that could not ship.
+    if (!form.state.trim()) { errors.state = true; missing.push("State"); }
 
     if (missing.length > 0) {
       setValidationErrors(errors);
@@ -542,6 +547,11 @@ export function ShippingPage() {
     if (!form.pin.trim() || form.pin.replace(/\D/g, "").length !== 6) { errors.pin = true; missing.push("6-Digit PIN Code"); }
     if (!form.house.trim()) { errors.house = true; missing.push("House / Flat No."); }
     if (!form.city.trim()) { errors.city = true; missing.push("City"); }
+    // State is shipping-critical: Shiprocket needs billing_state, and
+    // confirmOrder now refuses to dispatch an order without one. It is usually
+    // auto-filled from the PIN code, but that lookup can fail — and when it
+    // did, checkout happily took the money for a parcel that could not ship.
+    if (!form.state.trim()) { errors.state = true; missing.push("State"); }
 
     if (missing.length > 0) {
       setValidationErrors(errors);
@@ -788,7 +798,7 @@ export function ShippingPage() {
                   <FloatingInput label="Landmark (Optional)" value={form.landmark} onChange={set("landmark") as (v: string) => void} />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div style={{ border: fieldBorder("city"), borderRadius: 16 }}><FloatingInput label="City" value={form.city} onChange={set("city") as (v: string) => void} required /></div>
-                    <FloatingSelect label="State" options={INDIA_STATES} value={form.state} onChange={set("state") as (v: string) => void} />
+                    <div style={{ border: fieldBorder("state"), borderRadius: 16 }}><FloatingSelect label="State" options={INDIA_STATES} value={form.state} onChange={set("state") as (v: string) => void} /></div>
                   </div>
 
                   {/* Address Type Selector & Default option */}
