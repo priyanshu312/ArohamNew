@@ -1,4 +1,4 @@
-# Render Blueprint for the Nakshra backend (Express + Supabase + Razorpay).
+﻿# Render Blueprint for the Nakshra backend (Express + Supabase + Razorpay).
 # Deploy: Render Dashboard -> New -> Blueprint -> pick this repo.
 # All secret values below are marked `sync: false`, so Render will prompt for
 # them on first deploy and never store them in this file.
@@ -35,10 +35,12 @@ services:
         value: "false"
       # --- Shiprocket ---
       - key: SHIPROCKET_ENABLED
-        value: "false"
+        sync: false        # DO NOT hard-code — set to "true" in Render dashboard
       - key: SHIPROCKET_EMAIL
         sync: false
       - key: SHIPROCKET_PASSWORD
+        sync: false
+      - key: SHIPROCKET_PICKUP_LOCATION
         sync: false
       - key: SHIPROCKET_PICKUP_PINCODE
         sync: false

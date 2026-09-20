@@ -1,4 +1,4 @@
-// services/paymentService.js
+﻿// services/paymentService.js
 // "4. PAYMENT" + "5. ORDER CONFIRMATION": verify signature, update statuses, stock
 const crypto = require("crypto");
 const supabase = require("../config/supabase");
@@ -8,7 +8,7 @@ const { sendOrderConfirmation } = require("./notify");
 function verifyPaymentSignature({ razorpay_order_id, razorpay_payment_id, razorpay_signature }) {
   const secret = process.env.RAZORPAY_KEY_SECRET;
   if (!secret || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-    console.error("[Payments] Cannot verify payment signature — missing RAZORPAY_KEY_SECRET or params.");
+    console.error("[Payments] Cannot verify payment signature â€” missing RAZORPAY_KEY_SECRET or params.");
     return false;
   }
   const body = razorpay_order_id + "|" + razorpay_payment_id;
@@ -21,7 +21,7 @@ function verifyPaymentSignature({ razorpay_order_id, razorpay_payment_id, razorp
 function verifyWebhookSignature(rawBody, signature) {
   const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
   if (!secret || rawBody == null || !signature) {
-    console.error("[Payments] Cannot verify webhook signature — missing RAZORPAY_WEBHOOK_SECRET, body, or signature header.");
+    console.error("[Payments] Cannot verify webhook signature â€” missing RAZORPAY_WEBHOOK_SECRET, body, or signature header.");
     return false;
   }
   const expected = crypto
@@ -30,7 +30,7 @@ function verifyWebhookSignature(rawBody, signature) {
   return expected === signature;
 }
 
-// SUCCESS path: payment SUCCESS → order CONFIRMED → reserved stock becomes sold → Shiprocket Integration
+// SUCCESS path: payment SUCCESS â†’ order CONFIRMED â†’ reserved stock becomes sold â†’ Shiprocket Integration
 async function confirmOrder(orderId, paymentDetails) {
   // 1. Update payments table
   await supabase.from("payments")
@@ -85,16 +85,23 @@ async function confirmOrder(orderId, paymentDetails) {
     await shiprocket.initialize();
 
     const addr = order.address || {};
-    
+    // Normalize address field: checkout may send address_line1 or line1
+    const addressLine = addr.address || addr.address_line1 || addr.line1 || "";
+    // Normalize pincode: may come as pin or pincode
+    const pincode = addr.pincode || addr.pin || "";
+    // Normalize name
+    const customerName = addr.name || addr.full_name || "Customer";
+
     const orderData = {
       order_id: order.id,
-      customer_name: addr.name || "Customer",
-      address: addr.address || "No address provided",
+      customer_name: customerName,
+      address: addressLine || "No address provided",
       city: addr.city || "Unknown",
-      pincode: addr.pincode || "000000",
-      state: addr.state || addr.city || "Unknown", 
+      pincode: pincode || "000000",
+      state: addr.state || addr.city || "Unknown",
       phone: addr.phone || "0000000000",
       email: addr.email || "noemail@example.com",
+      pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || "warehouse",
       sub_total: order.amount / 100, // paise to INR
       items: items.map(i => ({
         name: i.name,
@@ -125,14 +132,14 @@ async function confirmOrder(orderId, paymentDetails) {
   }
 }
 
-// FAILURE path: payment FAILED → order PAYMENT_FAILED → release reserved stock
+// FAILURE path: payment FAILED â†’ order PAYMENT_FAILED â†’ release reserved stock
 async function failOrder(orderId, reason) {
-  // Never downgrade an order that has already been paid/confirmed — a stray or
+  // Never downgrade an order that has already been paid/confirmed â€” a stray or
   // replayed verify/webhook call with missing fields must not flip it back.
   const { data: existing } = await supabase.from("orders")
     .select("status").eq("id", orderId).maybeSingle();
   if (existing && (existing.status === "CONFIRMED" || existing.status === "SHIPPED" || existing.status === "DELIVERED")) {
-    console.warn(`[Payments] failOrder skipped for #${orderId} — already ${existing.status}.`);
+    console.warn(`[Payments] failOrder skipped for #${orderId} â€” already ${existing.status}.`);
     return;
   }
 
