@@ -38,8 +38,37 @@ function verifyWebhookSignature(rawBody, signature) {
   return expected === signature;
 }
 
-// SUCCESS path: payment SUCCESS â†’ order CONFIRMED â†’ reserved stock becomes sold â†’ Shiprocket Integration
+// SUCCESS path: payment SUCCESS → order CONFIRMED → reserved stock becomes sold → Shiprocket Integration
 async function confirmOrder(orderId, paymentDetails) {
+  // 0. Claim the order, exactly once.
+  //
+  // Two callers land here for the same payment: Razorpay's webhook and the
+  // frontend's /payments/verify. The webhook usually wins by a few seconds and
+  // the verify call used to run the WHOLE sequence again — which re-committed
+  // stock (deducting every item twice), sent a second confirmation email, and
+  // re-ran the Shiprocket pipeline. The second AWB request returns nothing
+  // because the shipment already has one, so the real AWB was overwritten with
+  // null and the order looked unshipped.
+  //
+  // A conditional UPDATE is the lock: Postgres lets exactly one of the two
+  // callers match a row, whoever gets there first. The loser sees zero rows
+  // and returns. Reading the status and then deciding would not be enough —
+  // both could read PENDING before either writes.
+  const { data: claimed, error: claimErr } = await supabase.from("orders")
+    .update({ status: "CONFIRMED" })
+    .eq("id", orderId)
+    .in("status", ["PENDING", "PAYMENT_FAILED"])
+    .select("id");
+
+  if (claimErr) {
+    console.error(`[Payments] Could not claim order #${orderId}: ${claimErr.message}`);
+    return;
+  }
+  if (!claimed || claimed.length === 0) {
+    console.log(`[Payments] confirmOrder skipped for #${orderId} — already confirmed by the other path (webhook/verify), or no such order.`);
+    return;
+  }
+
   // 1. Update payments table
   await supabase.from("payments")
     .update({ status: "SUCCESS", ...paymentDetails, paid_at: new Date().toISOString() })
@@ -150,7 +179,7 @@ async function confirmOrder(orderId, paymentDetails) {
   }
 }
 
-// FAILURE path: payment FAILED â†’ order PAYMENT_FAILED â†’ release reserved stock
+// FAILURE path: payment FAILED → order PAYMENT_FAILED → release reserved stock
 async function failOrder(orderId, reason) {
   // Never downgrade an order that has already been paid/confirmed — a stray or
   // replayed verify/webhook call with missing fields must not flip it back.

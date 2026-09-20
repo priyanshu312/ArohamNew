@@ -38,7 +38,7 @@ export const VALID_COUPONS: Record<string, CouponDef> = {
 // enabled by accident, nobody gets a ₹1 order unless the backend also allows it.
 // Must be the literal `import.meta.env.VITE_...` form — Vite does not substitute
 // a dynamic or optional-chained lookup.
-if (true) {
+if (String(import.meta.env.VITE_TEST_COUPON).toLowerCase() === "true") {
   VALID_COUPONS.WELCOME1 = { type: "fixed_total", value: 1, label: "TEST — pay ₹1" };
 }
 
