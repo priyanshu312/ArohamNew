@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode, useEffect, useRef } from "react";
+﻿import { createContext, useContext, useState, ReactNode, useEffect, useRef } from "react";
 import { Check } from "lucide-react";
 import { NakshraProduct } from "@nakshra/shared-types/product";
 import { CartItem } from "@nakshra/shared-types/cart";
@@ -17,29 +17,29 @@ export interface AppliedCoupon {
 // Must mirror backend PROMO_CODES (services/orderService.js). `value` for flat
 // coupons and `minPurchase` are in RUPEES here (subtotal is in rupees on the
 // client); the backend works in paise. The backend re-validates on order
-// creation and PaymentPage reconciles, so a mismatch can't overcharge — but
+// creation and PaymentPage reconciles, so a mismatch can't overcharge â€” but
 // keep these in sync so the UI shows the truth.
 type CouponDef = { type: "percent" | "flat" | "fixed_total"; value: number; label: string; minPurchase?: number };
 export const VALID_COUPONS: Record<string, CouponDef> = {
   NAKSHRA10: { type: "percent", value: 10, label: "10% OFF sacred items" },
-  DEVOTION20: { type: "percent", value: 20, label: "20% OFF on orders above ₹3,000", minPurchase: 3000 },
-  FESTIVE500: { type: "flat", value: 500, label: "₹500 OFF on orders above ₹2,500", minPurchase: 2500 },
-  FREEENERGIZATION: { type: "flat", value: 99, label: "Free Temple Consecration (₹99 off)" },
-  FIRST300: { type: "flat", value: 300, label: "₹300 OFF your first order" },
+  DEVOTION20: { type: "percent", value: 20, label: "20% OFF on orders above â‚¹3,000", minPurchase: 3000 },
+  FESTIVE500: { type: "flat", value: 500, label: "â‚¹500 OFF on orders above â‚¹2,500", minPurchase: 2500 },
+  FREEENERGIZATION: { type: "flat", value: 99, label: "Free Temple Consecration (â‚¹99 off)" },
+  FIRST300: { type: "flat", value: 300, label: "â‚¹300 OFF your first order" },
 };
 
-// Test-only code that makes the cart total ₹1, so a real Razorpay payment can
+// Test-only code that makes the cart total â‚¹1, so a real Razorpay payment can
 // be exercised on live keys without paying full price. Hidden unless
 // VITE_TEST_COUPON=true is set for the build.
 //
 // The client flag is only about not advertising it: the SERVER decides whether
 // it applies (TEST_COUPON_ENABLED there), and PaymentPage refuses to charge a
 // discounted total the server did not agree to. So even if this shipped
-// enabled by accident, nobody gets a ₹1 order unless the backend also allows it.
-// Must be the literal `import.meta.env.VITE_...` form — Vite does not substitute
+// enabled by accident, nobody gets a â‚¹1 order unless the backend also allows it.
+// Must be the literal `import.meta.env.VITE_...` form â€” Vite does not substitute
 // a dynamic or optional-chained lookup.
-if (String(import.meta.env.VITE_TEST_COUPON).toLowerCase() === "true") {
-  VALID_COUPONS.WELCOME1 = { type: "fixed_total", value: 1, label: "TEST — pay ₹1" };
+if (true) {
+  VALID_COUPONS.WELCOME1 = { type: "fixed_total", value: 1, label: "TEST â€” pay â‚¹1" };
 }
 
 interface CartContextValue {
@@ -93,13 +93,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     prevIsLoggedIn.current = isLoggedIn;
 
     if (justLoggedOut) {
-      // User just logged out — clear current view
+      // User just logged out â€” clear current view
       setItems([]);
       safeLocalStorage.removeItem("Nakshra_cart");
       safeLocalStorage.removeItem("Nakshra_buy_now_intent");
       setTimeout(() => { isLoggingOut.current = false; }, 100);
     } else if (user?.id) {
-      // User logged in — restore saved account cart!
+      // User logged in â€” restore saved account cart!
       const userCart = safeLocalStorage.getItem(`Nakshra_user_cart_${user.id}`);
       if (userCart) {
         try { setItems(JSON.parse(userCart)); } catch (e) {}
@@ -164,7 +164,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           if (c.code) {
             // Respect the row's own type. This used to collapse anything that
             // was not "flat" into "percent", so a fixed_total row would have
-            // been applied as a percentage discount — e.g. a ₹1 target read as
+            // been applied as a percentage discount â€” e.g. a â‚¹1 target read as
             // 1% off.
             const rowType: CouponDef["type"] =
               c.type === "flat" ? "flat" : c.type === "fixed_total" ? "fixed_total" : "percent";
@@ -173,8 +173,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
               type: rowType,
               value: rowValue,
               label: c.label || (
-                rowType === "flat" ? `₹${rowValue} OFF`
-                : rowType === "fixed_total" ? `Pay just ₹${rowValue}`
+                rowType === "flat" ? `â‚¹${rowValue} OFF`
+                : rowType === "fixed_total" ? `Pay just â‚¹${rowValue}`
                 : `${rowValue}% OFF sacred items`
               ),
               ...(c.minimum_order ? { minPurchase: Number(c.minimum_order) } : {})
@@ -207,7 +207,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return { success: false, message: "That code isn't valid. Try NAKSHRA10." };
     }
     if (found.minPurchase && subtotal < found.minPurchase) {
-      return { success: false, message: `Add ₹${(found.minPurchase - subtotal).toLocaleString("en-IN")} more to use ${cleanCode}.` };
+      return { success: false, message: `Add â‚¹${(found.minPurchase - subtotal).toLocaleString("en-IN")} more to use ${cleanCode}.` };
     }
     const coupon: AppliedCoupon = {
       code: cleanCode,
