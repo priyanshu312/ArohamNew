@@ -121,8 +121,12 @@ async function createPendingOrder(userId, products, address, promoCode) {
       discount = Math.max(0, subtotal - promo.value);
       promoApplied = true;
     } else {
+      // Percentage discounts are whole rupees, rounded down, exactly as the
+      // cart computes them (packages/shared-state CartContext). Paise here
+      // would charge a total the customer was never shown: 10% of ₹4,405 is
+      // ₹440.50, which the cart displays as ₹440.
       discount = promo.type === "percentage"
-        ? Math.floor(subtotal * (promo.value / 100))
+        ? Math.floor((subtotal * promo.value) / 100 / 100) * 100
         : Math.min(subtotal, promo.value);
       promoApplied = discount > 0;
     }

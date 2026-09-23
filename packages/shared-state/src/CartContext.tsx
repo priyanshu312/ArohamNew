@@ -180,7 +180,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   let discount = 0;
   if (appliedCoupon && subtotal > 0) {
     if (appliedCoupon.type === "percent") {
-      discount = Math.round((subtotal * appliedCoupon.value) / 100);
+      // Whole rupees, rounded down — the backend prices it the same way, so the
+      // total shown here is the total Razorpay charges.
+      discount = Math.floor((subtotal * appliedCoupon.value) / 100);
     } else if (appliedCoupon.type === "fixed_total") {
       // `value` is the final price to charge, not an amount off.
       discount = Math.max(0, subtotal - appliedCoupon.value);
