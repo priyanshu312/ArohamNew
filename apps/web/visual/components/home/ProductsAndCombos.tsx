@@ -28,15 +28,25 @@ export function ProductsAndCombos({ products, onProductClick, onAddCombo: _onAdd
   const yantras = products.filter(p => p.category === "Yantra");
   const yantraShelf = [...yantras.filter(p => !isBhojpatra(p)), ...yantras.filter(isBhojpatra)];
 
-  // Four shelves of what the shop actually sells, each filtered by its own
+  // "Our Picks" is one of each kind the category shelves below don't cover,
+  // Rudraksha first. Rudraksha had a shelf of its own, but its fourteen mukhi
+  // are options of one listing, so that shelf held a single card. The title
+  // claims nothing it can't back up: there is no sales data behind a
+  // "Trending" or "Bestselling" label.
+  const shelvedCategories = ["Yantra", "Pendant", "Vastu"];
+  const picks = products.filter((p, i) =>
+    !shelvedCategories.includes(p.category || "") && products.findIndex(q => q.category === p.category) === i);
+
+  // Category shelves of what the shop actually sells, each filtered by its own
   // category so "View all" lands somewhere real. What was here before was five
   // shelves of the same products under invented labels — "Bestselling", "Fav
   // Items", "Mega Sale" — whose View all links opened an empty shop page.
+  // "Our Picks" spans categories, so its View all opens the whole shop.
   const shelves: [string, string, string, NakshraProduct[], string][] = [
     ["Yantras", t("products.shelf_yantra", "Sacred geometry"), "Yantra",
       yantraShelf, MAROON],
-    ["Rudraksha", t("products.shelf_rudraksha", "One to fourteen mukhi"), "Rudraksha",
-      products.filter(p => p.category === "Rudraksha"), SAFFRON],
+    ["Our Picks", t("products.shelf_picks", "Rudraksha, mala and more"), "",
+      picks, SAFFRON],
     ["Pendants", t("products.shelf_pendant", "Set in silver and gold"), "Pendant",
       products.filter(p => p.category === "Pendant"), GOLD],
     ["Vastu", t("products.shelf_vastu", "For the home and the office"), "Vastu",
@@ -57,7 +67,7 @@ export function ProductsAndCombos({ products, onProductClick, onAddCombo: _onAdd
                 </div>
                 <h2 style={{ fontFamily: SERIF, fontSize: "clamp(1.6rem,3.5vw,2.5rem)", fontWeight: 500, color: MAROON, lineHeight: 1.15 }}>{title}</h2>
               </div>
-              <button onClick={() => navigate(`/shop?category=${encodeURIComponent(category as string)}`)} className="flex items-center gap-1 text-sm font-medium whitespace-nowrap transition-opacity hover:opacity-60" style={{ color: MAROON }}>
+              <button onClick={() => navigate(category ? `/shop?category=${encodeURIComponent(category as string)}` : "/shop")} className="flex items-center gap-1 text-sm font-medium whitespace-nowrap transition-opacity hover:opacity-60" style={{ color: MAROON }}>
                 {t("common.view_all", "View all")} <ChevronRight size={14} />
               </button>
             </div>
