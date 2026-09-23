@@ -22,6 +22,13 @@ export function HomePage() {
   const goToShop = () => navigate("/shop");
   const goToProduct = (p: NakshraProduct) => navigate(`/shop/${p.slug}`);
 
+  // The showcase picks the first few products, so it has to be given one of
+  // each kind. Handed the raw list it showed only Meru Shree Yantra: its nine
+  // size options are the first nine rows in the shop's order. One listing per
+  // category, in that order, shows the range instead.
+  const listings = groupVariants(products);
+  const showcase = listings.filter((p, i) => listings.findIndex(q => q.category === p.category) === i);
+
   const handleAddCombo = (name: string) => {
     const combo = COMBOS.find(c => c.name === name);
     // Use first product as placeholder for combo if no exact match, though normally combo should be its own item
@@ -33,9 +40,9 @@ export function HomePage() {
   return (
     <main>
       <NavagrahaHero onShop={goToShop} onConsult={() => navigate("/consult")} />
-      <ShopConsultCards products={products} onShop={goToShop} onProductClick={goToProduct} />
+      <ShopConsultCards products={showcase} onShop={goToShop} onProductClick={goToProduct} />
       {FEATURE_CRAFTSMANSHIP && <HowItsMade />}
-      <ProductsAndCombos products={groupVariants(products)} onProductClick={goToProduct} onAddToCart={p => addToCart(p)} onAddCombo={handleAddCombo} />
+      <ProductsAndCombos products={listings} onProductClick={goToProduct} onAddToCart={p => addToCart(p)} onAddCombo={handleAddCombo} />
       {FEATURE_WHY_NAKSHRA && <WhyNakshra />}
       {FEATURE_CUSTOMER_STORIES && <VideoTestimonials />}
       {FEATURE_REVIEWS && <CommunityComments />}
