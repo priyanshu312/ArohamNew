@@ -10,12 +10,76 @@ import { CATEGORIES, PURPOSES } from "@nakshra/shared-config/data";
 import { useProducts, groupVariants } from "@nakshra/shared-hooks/useProducts";
 import { useCart } from "@nakshra/shared-state";
 import { useWishlist } from "@nakshra/shared-state";
+import type { NakshraProduct } from "@nakshra/shared-types/product";
 
 function isSameCategory(prodCategory?: string, filterCat?: string): boolean {
   if (!prodCategory || !filterCat) return false;
   const pCatNorm = prodCategory.toLowerCase().trim().replace(/s$/, "");
   const cNorm = filterCat.toLowerCase().trim().replace(/s$/, "");
   return pCatNorm === cNorm || prodCategory.toLowerCase().trim() === filterCat.toLowerCase().trim();
+}
+
+// The unfiltered shop is laid out as shelves, one per kind of product, so a
+// shopper sees each kind at a glance instead of one long list of 37 mixed
+// cards. Categories with one or two products share a shelf, since a shelf
+// holding one card looks broken. The same shelves are the tiles at the top.
+const SHELVES = [
+  { title: "Yantras", cats: ["Yantra"], img: "/images/products/meru-shree-yantra-brass.jpg" },
+  { title: "Gemstones & Jewellery", cats: ["Pendant", "Ring", "Gemstone"], img: "/images/products/navratna-pendant-silver.jpg" },
+  { title: "Rudraksha & Mala", cats: ["Rudraksha", "Mala", "Bracelet"], img: "/images/products/rudraksha-5-mukhi.jpg" },
+  { title: "Vastu", cats: ["Vastu", "Potli"], img: "/images/products/vastu-pyramid-brass.jpg" },
+  { title: "Idols", cats: ["Idols"], img: "/images/products/rashi-idol-ganesh-pyrite.jpg" },
+];
+const SHELF_SIZE = 4;
+
+function isShelf(cats: string[], shelf: (typeof SHELVES)[number]) {
+  return cats.length === shelf.cats.length && shelf.cats.every(c => cats.includes(c));
+}
+
+// Listings that differ only in which mantra is written on them read as the
+// same card repeated, so the shop shows each family as one card that opens
+// the family (/shop?family=<key>). Every member keeps its own product page.
+const FAMILIES = [
+  {
+    key: "bhojpatra",
+    name: "Bhojpatra Yantra",
+    title: "Bhojpatra Yantras",
+    subtitle: "Handwritten on bhojpatra",
+    blurb: "Each yantra is handwritten on bhojpatra. Pick the one you need, then its size.",
+    match: (p: NakshraProduct) => /bhojpatra/i.test(p.variantGroup || p.name),
+  },
+];
+
+type ListedProduct = NakshraProduct & { familyKey?: string; familyCount?: number };
+
+/** Replaces each family's members with one card, at the first member's place. */
+function collapseFamilies(listed: NakshraProduct[]): ListedProduct[] {
+  const out: ListedProduct[] = [];
+  const placed = new Set<string>();
+  for (const p of listed) {
+    const fam = FAMILIES.find(f => f.match(p));
+    if (!fam) {
+      out.push(p);
+      continue;
+    }
+    const members = listed.filter(fam.match);
+    if (members.length < 2) {
+      out.push(p);
+      continue;
+    }
+    if (placed.has(fam.key)) continue;
+    placed.add(fam.key);
+    const cheapest = members.reduce((a, b) => (b.price < a.price ? b : a));
+    out.push({
+      ...cheapest,
+      name: fam.name,
+      subtitle: `${fam.subtitle} · ${members.length} types`,
+      variantCount: undefined,
+      familyKey: fam.key,
+      familyCount: members.length,
+    });
+  }
+  return out;
 }
 
 export function ShopPage() {
@@ -47,26 +111,8 @@ export function ShopPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [quickViewProduct, setQuickViewProduct] = useState<any>(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
-  const [recommendations, setRecommendations] = useState<any[]>([]);
-
-  const fetchRecommendations = () => {
-    const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || "http://localhost:5000";
-    const guestId = localStorage.getItem("Nakshra_guest_user_id") || "guest_user";
-    fetch(`${apiBase}/api/recommendations/${guestId}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.recommendations) {
-          setRecommendations(data.recommendations);
-        } else if (data.recommendations) {
-          setRecommendations(data.recommendations);
-        }
-      })
-      .catch(err => console.error("Recs fetch error:", err));
-  };
-
-  useEffect(() => {
-    fetchRecommendations();
-  }, [cats, prps, cols]);
+  const familyParam = searchParams.get("family") || "";
+  const family = FAMILIES.find(f => f.key === familyParam);
 
   useEffect(() => {
     if (catParam) setCats([catParam]);
@@ -76,14 +122,28 @@ export function ShopPage() {
     if (titleParam) setCols([titleParam]);
   }, [titleParam]);
 
+  const activeShelf = SHELVES.find(s => isShelf(cats, s));
   let displayTitle = titleParam || (cats.length === 1 ? cats[0] : "Sacred Products");
-  if (cats.length === 1) displayTitle = cats[0];
+  if (activeShelf) displayTitle = activeShelf.title;
+  else if (cats.length === 1) displayTitle = cats[0];
   else if (cats.length > 1 || prps.length > 1 || cols.length > 1) displayTitle = "Filtered Products";
+  if (family) displayTitle = family.title;
   const isCustom = displayTitle !== "Sacred Products";
 
   const { products, loading: productsLoading } = useProducts();
   // One card per variant group; its options are picked on the product page.
-  const listed = groupVariants(products);
+  // Families collapse to one card too, except inside the family's own view.
+  const grouped = groupVariants(products);
+  const listed: ListedProduct[] = family ? grouped.filter(family.match) : collapseFamilies(grouped);
+
+  const openProduct = (p: ListedProduct) => {
+    if (p.familyKey) {
+      navigate(`/shop?family=${p.familyKey}`);
+      window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    } else {
+      navigate(`/shop/${p.slug}`);
+    }
+  };
 
   const filtered = listed.filter(p => {
     if (cats.length) {
@@ -157,6 +217,20 @@ export function ShopPage() {
   const toggleCol = (c: string) => setCols(prev => prev[0] === c ? [] : [c]);
   const clearAll = () => { setCats([]); setPrps([]); setCols([]); setMaxPrice(30000); };
   const hasActiveFilters = cats.length > 0 || prps.length > 0 || (cols.length > 0 && cols[0] !== titleParam) || maxPrice < 30000;
+  // The plain shop, as it opens: shelves. Anything that narrows or reorders
+  // the list shows it as one grid instead, since a shelf only holds its best few.
+  const showShelves = !hasActiveFilters && cols.length === 0 && !family && sort === "featured" && viewMode === "grid";
+  const showTiles = cols.length === 0 && !family && prps.length === 0 && maxPrice >= 30000 && (cats.length === 0 || !!activeShelf);
+
+  const openShelf = (shelf: (typeof SHELVES)[number]) => {
+    setCats(activeShelf === shelf ? [] : shelf.cats);
+    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+  };
+
+  const leaveToShop = () => {
+    clearAll();
+    navigate("/shop");
+  };
 
   const FilterPanel = () => (
     <div className="space-y-6">
@@ -310,6 +384,179 @@ export function ShopPage() {
     </div>
   );
 
+  const renderGridCard = (p: ListedProduct, extraClass = "") => {
+    const discountPct = p.original > p.price ? Math.round((1 - p.price / p.original) * 100) : 0;
+    const itemInCart = items.find(i => i.product.id === p.id);
+    // A group's or family's card stands for all its options, so it never shows one option's cart count.
+    const cartQty = itemInCart && !p.variantCount && !p.familyKey ? itemInCart.qty : 0;
+    const isWish = isInWishlist(p.id);
+
+    return (
+      <div
+        key={p.id}
+        onClick={() => openProduct(p)}
+        className={`${extraClass} group rounded-none sm:rounded-3xl overflow-hidden cursor-pointer transition-all duration-300 sm:hover:-translate-y-1.5 bg-white flex flex-col justify-between border-b sm:border border-gray-200 sm:border-amber-900/10 sm:shadow-[0_2px_12px_rgba(0,0,0,0.03)] sm:hover:shadow-[0_16px_36px_rgba(91,31,36,0.12)]`}
+      >
+        {/* Image — square like the photos themselves, so none is cropped,
+            and padded the same on every card so every product sits at the same
+            size. multiply melts a photo's white backdrop into the cream tile. */}
+        <div className="relative aspect-square bg-[#F3ECE1] overflow-hidden flex items-center justify-center p-4 sm:p-6">
+          <img
+            src={p.img}
+            alt={`${p.name} - ${p.subtitle}`}
+            loading="lazy"
+            className="w-full h-full object-contain mix-blend-multiply transition-transform duration-700 group-hover:scale-108"
+          />
+
+          {/* Badge — compact on mobile */}
+          <div className="absolute top-2 left-2 sm:top-3 sm:left-3 flex flex-col gap-1 z-10 pointer-events-none">
+            {p.badges && p.badges.length > 0 && (
+              <span
+                className="px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-sm sm:rounded-full text-[8px] sm:text-[10px] font-extrabold tracking-wider uppercase backdrop-blur-md shadow-xs"
+                style={{ background: "rgba(91,31,36,0.88)", color: GOLD }}
+              >
+                {p.badges[0]}
+              </span>
+            )}
+          </div>
+
+          {/* Wishlist — smaller on mobile. A family card is not one product, so it has none. */}
+          {!p.familyKey && <button
+            aria-label="Add to wishlist"
+            onClick={e => {
+              e.stopPropagation();
+              toggleWishlist(p);
+            }}
+            className="absolute top-2 right-2 sm:top-3 sm:right-3 w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center backdrop-blur-md bg-white/80 border border-white/60 shadow-sm transition-transform duration-200 hover:scale-110 active:scale-90 z-10"
+          >
+            <Heart
+              size={13}
+              className="sm:w-[15px] sm:h-[15px]"
+              style={{
+                color: isWish ? "#E74C3C" : "#7A6A58",
+                fill: isWish ? "#E74C3C" : "none"
+              }}
+            />
+          </button>}
+
+          {/* Quick View — desktop only */}
+          <div className="hidden sm:flex absolute inset-x-0 bottom-0 py-2.5 items-center justify-center gap-2 text-xs font-bold translate-y-full group-hover:translate-y-0 transition-transform duration-300 shadow-md"
+            style={{ background: "rgba(91,31,36,0.92)", color: GOLD }}>
+            <Eye size={14} /> {p.familyKey ? `See all ${p.familyCount} types` : "Quick View"}
+          </div>
+        </div>
+
+        {/* Details — compact Myntra-style on mobile */}
+        <div className="p-2.5 sm:p-5 flex-1 flex flex-col justify-between gap-1.5 sm:gap-3">
+          <div className="space-y-0.5 sm:space-y-1.5">
+            {/* Category + Rating row — a fixed height, so a card with a rating
+                chip keeps its title level with its neighbours' */}
+            <div className="flex items-center justify-between h-4 sm:h-6">
+              <span className="text-[9px] sm:text-[10px] uppercase font-extrabold tracking-wider" style={{ color: "#8A7A68" }}>
+                {p.category || "Sacred Item"}
+              </span>
+              {(p.reviews || 0) > 0 && (
+                <div className="flex items-center gap-0.5 sm:gap-1 sm:bg-amber-50 sm:px-2 sm:py-0.5 sm:rounded-full sm:border sm:border-amber-900/10">
+                  <Star size={10} className="sm:w-[11px] sm:h-[11px]" fill={GOLD} stroke={GOLD} />
+                  <span className="text-[10px] sm:text-[11px] font-bold" style={{ color: MAROON }}>{Number(p.rating).toFixed(1)}</span>
+                  {!!p.reviews && <span className="text-[8px] sm:text-[9px]" style={{ color: "#8A7A68" }}>({p.reviews})</span>}
+                </div>
+              )}
+            </div>
+
+            {/* Product name — 1 line on mobile, 2 on desktop */}
+            <h3
+              className="text-xs sm:text-base font-bold leading-tight sm:leading-snug line-clamp-1 sm:line-clamp-2 transition-colors group-hover:text-[#7A2A30]"
+              style={{ fontFamily: SERIF, color: MAROON }}
+            >
+              {p.name}
+            </h3>
+
+            {/* Subtitle */}
+            <p className="text-[10px] sm:text-xs line-clamp-1 font-medium" style={{ color: "#7A6A58" }}>
+              {p.subtitle}
+            </p>
+          </div>
+
+          {/* Price + Cart */}
+          <div className="pt-1 space-y-1.5 sm:space-y-2">
+            {/* Pricing row */}
+            <div className="flex items-baseline gap-1 sm:gap-2 flex-wrap justify-between">
+              <div className="flex items-baseline gap-1 sm:gap-2 flex-wrap">
+                {(p.variantCount || p.familyKey) && <span className="text-[10px] sm:text-xs font-semibold" style={{ color: "#8A7A68" }}>From</span>}
+                <span className="text-sm sm:text-xl font-extrabold" style={{ fontFamily: PRICE_FONT, color: MAROON }}>
+                  ₹{Math.round(p.price).toLocaleString("en-IN")}
+                </span>
+                {p.original > p.price && (
+                  <span className="text-[10px] sm:text-xs line-through opacity-60 font-semibold" style={{ fontFamily: PRICE_FONT, color: "#8A7A68" }}>
+                    ₹{Math.round(p.original).toLocaleString("en-IN")}
+                  </span>
+                )}
+              </div>
+
+              {discountPct > 0 && (
+                <span className="text-[9px] sm:text-[10px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  {discountPct}% OFF
+                </span>
+              )}
+            </div>
+
+            {/* Add to Cart */}
+            {cartQty > 0 ? (
+              <div
+                onClick={e => e.stopPropagation()}
+                className="w-full py-1 sm:py-1.5 px-2 sm:px-3 rounded-lg sm:rounded-2xl flex items-center justify-between font-bold text-[10px] sm:text-xs shadow-sm"
+                style={{ background: `linear-gradient(135deg, ${MAROON}, #7A2A30)`, color: IVORY }}
+              >
+                <button
+                  aria-label="Decrease quantity"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (cartQty <= 1) removeFromCart(p.id);
+                    else updateQty(p.id, -1);
+                  }}
+                  className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl flex items-center justify-center transition-all hover:bg-white/20 active:scale-90"
+                  style={{ color: GOLD }}
+                >
+                  <Minus size={11} strokeWidth={3} />
+                </button>
+                
+                <span className="text-[10px] sm:text-xs font-extrabold tracking-wider" style={{ color: IVORY }}>
+                  {cartQty} IN CART
+                </span>
+
+                <button
+                  aria-label="Increase quantity"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    updateQty(p.id, 1);
+                  }}
+                  className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl flex items-center justify-center transition-all hover:bg-white/20 active:scale-90"
+                  style={{ color: GOLD }}
+                >
+                  <Plus size={11} strokeWidth={3} />
+                </button>
+              </div>
+            ) : (
+              <button
+                aria-label={p.familyKey ? `See all ${p.name} types` : p.variantCount ? `See ${p.name} options` : `Add ${p.name} to cart`}
+                onClick={e => {
+                  e.stopPropagation();
+                  if (p.variantCount || p.familyKey) openProduct(p);
+                  else addToCart(p, 1, false);
+                }}
+                className="w-full py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg sm:rounded-2xl text-[10px] sm:text-xs font-bold tracking-wider transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-2 shadow-xs hover:shadow-md hover:opacity-95 active:scale-98 uppercase border border-[#5B1F24] sm:border-0 bg-transparent sm:bg-[linear-gradient(135deg,#5B1F24,#7A2A30)] text-[#5B1F24] sm:text-[#FAF7F2]"
+              >
+                <ShoppingCart size={12} className="sm:w-[14px] sm:h-[14px]" />
+                <span>{p.familyKey ? `SEE ${p.familyCount} TYPES` : p.variantCount ? `SEE ${p.variantCount} OPTIONS` : "ADD TO CART"}</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div style={{ background: "#FAF7F2", minHeight: "100vh", fontFamily: SANS }}>
       {/* Top Banner & Header */}
@@ -320,7 +567,11 @@ export function ShopPage() {
           <div className="flex items-center gap-2 mb-3 text-xs font-medium" style={{ color: "#8A7A68" }}>
             <button onClick={() => navigate("/")} className="hover:underline transition-all" style={{ color: MAROON }}>Home</button>
             <ChevronRight size={12} />
-            <span className="font-semibold" style={{ color: MAROON }}>Shop</span>
+            {isCustom ? (
+              <button onClick={leaveToShop} className="font-semibold hover:underline transition-all" style={{ color: MAROON }}>Shop</button>
+            ) : (
+              <span className="font-semibold" style={{ color: MAROON }}>Shop</span>
+            )}
             {isCustom && (
               <>
                 <ChevronRight size={12} />
@@ -335,7 +586,9 @@ export function ShopPage() {
                 {displayTitle}
               </h1>
               <p className="text-xs sm:text-sm mt-1 sm:mt-1.5 max-w-xl font-medium" style={{ color: "#7A6A58" }}>
-                {isCustom 
+                {family
+                  ? family.blurb
+                  : isCustom
                   ? `Explore our authentic, temple-energized selection of ${displayTitle.toLowerCase().replace(/products?$/i, "").trim()} products.`
                   : "Handcrafted, temple-energized & astrologer-recommended sacred essentials for spiritual harmony."}
               </p>
@@ -352,71 +605,41 @@ export function ShopPage() {
       {/* Main Content Area */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-8">
 
-        {/* Machine Learning Recommendations Banner */}
-        {recommendations.length > 0 && !hasActiveFilters && (
-          <div className="mb-10 p-6 rounded-3xl bg-gradient-to-r from-[#4D1418] via-[#5B1F24] to-[#3C1014] text-white border border-amber-500/20 shadow-xl relative overflow-hidden">
-            <div className="flex items-center justify-between mb-4 relative z-10">
-              {/* items-start, not items-center: the heading wraps to two lines on
-                  a phone, and centring floated the badge into the gap between
-                  them. mt-0.5 sits it on the first line's optical baseline.
-                  The ✨ in the heading text was a second sparkle next to the
-                  badge icon — one is enough. */}
-              <div className="flex items-start gap-2.5">
-                <div className="w-8 h-8 mt-0.5 rounded-xl bg-amber-500/20 flex items-center justify-center border border-amber-400/30 flex-shrink-0">
-                  <Sparkles className="w-4 h-4 text-amber-300" />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="font-bold text-lg sm:text-xl text-amber-100" style={{ fontFamily: SERIF }}>
-                    Specially Curated For You
-                  </h3>
-                  <p className="text-sm text-amber-200/80 font-medium mt-1">
-                    Sacred remedies and temple-energized tools selected for your spiritual journey.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 relative z-10">
-              {recommendations.map((rec) => (
-                <div
-                  key={rec.id}
-                  onClick={() => navigate(`/shop/${rec.slug || rec.id}`)}
-                  className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10 hover:border-amber-400/50 transition-all cursor-pointer group flex flex-col justify-between"
-                >
-                  <div>
-                    {rec.reasonBadge && (
-                      <span className="inline-block mb-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold text-amber-200 bg-amber-500/20 border border-amber-400/30">
-                        {rec.reasonBadge}
-                      </span>
-                    )}
-                    {rec.img && (
-                      <img
-                        src={rec.img}
-                        alt={rec.name}
-                        className="w-full h-28 object-cover rounded-xl mb-2 bg-amber-950/20 group-hover:scale-105 transition-transform"
-                      />
-                    )}
-                    <h4 className="font-bold text-xs text-white truncate group-hover:text-amber-200">
-                      {rec.name}
-                    </h4>
-                    <p className="text-[10px] text-amber-200/70 line-clamp-1 mt-0.5 font-medium">
-                      {rec.shortDesc || rec.subtitle || "Sacred remedy"}
-                    </p>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="font-extrabold text-xs text-amber-300">
-                      ₹{typeof rec.price === "number" ? rec.price.toLocaleString("en-IN") : rec.price}
-                    </span>
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-amber-200/80 bg-white/10 px-2 py-0.5 rounded-full border border-white/10">
-                      View
-                    </span>
-                  </div>
-                </div>
-              ))}
+        {/* Shop by category — the same shelves the page is laid out in. On a
+            phone the row scrolls sideways rather than wrapping to two lines. */}
+        {showTiles && (
+          <div className="-mx-4 sm:mx-0 mb-6 sm:mb-8 overflow-x-auto no-scrollbar">
+            <div className="flex sm:grid sm:grid-cols-5 gap-3 sm:gap-4 px-4 sm:px-0 w-max sm:w-auto">
+              {SHELVES.map(shelf => {
+                const count = listed.filter(p => shelf.cats.some(c => isSameCategory(p.category, c))).length;
+                const active = activeShelf === shelf;
+                return (
+                  <button
+                    key={shelf.title}
+                    onClick={() => openShelf(shelf)}
+                    aria-pressed={active}
+                    className="group flex flex-col items-center gap-2 w-24 sm:w-auto flex-shrink-0 sm:p-3 rounded-3xl transition-all sm:hover:bg-white"
+                  >
+                    <div
+                      className="w-20 h-20 sm:w-28 sm:h-28 rounded-full overflow-hidden flex items-center justify-center p-2.5 sm:p-3.5 transition-all"
+                      style={{
+                        background: "#F3ECE1",
+                        boxShadow: active ? `0 0 0 2px ${MAROON}` : "0 0 0 1px rgba(91,31,36,0.08)"
+                      }}
+                    >
+                      <img src={shelf.img} alt="" className="w-full h-full object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-110" />
+                    </div>
+                    <div className="text-center leading-tight">
+                      <div className="text-xs sm:text-sm font-bold" style={{ fontFamily: SERIF, color: MAROON }}>{shelf.title}</div>
+                      <div className="text-[10px] sm:text-[11px] font-medium mt-0.5" style={{ color: "#8A7A68" }}>{count} products</div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
-        
+
         {/* Active Filters Bar (Hidden on mobile, only shown on tablet/desktop if user manually filtered) */}
         {hasActiveFilters && (
           <div className="hidden sm:flex flex-wrap items-center gap-2 mb-6 p-2.5 sm:p-3 rounded-2xl bg-white border border-amber-900/10 shadow-xs">
@@ -598,177 +821,46 @@ export function ShopPage() {
             ) : (
               /* Products Grid or List View */
               viewMode === "grid" ? (
-                /* GRID VIEW CARDS */
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 lg:gap-6 items-stretch">
-                  {filtered.map(p => {
-                    const discountPct = p.original > p.price ? Math.round((1 - p.price / p.original) * 100) : 0;
-                    const itemInCart = items.find(i => i.product.id === p.id);
-                    // A group's card stands for all its options, so it never shows one option's cart count.
-                    const cartQty = itemInCart && !p.variantCount ? itemInCart.qty : 0;
-                    const isWish = isInWishlist(p.id);
-
-                    return (
-                      <div
-                        key={p.id}
-                        onClick={() => navigate(`/shop/${p.slug}`)}
-                        className="group rounded-none sm:rounded-3xl overflow-hidden cursor-pointer transition-all duration-300 sm:hover:-translate-y-1.5 bg-white flex flex-col justify-between border-b sm:border border-gray-200 sm:border-amber-900/10 sm:shadow-[0_2px_12px_rgba(0,0,0,0.03)] sm:hover:shadow-[0_16px_36px_rgba(91,31,36,0.12)]"
-                      >
-                        {/* Image — Myntra-style: tall aspect, no padding on mobile */}
-                        <div className="relative aspect-[3/4] sm:aspect-[4/3] bg-[#F5F5F6] sm:bg-[#FAF7F2] overflow-hidden flex items-center justify-center sm:p-4">
-                          <img
-                            src={p.img}
-                            alt={`${p.name} - ${p.subtitle}`}
-                            className="w-full h-full object-cover sm:object-contain transition-transform duration-700 group-hover:scale-108"
-                          />
-
-                          {/* Badge — compact on mobile */}
-                          <div className="absolute top-2 left-2 sm:top-3 sm:left-3 flex flex-col gap-1 z-10 pointer-events-none">
-                            {p.badges && p.badges.length > 0 && (
-                              <span
-                                className="px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-sm sm:rounded-full text-[8px] sm:text-[10px] font-extrabold tracking-wider uppercase backdrop-blur-md shadow-xs"
-                                style={{ background: "rgba(91,31,36,0.88)", color: GOLD }}
-                              >
-                                {p.badges[0]}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Wishlist — smaller on mobile */}
-                          <button
-                            aria-label="Add to wishlist"
-                            onClick={e => {
-                              e.stopPropagation();
-                              toggleWishlist(p);
-                            }}
-                            className="absolute top-2 right-2 sm:top-3 sm:right-3 w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center backdrop-blur-md bg-white/80 border border-white/60 shadow-sm transition-transform duration-200 hover:scale-110 active:scale-90 z-10"
-                          >
-                            <Heart
-                              size={13}
-                              className="sm:w-[15px] sm:h-[15px]"
-                              style={{
-                                color: isWish ? "#E74C3C" : "#7A6A58",
-                                fill: isWish ? "#E74C3C" : "none"
-                              }}
-                            />
-                          </button>
-
-                          {/* Quick View — desktop only */}
-                          <div className="hidden sm:flex absolute inset-x-0 bottom-0 py-2.5 items-center justify-center gap-2 text-xs font-bold translate-y-full group-hover:translate-y-0 transition-transform duration-300 shadow-md"
-                            style={{ background: "rgba(91,31,36,0.92)", color: GOLD }}>
-                            <Eye size={14} /> Quick View
-                          </div>
-                        </div>
-
-                        {/* Details — compact Myntra-style on mobile */}
-                        <div className="p-2.5 sm:p-5 flex-1 flex flex-col justify-between gap-1.5 sm:gap-3">
-                          <div className="space-y-0.5 sm:space-y-1.5">
-                            {/* Category + Rating row */}
-                            <div className="flex items-center justify-between">
-                              <span className="text-[9px] sm:text-[10px] uppercase font-extrabold tracking-wider" style={{ color: "#8A7A68" }}>
-                                {p.category || "Sacred Item"}
-                              </span>
-                              {(p.reviews || 0) > 0 && (
-                                <div className="flex items-center gap-0.5 sm:gap-1 sm:bg-amber-50 sm:px-2 sm:py-0.5 sm:rounded-full sm:border sm:border-amber-900/10">
-                                  <Star size={10} className="sm:w-[11px] sm:h-[11px]" fill={GOLD} stroke={GOLD} />
-                                  <span className="text-[10px] sm:text-[11px] font-bold" style={{ color: MAROON }}>{Number(p.rating).toFixed(1)}</span>
-                                  {!!p.reviews && <span className="text-[8px] sm:text-[9px]" style={{ color: "#8A7A68" }}>({p.reviews})</span>}
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Product name — 1 line on mobile, 2 on desktop */}
-                            <h3
-                              className="text-xs sm:text-base font-bold leading-tight sm:leading-snug line-clamp-1 sm:line-clamp-2 transition-colors group-hover:text-[#7A2A30]"
-                              style={{ fontFamily: SERIF, color: MAROON }}
+                showShelves ? (
+                  /* SHELVES — the plain shop, one row of best picks per kind */
+                  <div className="space-y-8 sm:space-y-12">
+                    {[
+                      ...SHELVES.map(shelf => ({ shelf, items: filtered.filter(p => shelf.cats.some(c => isSameCategory(p.category, c))) })),
+                      // Anything no shelf claims still gets shown, never dropped.
+                      { shelf: null, items: filtered.filter(p => !SHELVES.some(s => s.cats.some(c => isSameCategory(p.category, c)))) },
+                    ].map(({ shelf, items: shelfItems }) => shelfItems.length > 0 && (
+                      <section key={shelf?.title || "more"}>
+                        <div className="flex items-baseline justify-between gap-3 mb-3 sm:mb-4">
+                          <h2 className="text-lg sm:text-2xl font-semibold tracking-tight" style={{ fontFamily: SERIF, color: MAROON }}>
+                            {shelf?.title || "More Sacred Items"}
+                          </h2>
+                          {shelf && shelfItems.length > SHELF_SIZE && (
+                            <button
+                              onClick={() => openShelf(shelf)}
+                              className="flex items-center gap-1 text-xs sm:text-sm font-bold whitespace-nowrap hover:underline"
+                              style={{ color: MAROON }}
                             >
-                              {p.name}
-                            </h3>
-
-                            {/* Subtitle */}
-                            <p className="text-[10px] sm:text-xs line-clamp-1 font-medium" style={{ color: "#7A6A58" }}>
-                              {p.subtitle}
-                            </p>
-                          </div>
-
-                          {/* Price + Cart */}
-                          <div className="pt-1 space-y-1.5 sm:space-y-2">
-                            {/* Pricing row */}
-                            <div className="flex items-baseline gap-1 sm:gap-2 flex-wrap justify-between">
-                              <div className="flex items-baseline gap-1 sm:gap-2 flex-wrap">
-                                {p.variantCount && <span className="text-[10px] sm:text-xs font-semibold" style={{ color: "#8A7A68" }}>From</span>}
-                                <span className="text-sm sm:text-xl font-extrabold" style={{ fontFamily: PRICE_FONT, color: MAROON }}>
-                                  ₹{Math.round(p.price).toLocaleString("en-IN")}
-                                </span>
-                                {p.original > p.price && (
-                                  <span className="text-[10px] sm:text-xs line-through opacity-60 font-semibold" style={{ fontFamily: PRICE_FONT, color: "#8A7A68" }}>
-                                    ₹{Math.round(p.original).toLocaleString("en-IN")}
-                                  </span>
-                                )}
-                              </div>
-
-                              {discountPct > 0 && (
-                                <span className="text-[9px] sm:text-[10px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                  {discountPct}% OFF
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Add to Cart */}
-                            {cartQty > 0 ? (
-                              <div
-                                onClick={e => e.stopPropagation()}
-                                className="w-full py-1 sm:py-1.5 px-2 sm:px-3 rounded-lg sm:rounded-2xl flex items-center justify-between font-bold text-[10px] sm:text-xs shadow-sm"
-                                style={{ background: `linear-gradient(135deg, ${MAROON}, #7A2A30)`, color: IVORY }}
-                              >
-                                <button
-                                  aria-label="Decrease quantity"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (cartQty <= 1) removeFromCart(p.id);
-                                    else updateQty(p.id, -1);
-                                  }}
-                                  className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl flex items-center justify-center transition-all hover:bg-white/20 active:scale-90"
-                                  style={{ color: GOLD }}
-                                >
-                                  <Minus size={11} strokeWidth={3} />
-                                </button>
-                                
-                                <span className="text-[10px] sm:text-xs font-extrabold tracking-wider" style={{ color: IVORY }}>
-                                  {cartQty} IN CART
-                                </span>
-
-                                <button
-                                  aria-label="Increase quantity"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    updateQty(p.id, 1);
-                                  }}
-                                  className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl flex items-center justify-center transition-all hover:bg-white/20 active:scale-90"
-                                  style={{ color: GOLD }}
-                                >
-                                  <Plus size={11} strokeWidth={3} />
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                aria-label={p.variantCount ? `See ${p.name} options` : `Add ${p.name} to cart`}
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  if (p.variantCount) navigate(`/shop/${p.slug}`);
-                                  else addToCart(p, 1, false);
-                                }}
-                                className="w-full py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg sm:rounded-2xl text-[10px] sm:text-xs font-bold tracking-wider transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-2 shadow-xs hover:shadow-md hover:opacity-95 active:scale-98 uppercase border border-[#5B1F24] sm:border-0 bg-transparent sm:bg-[linear-gradient(135deg,#5B1F24,#7A2A30)] text-[#5B1F24] sm:text-[#FAF7F2]"
-                              >
-                                <ShoppingCart size={12} className="sm:w-[14px] sm:h-[14px]" />
-                                <span>{p.variantCount ? `SEE ${p.variantCount} OPTIONS` : "ADD TO CART"}</span>
-                              </button>
-                            )}
-                          </div>
+                              View all {shelfItems.length} <ChevronRight size={14} />
+                            </button>
+                          )}
                         </div>
-                      </div>
-                    );
-                  })}
+                        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4 lg:gap-5 items-stretch">
+                          {/* Four picks: 2 × 2 on a phone, one row on a wide screen. At
+                              the in-between width of three columns the fourth waits
+                              behind "View all" rather than dangling on a row alone. */}
+                          {(shelf ? shelfItems.slice(0, SHELF_SIZE) : shelfItems).map((p, i) =>
+                            renderGridCard(p, shelf && i === SHELF_SIZE - 1 ? "lg:max-xl:hidden" : "")
+                          )}
+                        </div>
+                      </section>
+                    ))}
+                  </div>
+                ) : (
+                /* GRID VIEW CARDS */
+                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4 lg:gap-5 items-stretch">
+                  {filtered.map(p => renderGridCard(p))}
                 </div>
+                )
               ) : (
                 /* LIST VIEW CARDS */
                 <div className="space-y-4">
@@ -776,21 +868,21 @@ export function ShopPage() {
                     const discountPct = p.original > p.price ? Math.round((1 - p.price / p.original) * 100) : 0;
                     const itemInCart = items.find(i => i.product.id === p.id);
                     // A group's card stands for all its options, so it never shows one option's cart count.
-                    const cartQty = itemInCart && !p.variantCount ? itemInCart.qty : 0;
+                    const cartQty = itemInCart && !p.variantCount && !p.familyKey ? itemInCart.qty : 0;
                     const isWish = isInWishlist(p.id);
 
                     return (
                       <div
                         key={p.id}
-                        onClick={() => navigate(`/shop/${p.slug}`)}
+                        onClick={() => openProduct(p)}
                         className="group rounded-3xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl bg-white border border-amber-900/10 p-4 sm:p-5 flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6"
                       >
                         {/* List View Image */}
-                        <div className="w-full sm:w-44 md:w-52 h-44 sm:h-40 flex-shrink-0 relative rounded-2xl overflow-hidden bg-[#FAF7F2] p-3 flex items-center justify-center">
+                        <div className="w-full sm:w-44 md:w-52 h-44 sm:h-40 flex-shrink-0 relative rounded-2xl overflow-hidden bg-[#F3ECE1] p-3 flex items-center justify-center">
                           <img
                             src={p.img}
                             alt={`${p.name} - ${p.subtitle}`}
-                            className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                            className="w-full h-full object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
                           />
                           
                           {p.badges && p.badges.length > 0 && (
@@ -802,7 +894,7 @@ export function ShopPage() {
                             </span>
                           )}
 
-                          <button
+                          {!p.familyKey && <button
                             aria-label="Add to wishlist"
                             onClick={e => {
                               e.stopPropagation();
@@ -811,7 +903,7 @@ export function ShopPage() {
                             className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-md bg-white/80 border border-white/60 shadow-xs"
                           >
                             <Heart size={13} style={{ color: isWish ? "#E74C3C" : "#7A6A58", fill: isWish ? "#E74C3C" : "none" }} />
-                          </button>
+                          </button>}
                         </div>
 
                         {/* List View Details Column */}
@@ -852,7 +944,7 @@ export function ShopPage() {
                         <div className="w-full sm:w-48 flex-shrink-0 flex flex-col sm:items-end justify-center gap-3 pt-3 sm:pt-0 border-t sm:border-t-0 border-amber-900/10">
                           <div className="flex flex-col sm:items-end">
                             <div className="flex items-baseline gap-2">
-                              {p.variantCount && <span className="text-xs font-semibold" style={{ color: "#8A7A68" }}>From</span>}
+                              {(p.variantCount || p.familyKey) && <span className="text-xs font-semibold" style={{ color: "#8A7A68" }}>From</span>}
                               <span className="text-xl font-extrabold" style={{ fontFamily: PRICE_FONT, color: MAROON }}>
                                 ₹{Math.round(p.price).toLocaleString("en-IN")}
                               </span>
@@ -906,17 +998,17 @@ export function ShopPage() {
                             </div>
                           ) : (
                             <button
-                              aria-label={p.variantCount ? `See ${p.name} options` : `Add ${p.name} to cart`}
+                              aria-label={p.familyKey ? `See all ${p.name} types` : p.variantCount ? `See ${p.name} options` : `Add ${p.name} to cart`}
                               onClick={e => {
                                 e.stopPropagation();
-                                if (p.variantCount) navigate(`/shop/${p.slug}`);
+                                if (p.variantCount || p.familyKey) openProduct(p);
                                 else addToCart(p, 1, false);
                               }}
                               className="w-full sm:w-40 py-2.5 px-4 rounded-2xl text-xs font-bold tracking-wider transition-all duration-200 flex items-center justify-center gap-2 shadow-xs hover:shadow-md active:scale-98 uppercase"
                               style={{ background: `linear-gradient(135deg, ${MAROON}, #7A2A30)`, color: IVORY }}
                             >
                               <ShoppingCart size={14} />
-                              <span>{p.variantCount ? `SEE ${p.variantCount} OPTIONS` : "ADD TO CART"}</span>
+                              <span>{p.familyKey ? `SEE ${p.familyCount} TYPES` : p.variantCount ? `SEE ${p.variantCount} OPTIONS` : "ADD TO CART"}</span>
                             </button>
                           )}
                         </div>

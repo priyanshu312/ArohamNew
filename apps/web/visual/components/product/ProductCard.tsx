@@ -54,8 +54,10 @@ export function ProductCard({ product: p, onProductClick, onAddToCart, wishKey =
       onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.boxShadow = "0 14px 36px rgba(91,31,36,0.12)"}
       onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.boxShadow = "0 2px 18px rgba(91,31,36,0.06)"}>
       <div>
-        <div className="relative overflow-hidden aspect-square bg-amber-50 flex-shrink-0">
-          <img src={p.img} alt={`${p.name} - ${p.subtitle}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+        {/* Same tile as the shop's cards: the whole photo, padded the same on
+            every card, its white backdrop multiplied into the cream. */}
+        <div className="relative overflow-hidden aspect-square bg-[#F3ECE1] flex-shrink-0 flex items-center justify-center p-4">
+          <img src={p.img} alt={`${p.name} - ${p.subtitle}`} loading="lazy" className="w-full h-full object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-105" />
           {p.badges && p.badges.length > 0 && (
             <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wide" style={{ background: "rgba(91,31,36,0.88)", color: GOLD }}>{p.badges[0]}</div>
           )}
