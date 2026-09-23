@@ -6,46 +6,38 @@ const { sendFeedback } = require("./gorseFeedback");
 // there is no cycle.
 const { failOrder } = require("./paymentService");
 
-const PROMO_CODES = [
-  {
-    code: "Nakshra10",
-    type: "percentage",
-    value: 10,
-    description: "Get 10% off on all sacred items."
-  },
-  {
-    code: "DEVOTION20",
-    type: "percentage",
-    value: 20,
-    minPurchase: 300000, // ₹3,000 in paise
-    description: "Get 20% off on orders above ₹3,000."
-  },
-  {
-    code: "FESTIVE500",
-    type: "flat",
-    value: 50000, // ₹500 in paise
-    minPurchase: 250000, // ₹2,500 in paise
-    description: "Flat ₹500 off on orders above ₹2,500."
-  },
-  {
-    code: "FREEENERGIZATION",
-    type: "flat",
-    value: 9900, // ₹99 in paise (saves temple consecration fee)
-    description: "Free Temple Consecration (Save ₹99)."
-  },
-  {
-    code: "FIRST300",
-    type: "flat",
-    value: 30000, // ₹300 in paise
-    description: "Flat ₹300 off on your first order."
-  }
-];
+// Coupons live in the `coupons` table, which admins manage from the admin
+// portal (infra/db/2026-09-24_admin_coupons.sql). Only "percent" and "flat"
+// rows are honoured from there; a fixed_total row is ignored whatever its
+// is_active says, so nobody can switch on a ₹1 code from the portal. The table
+// holds rupees (flat `value`, `minimum_order`); this file works in paise.
+async function findPromo(promoCode) {
+  const wanted = String(promoCode).trim().toUpperCase();
+  if (testCouponEnabled() && wanted === TEST_PROMO.code.toUpperCase()) return TEST_PROMO;
+
+  const { data, error } = await supabase
+    .from("coupons")
+    .select("code, type, value, minimum_order, expiry_date")
+    .eq("is_active", true);
+  if (error) throw new Error("Coupon lookup failed: " + error.message);
+
+  const row = (data || []).find((c) => String(c.code).trim().toUpperCase() === wanted);
+  if (!row || (row.type !== "percent" && row.type !== "flat")) return null;
+  if (row.expiry_date && new Date(row.expiry_date) < new Date()) return { expired: true, code: row.code };
+
+  return {
+    code: row.code,
+    type: row.type === "percent" ? "percentage" : "flat",
+    value: row.type === "percent" ? Number(row.value) : Math.round(Number(row.value) * 100),
+    minPurchase: row.minimum_order ? Math.round(Number(row.minimum_order) * 100) : 0,
+  };
+}
 
 // Test-only code that charges exactly ₹1 whatever is in the cart, so a real
 // Razorpay payment can be run end-to-end on LIVE keys without spending real
 // money on a full-price order.
 //
-// It is deliberately NOT in PROMO_CODES: it only exists while
+// It is deliberately NOT in the coupons table: it only exists while
 // TEST_COUPON_ENABLED=true is set on the server. Without that, the code is
 // rejected like any unknown string. That matters because the alternative — a
 // permanently live code — would let anyone who learned the word "Welcome1" buy
@@ -64,10 +56,6 @@ const TEST_PROMO = {
 
 function testCouponEnabled() {
   return String(process.env.TEST_COUPON_ENABLED).toLowerCase() === "true";
-}
-
-function activePromoCodes() {
-  return testCouponEnabled() ? [...PROMO_CODES, TEST_PROMO] : PROMO_CODES;
 }
 
 // Abandoned checkouts hold stock forever otherwise.
@@ -109,11 +97,23 @@ async function createPendingOrder(userId, products, address, promoCode) {
   let discount = 0;
   let promoApplied = false;
   let promoReason = null;
+  let promo = null;
 
   if (promoCode) {
-    const promo = activePromoCodes().find(p => p.code.toUpperCase() === String(promoCode).toUpperCase());
-    if (!promo) {
+    // A failed lookup must not block checkout: charge full price and say so,
+    // and PaymentPage stops to show the customer the undiscounted total.
+    let lookupFailed = false;
+    promo = await findPromo(promoCode).catch((e) => {
+      console.error("[orders]", e.message);
+      lookupFailed = true;
+      return null;
+    });
+    if (lookupFailed) {
+      promoReason = "Couldn't check that code right now. Please try again.";
+    } else if (!promo) {
       promoReason = "That code isn't valid.";
+    } else if (promo.expired) {
+      promoReason = `${promo.code} has expired.`;
     } else if (promo.minPurchase && subtotal < promo.minPurchase) {
       promoReason = `Add ₹${((promo.minPurchase - subtotal) / 100).toFixed(0)} more to use ${promo.code}.`;
     } else if (promo.type === "fixed_total") {
@@ -174,14 +174,24 @@ async function createPendingOrder(userId, products, address, promoCode) {
   }
 
   // 4. Payment record (status: INITIATED) → PAYMENT TABLE
+  //
+  // The coupon is snapshotted here, as priced, so the admin portal's usage
+  // figures survive the coupon later being edited or deleted. It counts as
+  // redeemed once confirmOrder sets paid_at.
+  const metadata = promoApplied
+    ? { coupon: { code: promo.code.toUpperCase(), type: promo.type, value: promo.value, discount, subtotal } }
+    : {};
   const { data: payment, error: pErr } = await supabase
     .from("payments")
-    .insert({ order_id: order.id, user_id: userId, amount, status: "INITIATED" })
+    .insert({ order_id: order.id, user_id: userId, amount, status: "INITIATED", metadata })
     .select()
     .single();
   if (pErr) throw new Error("Payment record failed: " + pErr.message);
 
-  return { order, payment, amount, subtotal, discount, promoApplied, promoReason };
+  return {
+    order, payment, amount, subtotal, discount, promoApplied, promoReason,
+    couponCode: promoApplied ? promo.code.toUpperCase() : null,
+  };
 }
 
 // User-initiated cancellation. Verifies ownership, refuses once the order has

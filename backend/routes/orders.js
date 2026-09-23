@@ -52,7 +52,7 @@ router.post("/", requireAuth, async (req, res) => {
     const check = await validateItems(items);
     if (!check.valid) return res.status(400).json({ errors: check.errors });
 
-    const { order, amount, subtotal, discount, promoApplied, promoReason } =
+    const { order, amount, subtotal, discount, promoApplied, promoReason, couponCode } =
       await createPendingOrder(req.user.id, check.products, address, promoCode);
 
     // Razorpay's minimum chargeable amount is 100 paise (₹1).
@@ -65,7 +65,7 @@ router.post("/", requireAuth, async (req, res) => {
     try {
       rzpOrder = await razorpay.orders.create({
         amount, currency: "INR", receipt: String(order.id),
-        notes: { order_id: String(order.id) },
+        notes: { order_id: String(order.id), ...(couponCode ? { coupon: couponCode } : {}) },
       });
     } catch (rzpErr) {
       // Razorpay SDK errors carry .statusCode + .error.{description,reason}, not .message.

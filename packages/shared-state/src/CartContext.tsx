@@ -14,19 +14,14 @@ export interface AppliedCoupon {
   label: string;
 }
 
-// Must mirror backend PROMO_CODES (services/orderService.js). `value` for flat
-// coupons and `minPurchase` are in RUPEES here (subtotal is in rupees on the
-// client); the backend works in paise. The backend re-validates on order
-// creation and PaymentPage reconciles, so a mismatch can't overcharge — but
-// keep these in sync so the UI shows the truth.
+// Coupons come from the `coupons` table, which admins manage from the admin
+// portal and the backend also prices from (services/orderService.js). `value`
+// for flat coupons and `minPurchase` are in RUPEES here (subtotal is in rupees
+// on the client); the backend works in paise. The backend re-validates on
+// order creation and PaymentPage reconciles, so this list can't overcharge —
+// it only decides what the cart shows before then.
 type CouponDef = { type: "percent" | "flat" | "fixed_total"; value: number; label: string; minPurchase?: number };
-export const VALID_COUPONS: Record<string, CouponDef> = {
-  NAKSHRA10: { type: "percent", value: 10, label: "10% OFF sacred items" },
-  DEVOTION20: { type: "percent", value: 20, label: "20% OFF on orders above ₹3,000", minPurchase: 3000 },
-  FESTIVE500: { type: "flat", value: 500, label: "₹500 OFF on orders above ₹2,500", minPurchase: 2500 },
-  FREEENERGIZATION: { type: "flat", value: 99, label: "Free Temple Consecration (₹99 off)" },
-  FIRST300: { type: "flat", value: 300, label: "₹300 OFF your first order" },
-};
+export const VALID_COUPONS: Record<string, CouponDef> = {};
 
 // Test-only code that makes the cart total ₹1, so a real Razorpay payment can
 // be exercised on live keys without paying full price. Hidden unless
@@ -160,23 +155,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
     ).then(({ data, error }) => {
       if (data && data.length > 0 && !error) {
         const merged: Record<string, CouponDef> = { ...VALID_COUPONS };
+        const now = Date.now();
         data.forEach((c: any) => {
+          // The backend refuses expired rows and never prices a fixed_total row
+          // from this table, so don't offer them either.
+          if (c.expiry_date && new Date(c.expiry_date).getTime() < now) return;
+          if (c.type === "fixed_total") return;
           if (c.code) {
-            // Respect the row's own type. This used to collapse anything that
-            // was not "flat" into "percent", so a fixed_total row would have
-            // been applied as a percentage discount — e.g. a ₹1 target read as
-            // 1% off.
-            const rowType: CouponDef["type"] =
-              c.type === "flat" ? "flat" : c.type === "fixed_total" ? "fixed_total" : "percent";
+            const rowType: CouponDef["type"] = c.type === "flat" ? "flat" : "percent";
             const rowValue = Number(c.value) || 10;
             merged[c.code.trim().toUpperCase()] = {
               type: rowType,
               value: rowValue,
-              label: c.label || (
-                rowType === "flat" ? `₹${rowValue} OFF`
-                : rowType === "fixed_total" ? `Pay just ₹${rowValue}`
-                : `${rowValue}% OFF sacred items`
-              ),
+              label: c.label || (rowType === "flat" ? `₹${rowValue} OFF` : `${rowValue}% OFF sacred items`),
               ...(c.minimum_order ? { minPurchase: Number(c.minimum_order) } : {})
             };
           }
@@ -204,7 +195,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const cleanCode = code.trim().toUpperCase();
     const found = couponsMap[cleanCode] || VALID_COUPONS[cleanCode];
     if (!found) {
-      return { success: false, message: "That code isn't valid. Try NAKSHRA10." };
+      return { success: false, message: "That code isn't valid." };
     }
     if (found.minPurchase && subtotal < found.minPurchase) {
       return { success: false, message: `Add ₹${(found.minPurchase - subtotal).toLocaleString("en-IN")} more to use ${cleanCode}.` };
