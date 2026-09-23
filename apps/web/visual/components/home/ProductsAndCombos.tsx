@@ -21,13 +21,20 @@ export function ProductsAndCombos({ products, onProductClick, onAddCombo: _onAdd
 
   if (!products || products.length === 0) return null;
 
+  // A shelf shows its first six. The nine bhojpatra yantras sit together in
+  // the shop's order, so they filled half the Yantras row and hid the other
+  // yantras. Each keeps its own card; they just follow the rest of the shelf.
+  const isBhojpatra = (p: NakshraProduct) => /bhojpatra/i.test(p.variantGroup || p.name);
+  const yantras = products.filter(p => p.category === "Yantra");
+  const yantraShelf = [...yantras.filter(p => !isBhojpatra(p)), ...yantras.filter(isBhojpatra)];
+
   // Four shelves of what the shop actually sells, each filtered by its own
   // category so "View all" lands somewhere real. What was here before was five
   // shelves of the same products under invented labels — "Bestselling", "Fav
   // Items", "Mega Sale" — whose View all links opened an empty shop page.
   const shelves: [string, string, string, NakshraProduct[], string][] = [
     ["Yantras", t("products.shelf_yantra", "Sacred geometry"), "Yantra",
-      products.filter(p => p.category === "Yantra"), MAROON],
+      yantraShelf, MAROON],
     ["Rudraksha", t("products.shelf_rudraksha", "One to fourteen mukhi"), "Rudraksha",
       products.filter(p => p.category === "Rudraksha"), SAFFRON],
     ["Pendants", t("products.shelf_pendant", "Set in silver and gold"), "Pendant",
