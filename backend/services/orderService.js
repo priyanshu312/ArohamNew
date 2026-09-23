@@ -17,7 +17,7 @@ async function findPromo(promoCode) {
 
   const { data, error } = await supabase
     .from("coupons")
-    .select("code, type, value, minimum_order, expiry_date")
+    .select("code, type, value, minimum_order, expiry_date, first_order_only")
     .eq("is_active", true);
   if (error) throw new Error("Coupon lookup failed: " + error.message);
 
@@ -30,7 +30,23 @@ async function findPromo(promoCode) {
     type: row.type === "percent" ? "percentage" : "flat",
     value: row.type === "percent" ? Number(row.value) : Math.round(Number(row.value) * 100),
     minPurchase: row.minimum_order ? Math.round(Number(row.minimum_order) * 100) : 0,
+    firstOrderOnly: !!row.first_order_only,
   };
+}
+
+// An order the customer kept, for first-order-only coupons. Cancelled and
+// failed orders don't count, and "Processing" is the old offline checkout path.
+const KEPT_ORDER_STATUSES = ["CONFIRMED", "Processing", "SHIPPED", "DELIVERED"];
+
+async function hasKeptOrder(userId) {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("id")
+    .eq("user_id", String(userId))
+    .in("status", KEPT_ORDER_STATUSES)
+    .limit(1);
+  if (error) throw new Error("First-order check failed: " + error.message);
+  return (data || []).length > 0;
 }
 
 // Test-only code that charges exactly ₹1 whatever is in the cart, so a real
@@ -103,17 +119,23 @@ async function createPendingOrder(userId, products, address, promoCode) {
     // A failed lookup must not block checkout: charge full price and say so,
     // and PaymentPage stops to show the customer the undiscounted total.
     let lookupFailed = false;
-    promo = await findPromo(promoCode).catch((e) => {
+    const failLookup = (e) => {
       console.error("[orders]", e.message);
       lookupFailed = true;
       return null;
-    });
+    };
+    promo = await findPromo(promoCode).catch(failLookup);
+    const repeatCustomer = promo && promo.firstOrderOnly && !promo.expired
+      ? await hasKeptOrder(userId).catch(failLookup)
+      : false;
     if (lookupFailed) {
       promoReason = "Couldn't check that code right now. Please try again.";
     } else if (!promo) {
       promoReason = "That code isn't valid.";
     } else if (promo.expired) {
       promoReason = `${promo.code} has expired.`;
+    } else if (repeatCustomer) {
+      promoReason = `${promo.code} is for your first order only.`;
     } else if (promo.minPurchase && subtotal < promo.minPurchase) {
       promoReason = `Add ₹${((promo.minPurchase - subtotal) / 100).toFixed(0)} more to use ${promo.code}.`;
     } else if (promo.type === "fixed_total") {
