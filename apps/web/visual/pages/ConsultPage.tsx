@@ -6,12 +6,15 @@ import { useCart } from "@nakshra/shared-state";
 import { supabase } from "@nakshra/shared-services";
 import { useProducts } from "@nakshra/shared-hooks/useProducts";
 import { generateUUID } from "@nakshra/shared-utils/uuid";
+import { api } from "@nakshra/shared-api";
 import { useTranslation } from "react-i18next";
 
 import { ConsultHero } from "@visual/components/consult/ConsultHero";
 import { AstrologerCard, Astrologer } from "@visual/components/consult/AstrologerCard";
 import { PastHistoryModal } from "@visual/components/consult/PastHistoryModal";
 import { ConsultChatModal } from "@visual/components/consult/ConsultChatModal";
+import { BookSlotModal } from "@visual/components/consult/BookSlotModal";
+import type { SlotBooking } from "@visual/components/consult/slotTime";
 
 const isAstrologerActive = (isOnline: boolean, workingHours: any) => {
   if (!isOnline) return false;
@@ -60,6 +63,12 @@ export function ConsultPage() {
   const [inputMessage, setInputMessage] = useState("");
   const [localCartToast, setLocalCartToast] = useState<string | null>(null);
   const localToastTimer = useRef<any>(null);
+
+  // Premium astrologers: the slot picker, the user's paid slots, and a clock so
+  // "Chat Now" appears when a slot starts without a reload.
+  const [bookSlotFor, setBookSlotFor] = useState<Astrologer | null>(null);
+  const [myBookings, setMyBookings] = useState<SlotBooking[]>([]);
+  const [now, setNow] = useState(() => Date.now());
 
   const [showUserHistoryModal, setShowUserHistoryModal] = useState(false);
   const [userHistorySessions, setUserHistorySessions] = useState<any[]>([]);
@@ -119,7 +128,9 @@ export function ConsultPage() {
             pricePerMin: Number(liveData.price_per_min) || 20,
             bio: liveData.bio,
             lastActiveAt: liveData.last_active_at,
-            workingHours: liveData.working_hours
+            workingHours: liveData.working_hours,
+            isPremium: !!liveData.is_premium,
+            consultationFee: Number(liveData.consultation_fee) || 500
           }));
           setAstrologers(dbFormatted);
           // Sync back to local storage so focus/storage listeners don't overwrite with old/empty cache
@@ -141,6 +152,40 @@ export function ConsultPage() {
       window.removeEventListener("focus", syncAstrologers);
     };
   }, []);
+
+  const loadMyBookings = async () => {
+    if (!isLoggedIn || !user?.id) { setMyBookings([]); return; }
+    try {
+      const data = await api("/consult/bookings/mine", { timeoutMs: 45000 });
+      setMyBookings(data.bookings || []);
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    loadMyBookings();
+    const poll = setInterval(loadMyBookings, 60000);
+    const tick = setInterval(() => setNow(Date.now()), 15000);
+    return () => { clearInterval(poll); clearInterval(tick); };
+  }, [isLoggedIn, user?.id]);
+
+  const openBookSlot = (astro: Astrologer) => {
+    if (!isLoggedIn || !user?.id) { openAuth(); return; }
+    setBookSlotFor(astro);
+  };
+
+  // Chat for a paid slot: the server checks the slot is running and creates
+  // (or reuses) the chat session, which then works like any other chat.
+  const startBookedChat = async (astro: Astrologer, booking: SlotBooking) => {
+    try {
+      const { session: booked } = await api(`/consult/bookings/${booking.id}/chat`, { method: "POST" });
+      setSelectedAstrologer(astro);
+      setSession(booked);
+      setMessages([]);
+    } catch (e: any) {
+      alert(e?.message || "Could not open the chat. Please try again.");
+      loadMyBookings();
+    }
+  };
 
   const openUserHistoryModal = async () => {
     if (!isLoggedIn || !user?.id) { openAuth(); return; }
@@ -313,7 +358,8 @@ export function ConsultPage() {
   };
 
   const filteredAstrologers = astrologers.filter(a => {
-    if (a.status === "offline") return false;
+    // Premium astrologers are booked by slot, so they're listed even when offline.
+    if (a.status === "offline" && !a.isPremium) return false;
     const matchesTopic = selectedTopic === "All" ? true : selectedTopic === "Online Now" ? a.status === "online" : a.specialties.some(s => s.toLowerCase().includes(selectedTopic.toLowerCase()));
     const matchesSearch = !searchQuery.trim() ? true : a.name.toLowerCase().includes(searchQuery.toLowerCase()) || a.title.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesTopic && matchesSearch;
@@ -365,7 +411,15 @@ export function ConsultPage() {
             )
           ) : (
             filteredAstrologers.map(astro => (
-              <AstrologerCard key={astro.id} astro={astro} onStartConsultation={startConsultation} />
+              <AstrologerCard
+                key={astro.id}
+                astro={astro}
+                onStartConsultation={startConsultation}
+                booking={myBookings.find(b => b.astrologerId === astro.id) || null}
+                now={now}
+                onBookSlot={openBookSlot}
+                onChatBooked={startBookedChat}
+              />
             ))
           )}
         </div>
@@ -380,6 +434,12 @@ export function ConsultPage() {
         onSelectSession={viewPastSessionChat}
         onAddToCart={handleAddToCart}
         astrologers={astrologers}
+      />
+
+      <BookSlotModal
+        astrologer={bookSlotFor}
+        onClose={() => setBookSlotFor(null)}
+        onBooked={loadMyBookings}
       />
 
       <ConsultChatModal

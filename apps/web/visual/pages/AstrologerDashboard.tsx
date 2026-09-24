@@ -7,6 +7,7 @@ import { useProducts } from "@nakshra/shared-hooks/useProducts";
 import { generateUUID } from "@nakshra/shared-utils/uuid";
 import { AstrologerOnboardingWizard } from "../components/astrologer/AstrologerOnboardingWizard";
 import { AstrologerOnboardingStatus } from "../components/astrologer/AstrologerOnboardingStatus";
+import { SlotAvailabilityPanel } from "../components/astrologer/SlotAvailabilityPanel";
 import {
   Send,
   UserCheck,
@@ -60,7 +61,7 @@ const QUICK_ASTRO_RESPONSES = [
   "According to your 7th House position, Jupiter brings strong marriage prospects."
 ];
 
-type MainTab = "overview" | "workstation" | "wallet" | "reviews" | "remedies" | "profile";
+type MainTab = "overview" | "workstation" | "slots" | "wallet" | "reviews" | "remedies" | "profile";
 
 export function AstrologerDashboard() {
   const navigate = useNavigate();
@@ -1229,6 +1230,7 @@ export function AstrologerDashboard() {
             {[
               { id: "overview", label: "Dashboard & Analytics", icon: BarChart2 },
               { id: "workstation", label: "Live Workstation & Queue", icon: MessageCircle, badge: pendingCount },
+              { id: "slots", label: "Booking Slots", icon: Calendar },
               { id: "wallet", label: "Earnings & Wallet", icon: Wallet },
               { id: "reviews", label: "Ratings & Reviews", icon: Star },
               { id: "remedies", label: "Remedies Catalog", icon: ShoppingBag },
@@ -1805,6 +1807,8 @@ export function AstrologerDashboard() {
               </div>
             </div>
           )}
+
+          {activeTab === "slots" && <SlotAvailabilityPanel astrologerId={currentAstroId} />}
 
           {activeTab === "profile" && (
             <div className="p-6 sm:p-8 space-y-6 max-w-3xl mx-auto w-full overflow-y-auto">

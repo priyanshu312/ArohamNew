@@ -5,6 +5,7 @@ const supabase = require("../config/supabase");
 const {
   verifyPaymentSignature, verifyWebhookSignature, confirmOrder, failOrder,
 } = require("../services/paymentService");
+const { confirmSlotBooking } = require("../services/slotBookings");
 
 // GET /api/payments/config-check — is this deployment able to take a payment?
 //
@@ -88,6 +89,28 @@ router.post("/webhook", async (req, res) => {
 
     const { data: pay } = await supabase.from("payments")
       .select("order_id, status").eq("razorpay_order_id", rzpOrderId).single();
+
+    // Not a shop order: it may be a paid astrologer slot (routes/consult.js).
+    if (!pay) {
+      const { data: booking } = await supabase.from("slot_bookings")
+        .select("id, status").eq("razorpay_order_id", rzpOrderId).maybeSingle();
+      if (booking) {
+        if (event.event === "payment.captured") {
+          const result = await confirmSlotBooking(rzpOrderId, { razorpay_payment_id: payment.id });
+          console.log(`[Payments] Slot booking ${booking.id}: ${result}.`);
+        } else if (event.event === "refund.processed") {
+          // A refunded slot frees up for someone else. Partial refunds are left for a human.
+          const refund = event.payload?.refund?.entity;
+          if (!refund || Number(refund.amount) >= Number(payment.amount)) {
+            await supabase.from("slot_bookings").update({ status: "REFUNDED" }).eq("id", booking.id);
+          }
+          console.log(`[Payments] Refund processed for slot booking ${booking.id}.`);
+        }
+        // payment.failed is ignored: the user can retry inside the same
+        // checkout, and the hold expires by itself if they give up.
+        return res.json({ received: true });
+      }
+    }
 
     // A refund arrives on an already-SUCCESS payment, so it has to be handled
     // before the "skip if already done" guard below. Without this, refunding in

@@ -1,6 +1,7 @@
-import { Star, MessageSquare } from "lucide-react";
+import { Star, MessageSquare, CalendarClock, Crown } from "lucide-react";
 import { SERIF } from "@nakshra/shared-config/theme";
 import { useTranslation } from "react-i18next";
+import { formatSlotRange, type SlotBooking } from "@visual/components/consult/slotTime";
 
 export interface Astrologer {
   id: string;
@@ -17,11 +18,19 @@ export interface Astrologer {
   bio?: string;
   lastActiveAt?: string | null;
   workingHours?: { enabled: boolean; start: string; end: string } | null;
+  // Premium astrologers are booked by paid 30-minute slot instead of "chat now".
+  isPremium?: boolean;
+  consultationFee?: number;
 }
 
 interface AstrologerCardProps {
   astro: Astrologer;
   onStartConsultation: (astro: Astrologer) => void;
+  // Premium only: the user's upcoming booked slot with this astrologer, if any.
+  booking?: SlotBooking | null;
+  now?: number;
+  onBookSlot?: (astro: Astrologer) => void;
+  onChatBooked?: (astro: Astrologer, booking: SlotBooking) => void;
 }
 
 const translateSpecialty = (spec: string, t: any) => {
@@ -37,7 +46,7 @@ const translateSpecialty = (spec: string, t: any) => {
   return spec;
 };
 
-export function AstrologerCard({ astro, onStartConsultation }: AstrologerCardProps) {
+export function AstrologerCard({ astro, onStartConsultation, booking, now = Date.now(), onBookSlot, onChatBooked }: AstrologerCardProps) {
   const { t } = useTranslation();
 
   const isOnline = astro.status === "online";
@@ -57,9 +66,21 @@ export function AstrologerCard({ astro, onStartConsultation }: AstrologerCardPro
 
   const expYears = (astro.experience || "5+").replace(/[^0-9+]/g, '') || "5+";
 
+  const premium = !!astro.isPremium;
+  const slotLive = !!booking && now >= new Date(booking.slotStart).getTime() && now < new Date(booking.slotEnd).getTime();
+  // What a click on the card (or its button) does.
+  const primaryAction = () => {
+    if (!premium) return onStartConsultation(astro);
+    if (booking) {
+      if (slotLive) onChatBooked?.(astro, booking);
+      return; // booked, not started yet: nothing to do until the slot begins
+    }
+    onBookSlot?.(astro);
+  };
+
   return (
     <div
-      onClick={() => onStartConsultation(astro)}
+      onClick={primaryAction}
       className="bg-white rounded-3xl p-5 border border-amber-900/10 shadow-[0_4px_22px_rgba(91,31,36,0.02)] hover:shadow-xl hover:border-amber-500/20 transition-all duration-300 group hover:-translate-y-1 cursor-pointer flex flex-col justify-between h-full"
     >
       <div>
@@ -71,6 +92,13 @@ export function AstrologerCard({ astro, onStartConsultation }: AstrologerCardPro
           />
 
 
+
+          {premium && (
+            <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide bg-gradient-to-r from-amber-500 to-amber-600 text-white flex items-center gap-1 shadow-md">
+              <Crown size={11} />
+              <span>{t("consult.premium", "PREMIUM")}</span>
+            </div>
+          )}
 
           <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-full text-[11px] font-bold bg-black/65 text-amber-300 border border-white/10 flex items-center gap-1 backdrop-blur-xs shadow-md">
             <Star size={12} className="fill-amber-400 text-amber-400" />
@@ -107,25 +135,46 @@ export function AstrologerCard({ astro, onStartConsultation }: AstrologerCardPro
           <span className="text-xs font-semibold text-amber-900/50 block text-[10px]">
             {expYears} {t("consult.exp", "Years Exp")}
           </span>
+          {premium ? (
+            <span className="text-sm font-extrabold text-[#5B1F24]">
+              ₹{astro.consultationFee ?? 500}
+              <span className="text-[10px] text-amber-900/60 font-medium ml-0.5">
+                {t("consult.per_slot", "/ 30 min")}
+              </span>
+            </span>
+          ) : (
           <span className="text-sm font-extrabold text-[#5B1F24]">
             ₹{astro.pricePerMin}
             <span className="text-[10px] text-amber-900/60 font-medium ml-0.5">
               {t("consult.min", "/ min")}
             </span>
           </span>
+          )}
         </div>
 
+        {premium && booking && !slotLive ? null : (
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onStartConsultation(astro);
+            primaryAction();
           }}
           className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#5B1F24] text-white hover:bg-[#78282E] transition-all shadow-md active:scale-95"
         >
-          <MessageSquare size={13} />
-          <span>{t("consult.chat_now", "Chat Now")}</span>
+          {premium && !booking ? <CalendarClock size={13} /> : <MessageSquare size={13} />}
+          <span>{premium && !booking ? t("consult.book_slot", "Book Slot") : t("consult.chat_now", "Chat Now")}</span>
         </button>
+        )}
       </div>
+
+      {premium && booking && !slotLive && (
+        <div className="mt-3 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] font-semibold text-emerald-900 flex items-start gap-1.5">
+          <CalendarClock size={13} className="shrink-0 mt-px" />
+          <span>
+            {t("consult.slot_booked", "Your slot is booked for")} {formatSlotRange(booking.slotStart, booking.slotEnd)} IST.{" "}
+            {t("consult.chat_opens", "Chat opens when it starts.")}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
