@@ -59,17 +59,30 @@ export async function applySupabaseAuth(token: string | null): Promise<boolean> 
       access_token: token,
       refresh_token: token,
     });
-    if (error) {
-      // Expired / secret rotated — drop the stale token so the app treats the
-      // user as logged out rather than half-authenticated.
-      try { localStorage.removeItem(AUTH_TOKEN_KEY); } catch {}
-      await supabase.auth.signOut();
-      return false;
-    }
+    // Don't delete the app token on failure. setSession also fails on a flaky
+    // mobile connection, and throwing the token away then left the UI "logged
+    // in" with nothing to send: checkout failed with "Missing auth token". The
+    // backend is the authority on whether the token is still good (AuthContext
+    // logs out on a 401 from it); here we only report whether RLS is wired up.
+    if (error) return false;
     return true;
   } catch {
     return false;
   }
+}
+
+// Re-attach the OTP JWT if supabase-js has lost its session while the token is
+// still stored. Without a session every direct supabase.from(...) call runs as
+// anon, and RLS quietly returns no rows for the user's own data.
+export async function ensureSupabaseSession(): Promise<boolean> {
+  let token: string | null = null;
+  try { token = localStorage.getItem(AUTH_TOKEN_KEY); } catch {}
+  if (!token) return false;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token === token) return true;
+  } catch {}
+  return applySupabaseAuth(token);
 }
 
 // Call once on app start to restore the supabase session from a stored OTP JWT.

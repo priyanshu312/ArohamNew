@@ -39,7 +39,7 @@ function CheckoutHeader() {
 export function PaymentPage() {
   const navigate = useNavigate();
   const { items, clearCart, subtotal, discount, total, appliedCoupon, applyCoupon, removeCoupon, cartReady } = useCart();
-  const { user } = useAuth();
+  const { user, openAuth } = useAuth();
   const [placing, setPlacing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"online" | "cod">("online");
   const [couponInput, setCouponInput] = useState("");
@@ -169,6 +169,13 @@ export function PaymentPage() {
       } catch (backendErr: any) {
         console.error("Order creation failed — refusing to open checkout:", backendErr);
         setPlacing(false);
+        if (backendErr?.status === 401) {
+          // Cart and address stay put, so paying again after logging in
+          // picks up exactly where this left off.
+          alert("Your login has expired, so we have not charged you.\n\nPlease log in again and tap Pay — your cart and address are saved.");
+          openAuth();
+          return;
+        }
         alert(
           `We couldn't start your order, so we have not charged you.\n\n` +
           `${backendErr?.message || "The server is unreachable."}\n\n` +

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useRef } from "react";
-import { supabase, firebaseAuth, initSupabaseAuthFromStorage } from "@nakshra/shared-services";
+import { supabase, firebaseAuth, initSupabaseAuthFromStorage, ensureSupabaseSession } from "@nakshra/shared-services";
 import { api } from "@nakshra/shared-api";
 import { setCookie, getCookie, deleteCookie } from "@nakshra/shared-utils/cookies";
 import { safeLocalStorage, safeSessionStorage } from "@nakshra/shared-utils/storage";
@@ -28,6 +28,45 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+// "unknown" means we couldn't get a definite answer (offline, Render cold
+// start, a 5xx). It must never log anyone out.
+type AccountState = "active" | "gone" | "blocked" | "signed_out" | "unknown";
+
+const ACCOUNT_NOTICE: Record<string, string> = {
+  gone: "Your account is no longer active.",
+  blocked: "Sorry, you are blocked. Can't login.",
+  signed_out: "Your login has expired. Please log in again.",
+};
+
+// Is this stored session still a live account?
+//
+// Shoppers are checked through the API, which verifies our own OTP token. This
+// used to read the users table straight from the browser, but RLS only returns
+// the row while supabase-js holds a session, and it drops that session on its
+// own (a failed setSession on a flaky connection, a backgrounded tab). The
+// query then came back empty, the empty result was read as "account deleted",
+// and the user was wiped out mid-checkout — three times in an hour for one
+// customer, who reasonably concluded her account had been deleted.
+async function checkAccount(u: any): Promise<AccountState> {
+  if (!u?.id) return "unknown";
+  const isAstrologer = u.role === "astrologer" || u.user_metadata?.role === "astrologer";
+  if (isAstrologer) {
+    const { data, error } = await supabase.from("astrologers").select("id, status").eq("id", u.id).maybeSingle();
+    if (error) return "unknown";
+    if (!data?.id) return "gone";
+    return String(data.status).toUpperCase() === "BLOCKED" ? "blocked" : "active";
+  }
+  try {
+    const row: any = await api("/auth/profile", { timeoutMs: 20000 });
+    if (!row?.id) return "gone";
+    return String(row.status).toUpperCase() === "BLOCKED" ? "blocked" : "active";
+  } catch (e: any) {
+    // 401: no token, or one the server no longer accepts. Better to say so now
+    // than let the customer find out from a failed payment.
+    return e?.status === 401 ? "signed_out" : "unknown";
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UnifiedUser | null>(() => {
@@ -153,24 +192,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (rawSession) {
         try {
           const parsed = JSON.parse(rawSession);
-          const table = (parsed.role === "astrologer" || parsed.user_metadata?.role === "astrologer") ? "astrologers" : "users";
-          
-          let userExists = false;
-          let isBlocked = false;
 
-          try {
-            const { data } = await supabase.from(table).select("id, status").eq("id", parsed.id).maybeSingle();
-            if (data && data.id) {
-              userExists = true;
-              if (String(data.status).toUpperCase() === "BLOCKED") {
-                isBlocked = true;
-              }
-            }
-          } catch (e) {}
-
-          // If user was deleted or blocked in DB, force logout immediately and clear local state
-          if (!userExists || isBlocked) {
+          // Log out only on a definite answer; an unreachable server keeps the
+          // stored session.
+          const state = await checkAccount(parsed);
+          if (state === "gone" || state === "blocked" || state === "signed_out") {
             await logout();
+            safeSessionStorage.setItem("Nakshra_auth_notice", ACCOUNT_NOTICE[state]);
             return;
           }
 
@@ -231,28 +259,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Real-time background watcher: Check every 4 seconds if logged-in user still exists & is active in DB
+  // Background watcher: notice a deleted/blocked account or a dead session
+  // without a reload. Once a minute and whenever the tab comes back into view
+  // (the old 4-second poll was 15 requests a minute per shopper). Each pass also
+  // re-attaches the token to supabase-js if it has dropped its session, so
+  // direct supabase.from(...) reads keep seeing the user's own rows.
   useEffect(() => {
     if (!isLoggedIn || !user?.id) return;
+    let stopped = false;
+    let running = false;
 
-    const intervalId = setInterval(async () => {
+    const tick = async () => {
+      if (stopped || running) return;
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      running = true;
       try {
-        const table = (user.role === "astrologer" || user.user_metadata?.role === "astrologer") ? "astrologers" : "users";
-        const { data } = await supabase.from(table).select("id, status").eq("id", user.id).maybeSingle();
-        
-        // If account was deleted or blocked in DB, force immediate logout
-        if (!data || !data.id || String(data.status).toUpperCase() === "BLOCKED") {
-          console.warn("[AuthWatcher] User was deleted or blocked in database. Force logging out.");
+        await ensureSupabaseSession();
+        const state = await checkAccount(user);
+        if (stopped) return;
+        if (state === "gone" || state === "blocked") {
+          console.warn(`[AuthWatcher] Account ${state}. Logging out.`);
           await logout();
-          safeSessionStorage.setItem("Nakshra_auth_notice", "Your account is no longer active.");
+          safeSessionStorage.setItem("Nakshra_auth_notice", ACCOUNT_NOTICE[state]);
           if (typeof window !== "undefined" && window.location) {
             window.location.href = "/";
           }
+        } else if (state === "signed_out") {
+          console.warn("[AuthWatcher] Session no longer accepted. Asking to log in again.");
+          await logout();
+          safeSessionStorage.setItem("Nakshra_auth_notice", ACCOUNT_NOTICE.signed_out);
+          setShowAuth(true);
         }
-      } catch (e) {}
-    }, 4000);
+      } catch (e) {
+      } finally {
+        running = false;
+      }
+    };
 
-    return () => clearInterval(intervalId);
+    const intervalId = setInterval(tick, 60000);
+    const onVisible = () => { if (document.visibilityState === "visible") tick(); };
+    if (typeof document !== "undefined") document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      stopped = true;
+      clearInterval(intervalId);
+      if (typeof document !== "undefined") document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [isLoggedIn, user?.id]);
 
   const login = (userData?: any) => {

@@ -108,7 +108,9 @@ export async function api(endpoint: string, options: ApiOptions = {}) {
   
   if (!response.ok) {
     const errorMsg = body.error || (body.errors || []).join(", ") || response.statusText;
-    throw new Error(errorMsg);
+    // Callers need the status to tell "your session is gone" (401) from a
+    // server hiccup — the message alone can't be matched reliably.
+    throw Object.assign(new Error(errorMsg), { status: response.status });
   }
   
   return body;
