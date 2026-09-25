@@ -5,6 +5,7 @@ import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@nakshra/shared-co
 import { useCart } from "@nakshra/shared-state";
 import { useAuth } from "@nakshra/shared-auth";
 import { api } from "@nakshra/shared-api";
+import { cachedDeliveryEstimate, FALLBACK_DELIVERY } from "@nakshra/shared-api/shipping";
 import { EmptyCheckout } from "@visual/components/checkout/EmptyCheckout";
 
 declare global {
@@ -239,6 +240,9 @@ export function PaymentPage() {
             // browser copy can only ever drift from it or outlive it.
 
             sessionStorage.setItem("Nakshra_last_order_items", JSON.stringify(items));
+            // The date the customer was shown at checkout, for the confirmation page.
+            const eta = cachedDeliveryEstimate(shippingAddr?.pincode || shippingAddr?.pin || "");
+            sessionStorage.setItem("Nakshra_order_eta", eta?.deliveryDate || FALLBACK_DELIVERY);
             sessionStorage.removeItem("Nakshra_shipping_addr");
             sessionStorage.setItem("Nakshra_last_order_id", String(internalOrderId));
             sessionStorage.setItem("Nakshra_order_total", String(total));

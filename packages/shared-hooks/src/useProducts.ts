@@ -61,10 +61,21 @@ function mapSupaProducts(data: any[]): NakshraProduct[] {
   });
 }
 
-/** The options of `product`'s group, cheapest first, or [] if it has no group. */
+const MUKHI = /^\s*(\d+)\s*mukhi\b/i;
+
+/**
+ * The options of `product`'s group, or [] if it has no group. Cheapest first,
+ * except Rudraksha: price doesn't follow the mukhi count (1 Mukhi is the
+ * second-dearest), and buyers look for them as 1, 2, 3 … 14.
+ */
 export function variantOptions(products: NakshraProduct[], product: NakshraProduct): NakshraProduct[] {
   if (!product.variantGroup) return [];
-  return products.filter(p => p.variantGroup === product.variantGroup).sort((a, b) => a.price - b.price);
+  const options = products.filter(p => p.variantGroup === product.variantGroup);
+  const mukhi = (p: NakshraProduct) => Number(MUKHI.exec(p.variantLabel || "")?.[1]);
+  if (options.every(p => Number.isFinite(mukhi(p)))) {
+    return options.sort((a, b) => mukhi(a) - mukhi(b));
+  }
+  return options.sort((a, b) => a.price - b.price);
 }
 
 /**

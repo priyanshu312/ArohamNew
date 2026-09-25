@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useParams, useNavigate, useSearchParams } from "react-router";
 import { Star, ShoppingCart, Share2, Heart, ChevronLeft, ChevronRight, Sparkles, Flame, Gem, Award, Shield, Package, Truck, CheckCircle, Mail, Phone, ChevronDown, ScrollText, Hand, RotateCcw, MessageCircle, Check, X } from "lucide-react";
 import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@nakshra/shared-config/theme";
 import { CONTACT_INFO } from "@nakshra/shared-config/contact";
@@ -11,9 +11,11 @@ import { useReviews } from "@nakshra/shared-hooks/useReviews";
 import { ProductReviews } from "@visual/components/product/ProductReviews";
 import { NakshraProduct } from "@nakshra/shared-types/product";
 import { DEFAULT_PRODUCTS } from "@nakshra/shared-config/products";
-import { getShiprocketDeliveryEstimate } from "@nakshra/shared-api/shipping";
+import { getShiprocketDeliveryEstimate, FALLBACK_DELIVERY } from "@nakshra/shared-api/shipping";
 
-const PROD_TABS = ["Description", "Benefits", "How to Use", "Temple Ritual", "Reviews"];
+// Reviews are not a tab: as the fifth tab they sat off-screen on a phone and
+// customers could not find them. They get their own section below the tabs.
+const PROD_TABS = ["Description", "Benefits", "How to Use", "Temple Ritual"];
 
 export function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -62,6 +64,15 @@ export function ProductDetailPage() {
   }, [slug, products, productsLoading]);
 
   const [tab, setTab] = useState(0);
+  // "Rate & review" in My Orders links here with ?review=1: open the form and
+  // bring it into view.
+  const [searchParams] = useSearchParams();
+  const wantsReview = searchParams.get("review") === "1";
+  useEffect(() => {
+    if (!wantsReview || !product) return;
+    const t = setTimeout(() => document.getElementById("reviews")?.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
+    return () => clearTimeout(t);
+  }, [wantsReview, product?.id]);
   const [qty, setQty] = useState(1);
   const [selectedImg, setSelectedImg] = useState(0);
   const [showSticky, setShowSticky] = useState(false);
@@ -158,9 +169,9 @@ export function ProductDetailPage() {
     } catch (e) {
       console.error("Pincode check error", e);
       setDeliveryResult({
-        date: "3–5 business days",
+        date: FALLBACK_DELIVERY,
         cod: true,
-        carrier: "Shiprocket Express",
+        carrier: "",
         fallback: true
       });
     } finally {
@@ -248,7 +259,6 @@ export function ProductDetailPage() {
         </div>
       ))}
     </div>,
-    <ProductReviews state={reviewState} />,
   ];
 
   return (
@@ -365,10 +375,7 @@ export function ProductDetailPage() {
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-5">
               <button
                 type="button"
-                onClick={() => {
-                  setTab(4);
-                  document.getElementById("product-tabs")?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
+                onClick={() => document.getElementById("reviews")?.scrollIntoView({ behavior: "smooth", block: "start" })}
                 className="flex items-center gap-3 transition-opacity hover:opacity-75"
               >
                 <div className="flex">
@@ -606,6 +613,11 @@ export function ProductDetailPage() {
       <div className="max-w-7xl mx-auto px-6 lg:px-10 pt-6 pb-2">
         <div className="w-full">{tabContent[tab]}</div>
       </div>
+
+      <section id="reviews" className="max-w-7xl mx-auto px-6 lg:px-10 pt-10 pb-2 scroll-mt-24">
+        <h2 className="mb-4" style={{ fontFamily: SERIF, fontSize: "1.4rem", fontWeight: 500, color: MAROON }}>Ratings &amp; Reviews</h2>
+        <ProductReviews state={reviewState} autoOpen={wantsReview} />
+      </section>
 
       {/* Frequently Bought Together / Item-to-Item Recommendations */}
       {recommendations.length > 0 && (

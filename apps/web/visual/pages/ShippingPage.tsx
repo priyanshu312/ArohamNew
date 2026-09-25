@@ -29,7 +29,7 @@ function CheckoutHeader() {
   );
 }
 
-import { getShiprocketDeliveryEstimate, ShippingEstimate } from "@nakshra/shared-api/shipping";
+import { getShiprocketDeliveryEstimate, ShippingEstimate, FALLBACK_DELIVERY } from "@nakshra/shared-api/shipping";
 
 export function ShippingPage() {
   const navigate = useNavigate();
@@ -231,7 +231,7 @@ export function ShippingPage() {
     const est = estimates[pin];
     return {
       ...found,
-      deliveryDate: est?.deliveryDate || found.deliveryDate || "3–5 business days"
+      deliveryDate: est?.deliveryDate || FALLBACK_DELIVERY
     };
   };
 
@@ -282,7 +282,7 @@ export function ShippingPage() {
         pin: form.pin,
         pincode: form.pin,
         address_type: form.addressType,
-        deliveryDate: est?.deliveryDate || "3–5 business days",
+        deliveryDate: est?.deliveryDate || FALLBACK_DELIVERY,
         specialRequest: form.specialRequest
       };
 
@@ -354,7 +354,7 @@ export function ShippingPage() {
         state: form.state,
         pin: form.pin,
         pincode: form.pin,
-        deliveryDate: est?.deliveryDate || "3–5 business days",
+        deliveryDate: est?.deliveryDate || FALLBACK_DELIVERY,
         specialRequest: form.specialRequest,
         ...savedObj
       };
@@ -371,7 +371,7 @@ export function ShippingPage() {
         city: form.city,
         state: form.state,
         pin: form.pin,
-        deliveryDate: est?.deliveryDate || "3–5 business days",
+        deliveryDate: est?.deliveryDate || FALLBACK_DELIVERY,
         specialRequest: form.specialRequest
       };
       sessionStorage.setItem("Nakshra_shipping_addr", JSON.stringify(fallbackObj));
@@ -529,8 +529,8 @@ export function ShippingPage() {
         const est = estimates[pin];
         const addrObj = {
           ...fallback,
-          courier: est?.courier || fallback.courier || "Shiprocket Express",
-          deliveryDate: est?.deliveryDate || fallback.deliveryDate || "3–5 business days",
+          courier: est?.courier || fallback.courier || "",
+          deliveryDate: est?.deliveryDate || FALLBACK_DELIVERY,
           specialRequest: form.specialRequest
         };
         sessionStorage.setItem("Nakshra_shipping_addr", JSON.stringify(addrObj));
@@ -575,8 +575,8 @@ export function ShippingPage() {
       pincode: form.pin,
       pin: form.pin,
       address_type: form.addressType,
-      courier: est?.courier || "Shiprocket Express",
-      deliveryDate: est?.deliveryDate || "3–5 business days",
+      courier: est?.courier || "",
+      deliveryDate: est?.deliveryDate || FALLBACK_DELIVERY,
       specialRequest: form.specialRequest,
     };
 
@@ -715,12 +715,12 @@ export function ShippingPage() {
                           {sel && (() => {
                             const pin = String(addr.pincode || addr.pin || "").replace(/\D/g, "").slice(0, 6);
                             const est = estimates[pin];
-                            const dateStr = est?.deliveryDate || "3–5 business days";
+                            const dateStr = est?.deliveryDate || FALLBACK_DELIVERY;
                             return (
                               <div className="mt-3 pt-2.5 flex items-center gap-2" style={{ borderTop: "1px solid rgba(200,160,68,0.2)" }}>
                                 <Truck size={14} style={{ color: "#4A8A4A", flexShrink: 0 }} />
                                 <span className="text-xs font-semibold" style={{ color: "#4A8A4A" }}>
-                                  Expected delivery by <strong>{dateStr}</strong> · Free Shipping
+                                  Estimated delivery: <strong>{dateStr}</strong> · Free Shipping
                                 </span>
                               </div>
                             );
@@ -838,7 +838,7 @@ export function ShippingPage() {
                     <div className="p-3.5 rounded-2xl flex items-center gap-2.5 my-2" style={{ background: "rgba(74,138,74,0.08)", border: "1px solid rgba(74,138,74,0.2)" }}>
                       <Truck size={15} style={{ color: "#4A8A4A", flexShrink: 0 }} />
                       <span className="text-xs font-semibold" style={{ color: "#4A8A4A" }}>
-                        Expected delivery by <strong>{estimates[form.pin].deliveryDate}</strong> · Free Shipping
+                        Estimated delivery: <strong>{estimates[form.pin].deliveryDate}</strong> · Free Shipping
                       </span>
                     </div>
                   )}

@@ -50,7 +50,7 @@ function StarPicker({ value, onChange }: { value: number; onChange: (n: number) 
 }
 
 /** `state` comes from useReviews() in the page, which also feeds the header stars. */
-export function ProductReviews({ state }: { state: ReturnType<typeof useReviews> }) {
+export function ProductReviews({ state, autoOpen = false }: { state: ReturnType<typeof useReviews>; autoOpen?: boolean }) {
   const { isLoggedIn, openAuth } = useAuth();
   const { reviews, summary, myReview, loading, saving, error, submit, remove } = state;
 
@@ -61,6 +61,18 @@ export function ProductReviews({ state }: { state: ReturnType<typeof useReviews>
   const [name, setName] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [thanks, setThanks] = useState(false);
+  // Set when the form should open as soon as the shopper is signed in: they
+  // tapped "Write a review" while logged out, or arrived from My Orders. Before,
+  // the login sheet opened and then nothing — they had to find the button again.
+  const [pendingOpen, setPendingOpen] = useState(autoOpen);
+
+  useEffect(() => {
+    if (!pendingOpen || !isLoggedIn) return;
+    setPendingOpen(false);
+    setThanks(false);
+    setFormError(null);
+    setOpen(true);
+  }, [pendingOpen, isLoggedIn]);
 
   // Opening the form on a product you already rated edits that review.
   useEffect(() => {
@@ -74,6 +86,7 @@ export function ProductReviews({ state }: { state: ReturnType<typeof useReviews>
 
   const startWriting = () => {
     if (!isLoggedIn) {
+      setPendingOpen(true);
       openAuth();
       return;
     }

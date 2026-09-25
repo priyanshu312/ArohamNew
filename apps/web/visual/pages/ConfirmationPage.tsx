@@ -4,6 +4,7 @@ import { Lock, CheckCircle, Package, Mail, ArrowRight, Truck, Check, Flame, Sear
 import { MAROON, GOLD, SAFFRON, IVORY, SANS, SERIF, PRICE_FONT } from "@nakshra/shared-config/theme";
 import { useCart } from "@nakshra/shared-state";
 import { api } from "@nakshra/shared-api";
+import { FALLBACK_DELIVERY } from "@nakshra/shared-api/shipping";
 
 function CheckoutHeader() {
   const navigate = useNavigate();
@@ -60,14 +61,9 @@ export function ConfirmationPage() {
   const orderId = sessionStorage.getItem("Nakshra_last_order_id") || "—";
   const displayOrderId = orderId !== "—" ? `ARH-${orderId}` : "Confirmed";
 
-  // Calculate dynamic estimated delivery date (4 days from today)
-  const deliveryDateObj = new Date();
-  deliveryDateObj.setDate(deliveryDateObj.getDate() + 4);
-  const formattedDeliveryDate = deliveryDateObj.toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric"
-  });
+  // The same estimate the customer saw on the shipping step (saved by
+  // PaymentPage), not a separate "today + 4" that disagreed with it.
+  const estimatedDelivery = sessionStorage.getItem("Nakshra_order_eta") || FALLBACK_DELIVERY;
 
   useEffect(() => {
     const t1 = setTimeout(() => setVisible(true), 80);
@@ -148,7 +144,7 @@ export function ConfirmationPage() {
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0" style={{ borderColor: "rgba(91,31,36,0.07)" }}>
-            {[["Order Date", new Date().toLocaleDateString("en-IN", {day:"2-digit",month:"short",year:"numeric"})], ["Est. Delivery", `Arriving by ${formattedDeliveryDate}`], ["Payment", "Razorpay"], ["Total", `₹${totalAmount.toLocaleString("en-IN")}`]].map(([l, v]) => (
+            {[["Order Date", new Date().toLocaleDateString("en-IN", {day:"2-digit",month:"short",year:"numeric"})], ["Est. Delivery", estimatedDelivery], ["Payment", "Razorpay"], ["Total", `₹${totalAmount.toLocaleString("en-IN")}`]].map(([l, v]) => (
               <div key={l} className="px-6 py-5"><p className="text-[10px] tracking-widest uppercase font-semibold mb-1" style={{ color: "#9A8A78" }}>{l}</p><p className="text-sm font-semibold" style={{ fontFamily: SERIF, color: MAROON }}>{v}</p></div>
             ))}
           </div>

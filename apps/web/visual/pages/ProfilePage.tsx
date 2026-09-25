@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { ChevronLeft, User, Package, Truck, CheckCircle, Edit2, Save, X, Calendar, ChevronDown, MapPin, Trash2, Plus, LogOut, Check, Flame, Home, ShoppingBag, AlertTriangle } from "lucide-react";
+import { ChevronLeft, User, Package, Truck, CheckCircle, Edit2, Save, X, Calendar, ChevronDown, MapPin, Trash2, Plus, LogOut, Check, Flame, Home, ShoppingBag, AlertTriangle, Star } from "lucide-react";
 import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@nakshra/shared-config/theme";
 import { useAuth } from "@nakshra/shared-auth";
 import { api } from "@nakshra/shared-api";
@@ -162,12 +162,10 @@ export function ProfilePage() {
   // catalogue we already load elsewhere. Falls back to the item's emoji.
   const { products: catalogue } = useProducts();
   const orderItems = (order: any): any[] => order?.order_items || order?.items || [];
-  const orderThumb = (order: any): string | null => {
-    const first = orderItems(order)[0];
-    if (!first) return null;
-    const match = catalogue.find(p => String(p.id) === String(first.product_id));
-    return match?.img || null;
-  };
+  const itemProduct = (it: any) =>
+    it ? catalogue.find(p => String(p.id) === String(it.product_id ?? it.id)) || null : null;
+  const itemThumb = (it: any): string | null => itemProduct(it)?.img || null;
+  const orderThumb = (order: any): string | null => itemThumb(orderItems(order)[0]);
   const orderTitle = (order: any): string => {
     const list = orderItems(order);
     if (!list.length) return "Order";
@@ -1235,6 +1233,7 @@ export function ProfilePage() {
               const isExpanded = expandedOrders[order.id];
               const stepIdx = getOrderStep(order.status, order.awb_code);
               const isCancelled = order.status === "CANCELLED" || order.status === "Cancelled";
+              const canReview = !isCancelled && String(order.status || "").toUpperCase() !== "PENDING";
               return (
                 <div key={order.id} className="rounded-2xl overflow-hidden transition-all" style={{ background: "#fff", border: "1px solid rgba(91,31,36,0.08)" }}>
                   <div className="p-4 flex items-center justify-between gap-3 cursor-pointer" onClick={() => toggleOrder(order.id)}>
@@ -1242,12 +1241,20 @@ export function ProfilePage() {
                       {/* Lead with what was actually bought. The card used to show
                           the raw order UUID, which means nothing to a customer and
                           swallowed the whole row. */}
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden"
-                        style={{ background: "rgba(200,160,68,0.10)", border: "1px solid rgba(91,31,36,0.08)" }}>
-                        {orderThumb(order) ? (
-                          <img src={orderThumb(order)} alt="" className="w-full h-full object-cover" loading="lazy" />
-                        ) : (
-                          <Package size={20} strokeWidth={1.4} style={{ color: "#C9BCAA" }} />
+                      <div className="relative flex-shrink-0">
+                        <div className="w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden"
+                          style={{ background: "#FAF7F2", border: "1px solid rgba(91,31,36,0.08)" }}>
+                          {orderThumb(order) ? (
+                            <img src={orderThumb(order)!} alt="" className="w-full h-full object-contain" loading="lazy" />
+                          ) : (
+                            <Package size={20} strokeWidth={1.4} style={{ color: "#C9BCAA" }} />
+                          )}
+                        </div>
+                        {itemsList.length > 1 && (
+                          <span className="absolute -bottom-1 -right-1 min-w-[20px] h-5 px-1 rounded-full text-[10px] font-bold flex items-center justify-center"
+                            style={{ background: MAROON, color: IVORY, border: "2px solid #fff" }}>
+                            +{itemsList.length - 1}
+                          </span>
                         )}
                       </div>
                       <div className="min-w-0">
@@ -1294,9 +1301,31 @@ export function ProfilePage() {
                       {/* Items */}
                       <div className="space-y-2 pt-2 border-t border-black/5">
                         {itemsList.map((it: any, i: number) => (
-                          <div key={i} className="flex justify-between items-center text-xs">
-                            <span>{itemName(it)} x{itemQty(it)}</span>
-                            <span className="font-semibold">₹{((itemPaise(it) * itemQty(it)) / 100).toLocaleString("en-IN")}</span>
+                          <div key={i} className="flex items-center gap-3 text-xs">
+                            <div className="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden"
+                              style={{ background: "#FAF7F2", border: "1px solid rgba(91,31,36,0.08)" }}>
+                              {itemThumb(it) ? (
+                                <img src={itemThumb(it)!} alt="" className="w-full h-full object-contain" loading="lazy" />
+                              ) : (
+                                <Package size={16} strokeWidth={1.4} style={{ color: "#C9BCAA" }} />
+                              )}
+                            </div>
+                            <span className="flex-1 min-w-0" style={{ color: "#3A2A20" }}>
+                              {itemName(it)} <span style={{ color: "#9A8A78" }}>× {itemQty(it)}</span>
+                            </span>
+                            <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                              <span className="font-semibold">₹{((itemPaise(it) * itemQty(it)) / 100).toLocaleString("en-IN")}</span>
+                              {/* Reviews were hard to find from the product page alone;
+                                  this is where a buyer thinks about what they bought. */}
+                              {canReview && itemProduct(it)?.slug && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); navigate(`/shop/${itemProduct(it)!.slug}?review=1`); }}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-colors hover:bg-amber-50"
+                                  style={{ color: "#8B6914", border: "1px solid rgba(200,160,68,0.4)" }}>
+                                  <Star size={10} fill={GOLD} stroke={GOLD} /> Rate &amp; review
+                                </button>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
