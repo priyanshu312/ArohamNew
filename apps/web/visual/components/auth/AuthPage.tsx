@@ -39,11 +39,11 @@ const OTP_LENGTH = (() => {
 
 
 const LEFT_PANELS = {
-  signin:        { img: "/images/auth-bg.png", headline: "Welcome Back.",                       sub: "Continue your sacred journey toward harmony, prosperity and divine energy.", items: ["Access Orders", "Astrology Reports", "Consultations", "Saved Wishlist"] },
-  signup:        { img: "/images/auth-bg.png", headline: "Your Spiritual Journey Begins.",    sub: "Join India's most trusted ecosystem for authentic Vedic solutions.", items: ["Temple Energized", "Expert Guidance", "Personalized Path"] },
-  otp:           { img: "/images/auth-bg.png", headline: "Securing Your Sacred Path.",        sub: "Verifying your identity with an encrypted one-time code.", items: ["Instant Verification", "Privacy Protected", "100% Secure"] },
-  "profile-setup":{ img: "/images/auth-bg.png", headline: "Complete Your Profile.",          sub: "Share your details to unlock personalized cosmic guidance.", items: ["Personalized Horoscope", "Order Tracking", "Exclusive Offers"] },
-  success:       { img: "/images/auth-bg.png", headline: "Welcome to Nakshra.",                sub: "Your journey toward harmony and prosperity begins now.", items: ["Explore Sacred Products", "Book Consultation", "Divine Blessings"] },
+  signin:        { img: "/images/auth-bg.webp", headline: "Welcome Back.",                       sub: "Continue your sacred journey toward harmony, prosperity and divine energy.", items: ["Access Orders", "Astrology Reports", "Consultations", "Saved Wishlist"] },
+  signup:        { img: "/images/auth-bg.webp", headline: "Your Spiritual Journey Begins.",    sub: "Join India's most trusted ecosystem for authentic Vedic solutions.", items: ["Temple Energized", "Expert Guidance", "Personalized Path"] },
+  otp:           { img: "/images/auth-bg.webp", headline: "Securing Your Sacred Path.",        sub: "Verifying your identity with an encrypted one-time code.", items: ["Instant Verification", "Privacy Protected", "100% Secure"] },
+  "profile-setup":{ img: "/images/auth-bg.webp", headline: "Complete Your Profile.",          sub: "Share your details to unlock personalized cosmic guidance.", items: ["Personalized Horoscope", "Order Tracking", "Exclusive Offers"] },
+  success:       { img: "/images/auth-bg.webp", headline: "Welcome to Nakshra.",                sub: "Your journey toward harmony and prosperity begins now.", items: ["Explore Sacred Products", "Book Consultation", "Divine Blessings"] },
 };
 
 export function AuthPage() {

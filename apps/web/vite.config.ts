@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import path from 'path'
+import { pathToFileURL } from 'url'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
@@ -27,10 +28,23 @@ function htmlEnvDefaults() {
   }
 }
 
+// Regenerate public/sitemap.xml from the live catalogue on every production
+// build, however the build is invoked (npm script or a bare `vite build`).
+function sitemap() {
+  return {
+    name: 'nakshra-sitemap',
+    apply: 'build' as const,
+    async buildStart() {
+      await import(pathToFileURL(path.resolve(__dirname, 'scripts/gen-sitemap.mjs')).href + `?t=${Date.now()}`)
+    },
+  }
+}
+
 export default defineConfig({
   plugins: [
     figmaAssetResolver(),
     htmlEnvDefaults(),
+    sitemap(),
     // The React and Tailwind plugins are both required for Make, even if
     // Tailwind is not being actively used – do not remove them
     react(),

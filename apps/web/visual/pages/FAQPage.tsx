@@ -22,7 +22,7 @@ export function FAQPage() {
     },
     {
       q: t("faq.q2", "How long does shipping take?"),
-      a: t("faq.a2", "Standard shipping takes 3-5 business days across India. Express shipping is available at checkout.")
+      a: t("faq.a2", "Orders are dispatched within 24-48 hours and usually arrive in 3-5 business days across India. Shipping is free, and the product page shows the estimated date for your pincode.")
     },
     {
       q: t("faq.q3", "What is the return policy?"),

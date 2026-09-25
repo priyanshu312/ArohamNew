@@ -126,7 +126,7 @@ export const en: Record<string, string> = {
   "faq.q1": "Are all products authentic and temple energized?",
   "faq.a1": "Yes, every single product goes through 108 mantra chanting rounds by Vedic Pandits before being dispatched.",
   "faq.q2": "How long does shipping take?",
-  "faq.a2": "Standard shipping takes 3-5 business days across India. Express shipping is available at checkout.",
+  "faq.a2": "Orders are dispatched within 24-48 hours and usually arrive in 3-5 business days across India. Shipping is free, and the product page shows the estimated date for your pincode.",
   "faq.q3": "What is the return policy?",
   "faq.a3": "We offer a 7-day hassle-free return policy if you are not completely satisfied with your item.",
   "faq.q4": "Are your bracelets and pendants real powerful?",
@@ -153,8 +153,8 @@ export const en: Record<string, string> = {
   "returns.desc": "If you don't feel the energy shift or are unsatisfied, return any item within 7 days of delivery for a full refund.",
 
   "track.title": "Track Your Sacred Order",
-  "track.subtitle": "Enter your Order ID or registered Phone Number to view real-time status.",
-  "track.placeholder": "Enter Order ID (e.g., NAK-1082)",
+  "track.subtitle": "Enter your order number and the email or phone number you ordered with.",
+  "track.placeholder": "Order number (e.g. NAK-48EBE070)",
   "track.button": "Track Order",
 
   "contact.title": "Contact & Spiritual Support",

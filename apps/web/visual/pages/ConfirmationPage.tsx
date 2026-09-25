@@ -5,6 +5,7 @@ import { MAROON, GOLD, SAFFRON, IVORY, SANS, SERIF, PRICE_FONT } from "@nakshra/
 import { useCart } from "@nakshra/shared-state";
 import { api } from "@nakshra/shared-api";
 import { FALLBACK_DELIVERY } from "@nakshra/shared-api/shipping";
+import { orderNumber } from "@nakshra/shared-utils";
 
 function CheckoutHeader() {
   const navigate = useNavigate();
@@ -59,7 +60,7 @@ export function ConfirmationPage() {
   const [loading, setLoading] = useState(true);
 
   const orderId = sessionStorage.getItem("Nakshra_last_order_id") || "—";
-  const displayOrderId = orderId !== "—" ? `ARH-${orderId}` : "Confirmed";
+  const displayOrderId = orderId !== "—" ? orderNumber(orderId) : "Confirmed";
 
   // The same estimate the customer saw on the shipping step (saved by
   // PaymentPage), not a separate "today + 4" that disagreed with it.

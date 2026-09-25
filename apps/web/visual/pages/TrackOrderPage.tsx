@@ -6,6 +6,15 @@ import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { api } from "@nakshra/shared-api";
 
+const STATUS_LABEL: Record<string, string> = {
+  PENDING: "Awaiting payment",
+  CONFIRMED: "Order confirmed — being prepared",
+  PROCESSING: "Being prepared",
+  SHIPPED: "Shipped",
+  DELIVERED: "Delivered",
+  CANCELLED: "Cancelled",
+};
+
 interface TrackingResult {
   orderId: string;
   status: string;
@@ -26,49 +35,33 @@ export function TrackOrderPage() {
   const { t } = useTranslation();
 
   const handleTrack = async () => {
-    if (!orderId || !email) return;
+    if (!orderId.trim() || !email.trim()) return;
     setLoading(true);
     setError("");
     setTrackedOrder(null);
 
+    // By the order number on the confirmation page (NAK-XXXXXXXX) and the email
+    // or phone used for the order. This used to want a Shiprocket shipment ID or
+    // AWB code, which customers never see, and ignored the email field.
     try {
-      // First try tracking via Shiprocket (using orderId as shipment_id or AWB)
-      const res = await api(`/shiprocket/track/${encodeURIComponent(orderId.trim())}`);
-      
-      if (res.success && res.data) {
-        const tracking = res.data?.tracking_data || res.data;
-        const activities = (tracking?.shipment_track_activities || tracking?.track_activities || [])
-          .slice(0, 8)
-          .map((a: any) => ({
-            date: a.date || a["sr-status-date"] || "",
-            activity: a.activity || a["sr-status"] || a.status || "",
-            location: a.location || a["sr-status-location"] || ""
-          }));
-
-        setTrackedOrder({
-          orderId: orderId.trim(),
-          status: tracking?.shipment_status_text || tracking?.current_status || tracking?.status || "In Transit",
-          courier: tracking?.courier_name || tracking?.courier_company_id?.toString() || "",
-          awb: tracking?.awb_code || tracking?.awb || "",
-          etd: tracking?.etd || tracking?.expected_date || "",
-          currentLocation: tracking?.current_location || activities[0]?.location || "",
-          activities
-        });
-      } else {
-        throw new Error("No tracking data");
-      }
-    } catch {
-      // Fallback: check sessionStorage for local order reference
-      const localOrderId = sessionStorage.getItem("Nakshra_last_order_id");
-      if (orderId.trim() === localOrderId) {
-        setTrackedOrder({
-          orderId: orderId.trim(),
-          status: "Processing",
-          activities: []
-        });
-      } else {
-        setError(t("track.error", "We couldn't find an active shipment matching that ID. Try your Shiprocket Shipment ID or AWB code."));
-      }
+      const res: any = await api(
+        `/orders/track?order=${encodeURIComponent(orderId.trim())}&contact=${encodeURIComponent(email.trim())}`,
+        { timeoutMs: 45000 }
+      );
+      const tr = res.tracking || {};
+      setTrackedOrder({
+        orderId: res.orderNumber,
+        status: tr.status || STATUS_LABEL[String(res.status || "").toUpperCase()] || res.status || "Processing",
+        courier: res.courier || "",
+        awb: res.awb || "",
+        etd: tr.etd || "",
+        currentLocation: tr.activities?.[0]?.location || "",
+        activities: tr.activities || [],
+      });
+    } catch (e: any) {
+      setError(e?.status === 404
+        ? "No order matches that order number and email/phone. The order number is on your confirmation page and in My Orders (e.g. NAK-48EBE070)."
+        : e?.message || "Couldn't look up that order right now. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -89,15 +82,15 @@ export function TrackOrderPage() {
           {t("track.title", "Track Your Order")}
         </h1>
         <p className="text-center mb-8" style={{ color: "#7A6A58" }}>
-          {t("track.subtitle", "Enter your Shipment ID or AWB code to view real-time tracking status.")}
+          {t("track.subtitle", "Enter your order number and the email or phone number you ordered with.")}
         </p>
         
         {trackedOrder ? (
           <TrackingDetails order={trackedOrder} onReset={() => setTrackedOrder(null)} t={t} />
         ) : (
           <div className="bg-white rounded-3xl p-8 shadow-sm border border-[rgba(91,31,36,0.05)] w-full space-y-5">
-            <FloatingInput label={t("track.placeholder", "Shipment ID or AWB Code")} value={orderId} onChange={setOrderId} required />
-            <FloatingInput label="Email Address" type="email" value={email} onChange={setEmail} required />
+            <FloatingInput label={t("track.placeholder", "Order number (e.g. NAK-48EBE070)")} value={orderId} onChange={setOrderId} required />
+            <FloatingInput label="Email or phone used for the order" value={email} onChange={setEmail} required />
             
             {error && (
               <div className="p-4 rounded-xl text-sm flex items-start gap-2" style={{ background: "rgba(200,160,68,0.1)", color: "#8B6914", border: "1px solid rgba(200,160,68,0.2)" }}>

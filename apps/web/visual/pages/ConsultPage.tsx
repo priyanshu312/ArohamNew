@@ -121,7 +121,8 @@ export function ConsultPage() {
             experience: `${liveData.experience_years || 5}+`,
             rating: Number(liveData.rating) || 4.95,
             consultations: liveData.consultations_count || 120,
-            specialties: liveData.specialties || ["Vedic Kundali", "Gemstones"],
+            // Signup stored the chosen specialty twice (["Vedic Kundali", "Vedic Kundali"]).
+            specialties: [...new Set<string>((liveData.specialties || ["Vedic Kundali", "Gemstones"]).map((s: string) => String(s).trim()).filter(Boolean))],
             languages: liveData.languages || ["Hindi", "English"],
             avatar: liveData.avatar_url || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80",
             status: (isAstrologerActive(liveData.is_online, liveData.working_hours) ? "online" : "offline") as "online" | "offline" | "busy",

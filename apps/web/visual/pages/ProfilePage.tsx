@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { ChevronLeft, User, Package, Truck, CheckCircle, Edit2, Save, X, Calendar, ChevronDown, MapPin, Trash2, Plus, LogOut, Check, Flame, Home, ShoppingBag, AlertTriangle, Star } from "lucide-react";
 import { MAROON, GOLD, IVORY, SANS, SERIF, PRICE_FONT } from "@nakshra/shared-config/theme";
+import { orderNumber } from "@nakshra/shared-utils";
 import { useAuth } from "@nakshra/shared-auth";
 import { api } from "@nakshra/shared-api";
 import * as Select from "@radix-ui/react-select";
@@ -1259,7 +1260,7 @@ export function ProfilePage() {
                       </div>
                       <div className="min-w-0">
                         <p className="text-xs font-semibold truncate" style={{ color: MAROON }}>{orderTitle(order)}</p>
-                        <p className="text-[10px]" style={{ color: "#9A8A78" }}>{new Date(order.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</p>
+                        <p className="text-[10px]" style={{ color: "#9A8A78" }}>{orderNumber(order.id)} · {new Date(order.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</p>
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0">

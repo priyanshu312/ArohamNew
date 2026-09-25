@@ -119,12 +119,15 @@ export function AstrologerCard({ astro, onStartConsultation, booking, now = Date
         </div>
 
         <div className="flex flex-wrap gap-1.5 my-3">
-          {astro.specialties.slice(0, 3).map((spec, i) => (
+          {/* No repeats, and not the specialty already shown as the title line. */}
+          {[...new Set(astro.specialties.map(s => translateSpecialty(s, t)))]
+            .filter(spec => spec !== translateSpecialty(astro.title, t))
+            .slice(0, 3).map((spec, i) => (
             <span
               key={`${i}-${spec}`}
               className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-900/70 border border-amber-900/10"
             >
-              {translateSpecialty(spec, t)}
+              {spec}
             </span>
           ))}
         </div>

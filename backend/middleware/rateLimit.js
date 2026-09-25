@@ -48,6 +48,14 @@ const kundliLimiter = make({
   message: "Too many chart requests. Please wait a few minutes.",
 });
 
+// Public order tracking: needs order number + matching email/phone, but throttle
+// guessing anyway. 20 / 15 min / IP.
+const trackLimiter = make({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: "Too many tracking attempts. Please wait a few minutes.",
+});
+
 // Everything else under /api — a generous ceiling to blunt scrapers/floods
 // without affecting normal browsing. 300 / 5 min / IP.
 const apiLimiter = make({
@@ -56,4 +64,4 @@ const apiLimiter = make({
   message: "Too many requests. Please slow down.",
 });
 
-module.exports = { otpSendLimiter, otpVerifyLimiter, chatLimiter, kundliLimiter, apiLimiter };
+module.exports = { otpSendLimiter, otpVerifyLimiter, chatLimiter, kundliLimiter, trackLimiter, apiLimiter };

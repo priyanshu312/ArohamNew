@@ -36,7 +36,9 @@ export function Footer() {
                 { label: t("footer.yantras", "Yantras"), href: "/shop?category=Yantra" },
                 { label: t("footer.pendants", "Pendants"), href: "/shop?category=Pendant" },
                 { label: t("footer.rudraksha", "Rudraksha"), href: "/shop?category=Rudraksha" },
-                { label: t("footer.combo_kits", "Combo Kits"), href: "/shop?title=Combo%20Deals" }
+                // "Combo Kits" listed the whole catalogue under a Combo Deals
+                // heading: there are no combo products (the shop hides them too).
+                { label: t("footer.vastu", "Vastu"), href: "/shop?category=Vastu" }
               ] 
             },
             { 
@@ -52,11 +54,10 @@ export function Footer() {
             { 
               title: t("footer.col_company", "Company"),  
               links: [
-                { label: t("footer.about_us", "About Us"), href: "#" },
-                { label: t("footer.our_story", "Our Story"), href: "#" },
-                { label: t("footer.careers", "Careers"), href: "#" },
-                { label: t("footer.press", "Press"), href: "#" },
+                // About Us / Our Story / Careers / Press were "#" links to pages
+                // that don't exist; add them back when the pages do.
                 { label: t("footer.blog", "Blog"), href: "/blog" },
+                { label: t("footer.consult", "Consult an Astrologer"), href: "/consult" },
                 { label: t("footer.terms", "Terms & Conditions"), href: "/terms" }
               ] 
             },

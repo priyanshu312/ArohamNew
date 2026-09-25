@@ -114,7 +114,7 @@ export function BookSlotModal({ astrologer, onClose, onBooked }: BookSlotModalPr
       currency: "INR",
       name: "Nakshra",
       description: `Consultation · ${formatSlotRange(booking.slotStart, booking.slotEnd)}`,
-      image: "/favicon.ico",
+      image: `${window.location.origin}/icon-192.png`,
       // The server holds the slot for 15 minutes; close the checkout well
       // before that so a payment never lands after the hold.
       timeout: 600,

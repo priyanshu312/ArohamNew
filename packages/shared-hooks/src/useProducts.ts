@@ -94,7 +94,10 @@ export function groupVariants(products: NakshraProduct[]): NakshraProduct[] {
     if (seen.has(p.variantGroup)) continue;
     seen.add(p.variantGroup);
     const options = variantOptions(products, p);
-    out.push(options.length > 1 ? { ...options[0], name: p.variantGroup, variantCount: options.length } : p);
+    // Cheapest explicitly: variantOptions isn't always price order (Rudraksha
+    // runs by mukhi), and the card's "From" price has to be the lowest.
+    const cheapest = options.reduce((min, o) => (o.price < min.price ? o : min), options[0]);
+    out.push(options.length > 1 ? { ...cheapest, name: p.variantGroup, variantCount: options.length } : p);
   }
   return out;
 }

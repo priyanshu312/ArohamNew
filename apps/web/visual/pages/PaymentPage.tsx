@@ -216,7 +216,7 @@ export function PaymentPage() {
         currency: "INR",
         name: "Nakshra",
         description: "Sacred Products – Temple Energized",
-        image: "/favicon.ico",
+        image: `${window.location.origin}/icon-192.png`,
         handler: async function (response: any) {
           try {
             // The verify call is the moment the order becomes real: it checks
