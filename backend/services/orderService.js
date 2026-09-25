@@ -56,7 +56,7 @@ async function hasKeptOrder(userId) {
 // It is deliberately NOT in the coupons table: it only exists while
 // TEST_COUPON_ENABLED=true is set on the server. Without that, the code is
 // rejected like any unknown string. That matters because the alternative — a
-// permanently live code — would let anyone who learned the word "Welcome1" buy
+// permanently live code — would let anyone who learned the word "WELCOME1" buy
 // a ₹7,909 rudraksha for ₹1. The server is authoritative here (the client
 // refuses to charge a discounted total the server did not agree to), so the
 // flag alone is enough to switch it off.
@@ -64,7 +64,7 @@ async function hasKeptOrder(userId) {
 // Turn on:  TEST_COUPON_ENABLED=true   Turn off: remove the var. No redeploy of
 // code needed either way, and leave it OFF in normal operation.
 const TEST_PROMO = {
-  code: "Welcome1",
+  code: "WELCOME1",
   type: "fixed_total",
   value: 100, // ₹1 in paise — the final amount charged, not a discount
   description: "TEST ONLY — charges ₹1."

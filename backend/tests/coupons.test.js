@@ -151,7 +151,7 @@ test("a coupon expiring in the future still applies", async () => {
 });
 
 test("an active fixed_total row in the table is never honoured", async () => {
-  rows = [coupon({ code: "Welcome1", type: "fixed_total", value: 1 })];
+  rows = [coupon({ code: "WELCOME1", type: "fixed_total", value: 1 })];
   const r = await createPendingOrder("u1", cart(500), {}, "welcome1");
   assert.equal(r.promoApplied, false);
   assert.equal(r.amount, 50000);

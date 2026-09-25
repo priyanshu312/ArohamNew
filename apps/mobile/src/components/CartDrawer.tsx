@@ -119,10 +119,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     <View style={styles.couponInputRow}>
                       <TextInput
                         style={styles.couponInput}
-                        placeholder="Enter Nakshra10 or FIRST100"
+                        placeholder="Enter NAKSHRA10 or FIRST300"
                         placeholderTextColor="#8B7355"
                         value={couponCode}
-                        onChangeText={setCouponCode}
+                        onChangeText={(t) => setCouponCode(t.toUpperCase())}
                         autoCapitalize="characters"
                       />
                       <TouchableOpacity style={styles.applyBtn} onPress={handleApplyCoupon}>

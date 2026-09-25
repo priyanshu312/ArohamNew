@@ -33,7 +33,7 @@ services:
       # --- Debug routes (must stay false in every deployment) ---
       - key: ENABLE_DEBUG_ROUTES
         value: "false"
-      # --- Test coupon (Welcome1 = pay ₹1). The server is authoritative: the
+      # --- Test coupon (WELCOME1 = pay ₹1). The server is authoritative: the
       # code is rejected unless this is "true", whatever the client shows.
       # Set it to "true" only while testing, then REMOVE it. ---
       - key: TEST_COUPON_ENABLED

@@ -56,8 +56,8 @@ export function OrderSummaryCard({ cartItems, onBack, onNext, nextLabel, step }:
                 <input
                   type="text"
                   value={inputCode}
-                  onChange={e => { setInputCode(e.target.value); setMsg(null); }}
-                  placeholder="Enter code (e.g. Nakshra10)"
+                  onChange={e => { setInputCode(e.target.value.toUpperCase()); setMsg(null); }}
+                  placeholder="Enter code (e.g. NAKSHRA10)"
                   className="flex-1 px-3 py-1.5 rounded-xl text-xs outline-none uppercase font-semibold"
                   style={{ border: "1px solid rgba(91,31,36,0.15)", background: "#FFFFFF", color: MAROON }}
                 />

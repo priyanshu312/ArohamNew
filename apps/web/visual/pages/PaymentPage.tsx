@@ -424,8 +424,8 @@ export function PaymentPage() {
                     <input
                       type="text"
                       value={couponInput}
-                      onChange={e => { setCouponInput(e.target.value); setCouponMsg(null); }}
-                      placeholder="Coupon code (e.g. Nakshra10)"
+                      onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponMsg(null); }}
+                      placeholder="Coupon code (e.g. NAKSHRA10)"
                       className="flex-1 min-w-0 px-3 py-2 rounded-xl text-xs outline-none uppercase font-semibold truncate"
                       style={{ border: "1px solid rgba(91,31,36,0.15)", background: "#FAF7F2", color: MAROON }}
                       onKeyDown={e => { if (e.key === "Enter") handleApplyCoupon(); }}

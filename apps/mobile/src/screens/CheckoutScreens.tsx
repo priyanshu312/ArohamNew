@@ -361,11 +361,11 @@ export const CheckoutPaymentScreen: React.FC<PaymentProps> = ({
             <View style={styles.couponInputRow}>
               <TextInput
                 style={styles.couponInput}
-                placeholder="Coupon code (e.g. Nakshra10)"
+                placeholder="Coupon code (e.g. NAKSHRA10)"
                 placeholderTextColor="#9a8c7a"
                 autoCapitalize="characters"
                 value={couponInput}
-                onChangeText={(t) => { setCouponInput(t); setCouponMsg(null); }}
+                onChangeText={(t) => { setCouponInput(t.toUpperCase()); setCouponMsg(null); }}
               />
               <TouchableOpacity style={styles.couponApplyBtn} onPress={handleApplyCoupon}>
                 <Text style={styles.couponApplyBtnText}>APPLY</Text>
