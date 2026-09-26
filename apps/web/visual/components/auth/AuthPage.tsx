@@ -301,7 +301,11 @@ export function AuthPage() {
             code: joinedOtp,
             fullName: name.trim() || undefined,
             phone: phoneDigits || undefined,
-            verifyOnly: isAstrologerMode,
+            // Astrologers get their account (created server-side on register)
+            // and a session token for it, like shoppers do.
+            astrologer: isAstrologerMode || undefined,
+            specialty: isAstrologerMode ? astroSpecialty : undefined,
+            experience: isAstrologerMode ? astroExperience : undefined,
           }),
         });
         if (vr?.token) {
@@ -309,7 +313,7 @@ export function AuthPage() {
           // Make auth.uid() resolve for the client's direct Supabase calls.
           await applySupabaseAuth(vr.token);
         }
-        otpUser = vr?.user || null;
+        otpUser = vr?.user || vr?.astrologer || null;
         if (otpUser?.id) setVerifiedUserId(otpUser.id);
       } catch (e: any) {
         setLoading(false);
@@ -330,14 +334,10 @@ export function AuthPage() {
             : null;
 
         if (isAstrologerMode) {
-          // Astrologer mode: ONLY check astrologers table, never users table
+          // The server found (or, on register, created) the astrologers row for
+          // this email and returned it with the token.
           try {
-            const { data } = await supabase
-              .from('astrologers')
-              .select('*')
-              .ilike('email', em)
-              .limit(1);
-            const astroData = data && data.length > 0 ? data[0] : null;
+            const astroData: any = otpUser;
             if (astroData && String(astroData.status).toUpperCase() === "BLOCKED") {
               setLoading(false);
               setErrorMsg("Sorry, you are blocked. Can't login.");
@@ -391,12 +391,10 @@ export function AuthPage() {
             }
           } catch (e) {}
 
-          // No existing astrologer found — proceed to create new one (falls through to astrologer creation below)
-          if (activeTab === "signin") {
-            setLoading(false);
-            setErrorMsg("Mobile number not registered. Please create an astrologer account.");
-            return;
-          }
+          // Only reachable if an old backend answered without the account.
+          setLoading(false);
+          setErrorMsg("That email isn't registered. Please create an astrologer account.");
+          return;
         } else {
           // Normal user mode: check backend API & database first for live status
           try {
@@ -444,81 +442,6 @@ export function AuthPage() {
             setErrorMsg("Sorry, you are blocked. Can't login.");
             return;
           }
-        }
-
-        if (isAstrologerMode) {
-          const astroId = generateUUID();
-          const astroFullName = name.trim() || "Acharya " + (phoneDigits.slice(-4) || "Ji");
-          const newAstrologer = {
-            id: astroId,
-            name: astroFullName,
-            title: `Vedic Jyotish & ${astroSpecialty} Specialist`,
-            experience: `${astroExperience}+ Years Exp`,
-            rating: 5.0,
-            consultations: 0,
-            specialties: [astroSpecialty, "Vedic Kundali", "Sacred Remedies"],
-            languages: ["Hindi", "English"],
-            avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80",
-            status: "online",
-            pricePerMin: 20
-          };
-
-          try {
-            const existingAstros = JSON.parse(localStorage.getItem("Nakshra_registered_astrologers") || "[]");
-            const updatedAstros = [newAstrologer, ...existingAstros.filter((a: any) => a.id !== newAstrologer.id)];
-            localStorage.setItem("Nakshra_registered_astrologers", JSON.stringify(updatedAstros));
-            window.dispatchEvent(new Event("storage"));
-          } catch (e) {}
-
-          // Save strictly into Supabase 'astrologers' table
-          try {
-            const { data, error } = await supabase.from("astrologers").upsert({
-              id: newAstrologer.id,
-              full_name: astroFullName,
-              email: email.trim() || null,
-              phone: phoneDigits || null,
-              title: newAstrologer.title,
-              experience_years: parseInt(astroExperience) || 5,
-              specialties: newAstrologer.specialties,
-              languages: newAstrologer.languages,
-              rating: 5.0,
-              is_online: true,
-              avatar_url: newAstrologer.avatar,
-              price_per_min: 20,
-              role: "astrologer"
-            }).select();
-
-            if (error) {
-              console.error("Supabase astrologers upsert error:", error);
-            } else {
-              console.log("Supabase astrologer created successfully:", data);
-            }
-          } catch (e) {
-            console.error("Supabase astrologers table insert exception:", e);
-          }
-
-          // Save to Firestore 'astrologers' collection
-          setDoc(doc(db, "astrologers", newAstrologer.id), {
-            fullName: astroFullName,
-            email: email.trim() || null,
-            phone: phoneDigits || null,
-            title: newAstrologer.title,
-            role: "astrologer",
-            createdAt: serverTimestamp()
-          }, { merge: true }).catch(err => console.warn("Firestore setDoc warning:", err));
-
-          setLoading(false);
-          login({
-            id: newAstrologer.id,
-            email: email.trim() || null,
-            user_metadata: { full_name: astroFullName, phone: phoneDigits || null, role: "astrologer" },
-            role: "astrologer",
-            astrologerProfile: newAstrologer
-          });
-
-          closeAuth(true);
-          navigate("/astrologer");
-          return;
         }
 
         if (existingUser) {

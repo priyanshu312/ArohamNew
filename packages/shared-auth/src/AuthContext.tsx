@@ -55,6 +55,10 @@ async function checkAccount(u: any): Promise<AccountState> {
   if (!u?.id) return "unknown";
   const isAstrologer = u.role === "astrologer" || u.user_metadata?.role === "astrologer";
   if (isAstrologer) {
+    // Astrologers from the old portal (any 6-digit code) have no session
+    // token, and without one the database won't show them their chats. Send
+    // them through the real email-code sign-in.
+    if (!safeLocalStorage.getItem("Nakshra_auth_token")) return "signed_out";
     const { data, error } = await supabase.from("astrologers").select("id, status").eq("id", u.id).maybeSingle();
     if (error) return "unknown";
     if (!data?.id) return "gone";

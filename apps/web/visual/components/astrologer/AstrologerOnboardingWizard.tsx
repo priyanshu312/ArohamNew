@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Sparkles, Phone, User, Award, BookOpen, ShieldCheck, Video, FileText, ChevronRight, ChevronLeft, Check, Upload, AlertCircle } from "lucide-react";
-import { supabase } from "@nakshra/shared-services";
+import { api } from "@nakshra/shared-api";
 
 interface AstrologerOnboardingWizardProps {
   initialPhone?: string;
@@ -217,29 +217,33 @@ export const AstrologerOnboardingWizard: React.FC<AstrologerOnboardingWizardProp
       created_at: new Date().toISOString()
     };
 
-    // Save locally
+    // The server stores it against the signed-in astrologer. The browser can
+    // no longer write this table: it holds Aadhaar, PAN and bank numbers, and
+    // it used to be readable and writable by anyone.
+    let saved: any;
     try {
-      localStorage.setItem(`Nakshra_astro_onboarding_app_${payload.id}`, JSON.stringify(payload));
-      localStorage.setItem(`Nakshra_astro_onboarding_app_current`, JSON.stringify(payload));
-    } catch (e) {}
-
-    // Submit to Admin backend
-    try {
-      const apiBase = (import.meta.env.VITE_ADMIN_API_URL as string) || (import.meta.env.VITE_API_BASE_URL as string) || "http://localhost:5001";
-      await fetch(`${apiBase}/api/admin/onboarding/applications`, {
+      const res: any = await api("/admin/onboarding/applications", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
-    } catch (e) {}
+      saved = res?.application;
+      if (!saved) throw new Error("The server did not confirm your application.");
+    } catch (e: any) {
+      setLoading(false);
+      setErrorMsg(e?.status === 401 || e?.status === 403
+        ? "Your login has expired. Please sign in again and resubmit."
+        : e?.message || "Could not submit your application. Please try again.");
+      return;
+    }
 
-    // Submit to Supabase table if available
+    // Cache the server's copy, which has the ID and bank numbers masked.
     try {
-      await supabase.from("astrologer_applications").upsert(payload);
+      localStorage.setItem(`Nakshra_astro_onboarding_app_${saved.id}`, JSON.stringify(saved));
+      localStorage.setItem(`Nakshra_astro_onboarding_app_current`, JSON.stringify(saved));
     } catch (e) {}
 
     setLoading(false);
-    onComplete(payload);
+    onComplete(saved);
   };
 
   return (

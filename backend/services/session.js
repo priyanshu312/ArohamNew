@@ -16,13 +16,16 @@ const b64url = (buf) =>
   Buffer.from(buf).toString("base64").replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
 const b64urlJson = (obj) => b64url(JSON.stringify(obj));
 
-function issueToken(userId, email) {
+// `extra` adds claims such as { app_role: "astrologer" }. `role` itself must
+// stay "authenticated" or Supabase won't map the token to that Postgres role.
+function issueToken(userId, email, extra = {}) {
   const secret = SECRET();
   if (!secret) return `MOCK-USER-ID-${userId}`;
 
   const now = Math.floor(Date.now() / 1000);
   const header = { alg: "HS256", typ: "JWT" };
   const payload = {
+    ...extra,
     sub: String(userId),
     role: "authenticated",
     aud: "authenticated",
@@ -54,7 +57,7 @@ function verifyToken(token) {
   }
   if (!payload || !payload.sub) return null;
   if (payload.exp && Math.floor(Date.now() / 1000) > payload.exp) return null;
-  return { id: payload.sub, email: payload.email || null };
+  return { id: payload.sub, email: payload.email || null, appRole: payload.app_role || null };
 }
 
 module.exports = { issueToken, verifyToken };

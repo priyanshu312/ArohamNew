@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { api } from "@nakshra/shared-api";
 import { Sparkles, CheckCircle2, Clock, Calendar, Video, FileText, ArrowRight, AlertCircle, RefreshCw, PhoneCall, ShieldCheck, Award, ExternalLink } from "lucide-react";
 
 interface AstrologerOnboardingStatusProps {
@@ -31,27 +32,15 @@ export const AstrologerOnboardingStatus: React.FC<AstrologerOnboardingStatusProp
       }
     } catch (e) {}
 
-    // 2. Fetch from backend API
+    // 2. Ask the server (needs the astrologer's session token; returns only
+    //    their own application, with ID and bank numbers masked).
     try {
-      const apiBase = (import.meta.env.VITE_ADMIN_API_URL as string) || (import.meta.env.VITE_API_BASE_URL as string) || "http://localhost:5001";
-      const res = await fetch(`${apiBase}/api/admin/onboarding/applications/${appId}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.application) {
-          setApp(data.application);
-          setInterviews(data.interviews || []);
-          setDocuments(data.documents || []);
-
-          // Sync back to local current
-          localStorage.setItem("Nakshra_astro_onboarding_app_current", JSON.stringify(data.application));
-        }
-      } else if (res.status === 404 && app) {
-        // Automatically sync the local application to the backend if the backend doesn't have it
-        await fetch(`${apiBase}/api/admin/onboarding/applications`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(app)
-        });
+      const data: any = await api(`/admin/onboarding/applications/${appId}`);
+      if (data?.application) {
+        setApp(data.application);
+        setInterviews(data.interviews || []);
+        setDocuments(data.documents || []);
+        localStorage.setItem("Nakshra_astro_onboarding_app_current", JSON.stringify(data.application));
       }
     } catch (e) {}
   };
@@ -59,9 +48,10 @@ export const AstrologerOnboardingStatus: React.FC<AstrologerOnboardingStatusProp
   useEffect(() => {
     fetchLatestStatus();
 
+    // Reviews take days, not seconds; a slow poll is plenty.
     const interval = setInterval(() => {
       fetchLatestStatus();
-    }, 3000);
+    }, 30000);
 
     const handleStorageChange = () => fetchLatestStatus();
     window.addEventListener("storage", handleStorageChange);

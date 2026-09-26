@@ -68,10 +68,11 @@ async function requireAuth(req, res, next) {
         id: sess.id,
         email: user?.email || sess.email || null,
         user_metadata: { full_name: user?.full_name || "", phone: user?.phone || "" },
+        appRole: sess.appRole,
       };
       return next();
     } catch (e) {
-      req.user = { id: sess.id, email: sess.email || null, user_metadata: { phone: "" } };
+      req.user = { id: sess.id, email: sess.email || null, user_metadata: { phone: "" }, appRole: sess.appRole };
       return next();
     }
   }

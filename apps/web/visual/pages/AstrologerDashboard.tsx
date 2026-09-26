@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { supabase } from "@nakshra/shared-services";
+import { api } from "@nakshra/shared-api";
 import { MAROON, GOLD, IVORY, SANS, SERIF } from "@nakshra/shared-config/theme";
 import { useAuth } from "@nakshra/shared-auth";
 import { useProducts } from "@nakshra/shared-hooks/useProducts";
@@ -144,118 +145,6 @@ export function AstrologerDashboard() {
     averageRating: 4.95
   });
 
-  const [loginPhone, setLoginPhone] = useState("");
-  const [loginOtp, setLoginOtp] = useState("");
-  const [loginStep, setLoginStep] = useState<"phone" | "otp">("phone");
-  const [portalLoading, setPortalLoading] = useState(false);
-  const [portalError, setPortalError] = useState("");
-
-  const handleSendOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const phoneDigits = loginPhone.replace(/\D/g, "");
-    if (!loginPhone.trim() || phoneDigits.length < 10) {
-      setPortalError("Please enter a valid 10-digit mobile number.");
-      return;
-    }
-    setPortalError("");
-    setPortalLoading(true);
-
-    try {
-      const { data } = await supabase
-        .from("astrologers")
-        .select("status")
-        .or(`phone.eq.${phoneDigits},phone.eq.+91${phoneDigits},phone.eq.91${phoneDigits}`)
-        .limit(1);
-      if (data && data.length > 0 && String(data[0].status).toUpperCase() === "BLOCKED") {
-        setPortalLoading(false);
-        setPortalError("Sorry, you are blocked. Can't login.");
-        return;
-      }
-    } catch (err) {}
-
-    setTimeout(() => {
-      setPortalLoading(false);
-      setLoginStep("otp");
-    }, 500);
-  };
-
-  const handleVerifyPortalOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (loginOtp !== "123456" && loginOtp.length !== 6) {
-      setPortalError("Invalid OTP. Use test OTP 123456.");
-      return;
-    }
-    setPortalError("");
-    setPortalLoading(true);
-
-    const phoneDigits = loginPhone.replace(/\D/g, "");
-    let matchedAstro: any = null;
-
-    try {
-      const { data } = await supabase
-        .from("astrologers")
-        .select("*")
-        .or(`phone.eq.${phoneDigits},phone.eq.+91${phoneDigits},phone.eq.91${phoneDigits}`)
-        .limit(1);
-      if (data && data.length > 0 && data[0].id) {
-        matchedAstro = data[0];
-      }
-    } catch (err) {}
-
-    if (matchedAstro && String(matchedAstro.status).toUpperCase() === "BLOCKED") {
-      setPortalLoading(false);
-      setPortalError("Sorry, you are blocked. Can't login.");
-      return;
-    }
-
-    const finalAstroId = matchedAstro?.id || generateUUID();
-    const finalAstroName = matchedAstro?.full_name || matchedAstro?.name || "Acharya Devrat Sharma";
-    const finalEmail = matchedAstro?.email || `astrologer_${phoneDigits.slice(-4)}@Nakshra.com`;
-
-    const astroUser = {
-      id: finalAstroId,
-      email: finalEmail,
-      user_metadata: {
-        full_name: finalAstroName,
-        phone: phoneDigits,
-        role: "astrologer"
-      },
-      role: "astrologer"
-    };
-
-    if (!matchedAstro) {
-      try {
-        await supabase.from("astrologers").insert({
-          id: finalAstroId,
-          full_name: finalAstroName,
-          email: finalEmail,
-          phone: phoneDigits,
-          title: "Senior Vedic Jyotish Master",
-          experience_years: 8,
-          specialties: ["Vedic Kundali", "Sacred Remedies"],
-          languages: ["Hindi", "English"],
-          rating: 4.95,
-          is_online: true,
-          avatar_url: PRESET_AVATARS[0],
-          price_per_min: 20,
-          role: "astrologer",
-          bio: "PENDING_WIZARD_COMPLETION"
-        });
-      } catch (err) {}
-    }
-
-    try {
-      localStorage.removeItem("Nakshra_astro_onboarding_app_current");
-      localStorage.setItem("Nakshra_mock_session", JSON.stringify(astroUser));
-      localStorage.setItem("Nakshra_accepted_session_ids", JSON.stringify([]));
-      window.dispatchEvent(new Event("storage"));
-    } catch (e) {}
-
-    setTimeout(() => {
-      setPortalLoading(false);
-      window.location.reload();
-    }, 400);
-  };
 
   const [profile, setProfile] = useState({
     name: user?.user_metadata?.full_name || "Acharya Astrologer",
@@ -296,20 +185,16 @@ export function AstrologerDashboard() {
     const fetchOnboardingStatus = async () => {
       if (!currentAstroId) return;
       try {
-        const apiBase = (import.meta.env.VITE_ADMIN_API_URL as string) || (import.meta.env.VITE_API_BASE_URL as string) || "http://localhost:5001";
-        const res = await fetch(`${apiBase}/api/admin/onboarding/applications/${currentAstroId}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.application) {
-            setOnboardingApp(data.application);
-            localStorage.setItem(`Nakshra_astro_onboarding_app_${currentAstroId}`, JSON.stringify(data.application));
-          }
+        const data: any = await api(`/admin/onboarding/applications/${currentAstroId}`);
+        if (data?.application) {
+          setOnboardingApp(data.application);
+          localStorage.setItem(`Nakshra_astro_onboarding_app_${currentAstroId}`, JSON.stringify(data.application));
         }
       } catch (e) {}
     };
 
     fetchOnboardingStatus();
-    const interval = setInterval(fetchOnboardingStatus, 3000);
+    const interval = setInterval(fetchOnboardingStatus, 30000);
     return () => clearInterval(interval);
   }, [currentAstroId]);
 
@@ -888,7 +773,11 @@ export function AstrologerDashboard() {
       await supabase.from("chat_messages").insert({
         session_id: s.id,
         sender: "astrologer",
-        text: "Astrologer is here to help you."
+        // sender_type and message_text are NOT NULL; without them this
+        // greeting was rejected and never reached the customer.
+        sender_type: "astrologer",
+        text: "Astrologer is here to help you.",
+        message_text: "Astrologer is here to help you."
       });
     } catch (e) {}
 
@@ -1051,8 +940,9 @@ export function AstrologerDashboard() {
 
   const mockStr = localStorage.getItem("Nakshra_mock_session");
   const currentUser = user || (mockStr ? JSON.parse(mockStr) : null);
+  const isAstrologer = (currentUser as any)?.role === "astrologer" || (currentUser as any)?.user_metadata?.role === "astrologer";
 
-  if (!currentUser) {
+  if (!currentUser || !isAstrologer) {
     return (
       <div className="min-h-screen bg-[#FAF6F0] flex items-center justify-center p-4" style={{ fontFamily: SANS }}>
         <div className="bg-white border-2 border-amber-900/15 rounded-3xl p-8 max-w-md w-full shadow-2xl space-y-6 text-center">
@@ -1064,61 +954,26 @@ export function AstrologerDashboard() {
               Verified Scholar Access
             </span>
             <h1 className="text-2xl font-extrabold text-[#5B1F24] mt-2" style={{ fontFamily: SERIF }}>Nakshra Scholar Portal</h1>
-            <p className="text-xs text-amber-900/60 mt-1 font-medium">Sign in with your registered phone number to manage your consultation workstation.</p>
+            <p className="text-xs text-amber-900/60 mt-1 font-medium">Sign in with your registered email to manage your consultation workstation.</p>
           </div>
 
-          {portalError && (
-            <div className="p-3 rounded-xl bg-red-50 text-red-700 text-xs font-bold border border-red-200">
-              {portalError}
+          {currentUser && (
+            <div className="p-3 rounded-xl bg-amber-50 text-amber-900 text-xs font-bold border border-amber-200">
+              You're signed in as a customer. Sign in with your astrologer email to open the workstation.
             </div>
           )}
 
-          {loginStep === "phone" ? (
-            <form onSubmit={handleSendOtp} className="space-y-4 text-left">
-              <div>
-                <label className="block text-xs font-bold text-[#5B1F24] mb-1">Mobile Phone Number</label>
-                <input
-                  type="tel"
-                  value={loginPhone}
-                  onChange={e => setLoginPhone(e.target.value)}
-                  placeholder="e.g. 9876543210"
-                  className="w-full h-12 px-4 rounded-xl text-xs bg-amber-50/50 border border-amber-900/20 text-[#3C3024] outline-none focus:border-[#5B1F24] font-semibold"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={portalLoading}
-                className="w-full py-3.5 rounded-xl text-xs font-bold text-white shadow-md active:scale-95 transition-all flex items-center justify-center gap-2"
-                style={{ background: `linear-gradient(135deg, ${MAROON}, #7A2A30)` }}
-              >
-                <span>{portalLoading ? "Sending OTP..." : "Get Verification Code"}</span>
-                <Send size={14} />
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleVerifyPortalOtp} className="space-y-4 text-left">
-              <div>
-                <label className="block text-xs font-bold text-[#5B1F24] mb-1">Enter 6-Digit OTP Code</label>
-                <input
-                  type="text"
-                  maxLength={6}
-                  value={loginOtp}
-                  onChange={e => setLoginOtp(e.target.value)}
-                  placeholder="Use test code 123456"
-                  className="w-full h-12 px-4 rounded-xl text-center text-base tracking-widest font-mono bg-amber-50/50 border border-amber-900/20 text-[#3C3024] outline-none focus:border-[#5B1F24]"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={portalLoading}
-                className="w-full py-3.5 rounded-xl text-xs font-bold text-white shadow-md active:scale-95 transition-all flex items-center justify-center gap-2"
-                style={{ background: `linear-gradient(135deg, ${MAROON}, #7A2A30)` }}
-              >
-                <span>{portalLoading ? "Verifying..." : "Verify & Open Workstation"}</span>
-                <CheckCircle2 size={14} />
-              </button>
-            </form>
-          )}
+          {/* Astrologers sign in with a code sent to their registered email.
+              The portal used to take a phone number and accept any 6 digits,
+              which let anyone open any astrologer's workstation. */}
+          <button
+            onClick={() => navigate("/auth?role=astrologer")}
+            className="w-full py-3.5 rounded-xl text-xs font-bold text-white shadow-md active:scale-95 transition-all flex items-center justify-center gap-2"
+            style={{ background: `linear-gradient(135deg, ${MAROON}, #7A2A30)` }}
+          >
+            <span>Sign In with Email Code</span>
+            <Send size={14} />
+          </button>
 
           <div className="pt-4 border-t border-amber-900/10 flex items-center justify-between text-xs font-semibold text-amber-900/60">
             <button onClick={() => navigate("/")} className="hover:underline hover:text-[#5B1F24]">← Return Home</button>
@@ -1135,7 +990,7 @@ export function AstrologerDashboard() {
     if (!onboardingApp) {
       return (
         <AstrologerOnboardingWizard
-          initialPhone={loginPhone || profile.phone}
+          initialPhone={profile.phone}
           astroId={currentAstroId}
           onComplete={(appData) => {
             setOnboardingApp(appData);

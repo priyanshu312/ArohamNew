@@ -114,6 +114,7 @@ app.use("/api/shiprocket", require("./routes/shiprocket"));
 app.use("/api/telemetry", require("./routes/telemetry"));
 app.use("/api/chat", require("./routes/chat"));
 app.use("/api/consult", require("./routes/consult"));
+app.use("/api/admin/onboarding", require("./routes/astrologerOnboarding"));
 app.use("/api/recommendations", require("./routes/recommendations"));
 app.use("/api/kundli", require("./routes/kundli"));
 

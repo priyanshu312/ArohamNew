@@ -1,4 +1,5 @@
 const router = require("express").Router();
+const crypto = require("crypto");
 const supabase = require("../config/supabase");
 const { sendOtp, checkOtp } = require("../services/otp");
 const { issueToken } = require("../services/session");
@@ -107,18 +108,73 @@ router.post("/otp/send", otpSendLimiter, async (req, res) => {
   }
 });
 
-// POST /api/auth/otp/verify  { email, code, fullName?, phone?, gender?, dob?, verifyOnly? }
-// verifyOnly: just checks the code (used by the astrologer flow, which creates
-// its own record); otherwise find-or-creates the users row + returns a token.
+// The astrologers row for a verified EMAIL. Signing in finds it; registering
+// (fullName given) creates it here with the service role, because the browser
+// may no longer write rows it doesn't own. Returns null when there is no row
+// and this isn't a registration. Throws {status} for a blocked account.
+async function findOrCreateAstrologer(email, { fullName, phone, specialty, experience } = {}) {
+  const { data: matches } = await supabase
+    .from("astrologers").select("*").ilike("email", email)
+    .order("updated_at", { ascending: false, nullsFirst: false })
+    .limit(1);
+  const existing = (matches || [])[0] || null;
+  if (existing) {
+    if (String(existing.status).toUpperCase() === "BLOCKED") {
+      throw Object.assign(new Error("Sorry, you are blocked. Can't login."), { status: 403 });
+    }
+    return existing;
+  }
+  const name = String(fullName || "").trim();
+  if (!name) return null;
+
+  const focus = String(specialty || "").trim() || "Vedic Kundali";
+  const { data: created, error } = await supabase
+    .from("astrologers")
+    .insert({
+      id: crypto.randomUUID(),
+      full_name: name,
+      email,
+      phone: digits10(phone),
+      title: `Vedic Jyotish & ${focus} Specialist`,
+      experience_years: parseInt(experience, 10) || 5,
+      specialties: [...new Set([focus, "Vedic Kundali", "Sacred Remedies"])],
+      languages: ["Hindi", "English"],
+      rating: 5.0,
+      // Hidden from /consult until they finish onboarding and go online.
+      is_online: false,
+      avatar_url: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80",
+      price_per_min: 20,
+      role: "astrologer",
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return created;
+}
+
+// POST /api/auth/otp/verify
+//   { email, code, fullName?, phone?, gender?, dob?, verifyOnly?, astrologer? }
+// Shoppers: find-or-create the users row and return a session token.
+// Astrologers (verifyOnly — the old name for this flag — or astrologer:true):
+// find-or-create the astrologers row and return a token for THAT id, so the
+// database can tell which astrologer is asking (row-level security keys chats
+// and earnings to auth.uid()).
 router.post("/otp/verify", otpVerifyLimiter, async (req, res) => {
-  const { code, fullName, phone, gender, dob, verifyOnly } = req.body;
+  const { code, fullName, phone, gender, dob, verifyOnly, astrologer: astroFlag, specialty, experience } = req.body;
   const email = normEmail(req.body.email);
   if (!isEmail(email) || !code) return res.status(400).json({ error: "Email and code are required." });
   try {
     const { approved, authUserId } = await checkOtp(email, code);
     if (!approved) return res.status(401).json({ error: "Invalid or expired code." });
 
-    if (verifyOnly) return res.json({ success: true, approved: true });
+    if (verifyOnly || astroFlag) {
+      const astrologer = await findOrCreateAstrologer(email, { fullName, phone, specialty, experience });
+      if (!astrologer) {
+        return res.status(404).json({ error: "That email isn't registered. Please create an astrologer account." });
+      }
+      const token = issueToken(astrologer.id, email, { app_role: "astrologer" });
+      return res.json({ success: true, approved: true, token, astrologer });
+    }
 
     const user = await findOrCreateUser(email, fullName, { phone, gender, dob, authUserId });
     const token = issueToken(user.id, user.email);
