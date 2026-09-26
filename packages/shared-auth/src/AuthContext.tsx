@@ -25,6 +25,9 @@ interface AuthContextValue {
   logout: () => Promise<void>;
   openAuth: () => void;
   closeAuth: (loggedIn?: boolean) => void;
+  // Ask the server now whether the stored login still works, instead of
+  // waiting for the next background check. Logs out on a definite "no".
+  verifySession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -90,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   });
   const [cartSynced, setCartSynced] = useState(false);
+  const verifyRef = useRef<() => Promise<void>>(async () => {});
 
   // Sync cart and orders helper
   const handleCartSync = async () => {
@@ -299,9 +303,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const intervalId = setInterval(tick, 60000);
     const onVisible = () => { if (document.visibilityState === "visible") tick(); };
     if (typeof document !== "undefined") document.addEventListener("visibilitychange", onVisible);
+    verifyRef.current = tick;
 
     return () => {
       stopped = true;
+      verifyRef.current = async () => {};
       clearInterval(intervalId);
       if (typeof document !== "undefined") document.removeEventListener("visibilitychange", onVisible);
     };
@@ -365,9 +371,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setShowAuth(false);
     if (loggedIn) setIsLoggedIn(true);
   };
+  const verifySession = () => verifyRef.current();
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, showAuth, user, session, cartSynced, login, logout, openAuth, closeAuth }}>
+    <AuthContext.Provider value={{ isLoggedIn, showAuth, user, session, cartSynced, login, logout, openAuth, closeAuth, verifySession }}>
       {children}
     </AuthContext.Provider>
   );

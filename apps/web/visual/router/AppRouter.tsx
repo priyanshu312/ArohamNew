@@ -113,13 +113,22 @@ function MainLayout() {
 }
 
 function ProtectedRoute() {
-  const { isLoggedIn, openAuth } = useAuth();
+  const { isLoggedIn, openAuth, verifySession } = useAuth();
+  const { pathname } = useLocation();
 
   // Open the auth modal once when an unauthenticated user lands here.
   useEffect(() => {
     if (!isLoggedIn) openAuth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn]);
+
+  // "Logged in" here is only what the browser remembers. Confirm with the
+  // server on every guarded page, so a login that died mid-checkout is caught
+  // at the address step rather than by a failed payment.
+  useEffect(() => {
+    if (isLoggedIn) verifySession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoggedIn, pathname]);
 
   if (!isLoggedIn) {
     // Render a real page (not a blank screen) so closing the modal isn't a dead end.
@@ -173,11 +182,15 @@ export function AppRouter() {
           <Route path="/terms" element={<TermsOfServicePage />} />
           <Route path="/blog" element={<BlogPage />} />
           
-          <Route path="/checkout/shipping" element={<ShippingPage />} />
-          <Route path="/checkout/payment" element={<PaymentPage />} />
+          {/* Confirmation stays open: it must still show after a paid order
+              even if the login lapses on the way back from Razorpay. */}
           <Route path="/checkout/confirm" element={<ConfirmationPage />} />
-          
+
           <Route element={<ProtectedRoute />}>
+            {/* Orders need a login (POST /orders is requireAuth), so don't let
+                anyone fill in an address and reach Pay without one. */}
+            <Route path="/checkout/shipping" element={<ShippingPage />} />
+            <Route path="/checkout/payment" element={<PaymentPage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
 
